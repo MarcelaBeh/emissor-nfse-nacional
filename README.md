@@ -1,10 +1,33 @@
 # NFSe Padrão Nacional
 
-Pacote para geração de NFSe Padrão Nacional (https://www.nfse.gov.br/) usando componentes NFePHP (https://github.com/nfephp-org).
+**Biblioteca PHP para integração com NFSe Nacional** - Pacote Composer reutilizável para emissão, consulta e cancelamento de Notas Fiscais de Serviço Eletrônicas no padrão nacional (https://www.nfse.gov.br/).
 
-Este pacote foi desenvolvido para atender algumas das minhas necessidades, implementei o que utilizei e a toque de caixa. Se quiser colaborar envie seu PR.
+Desenvolvido com componentes NFePHP (https://github.com/nfephp-org).
 
-**Em desenvolvimento. Use por sua conta e risco.**
+**Status:** Em desenvolvimento. Use por sua conta e risco.
+
+---
+
+## 📦 O que é este projeto?
+
+Este é um **pacote Composer (biblioteca)** que:
+
+- ✅ **Integra com APIs do Governo** (NFSe Nacional - SEFIN)
+- ✅ **Funciona em qualquer projeto PHP** (Laravel, Symfony, CakePHP, vanilla PHP)
+- ✅ **É instalado via Composer** (`composer require marcelabeh/emissor-nfse-nacional`)
+- ✅ **Será usado por outros desenvolvedores** em seus próprios projetos
+- ✅ **É independente de framework** - Zero acoplamento
+- ✅ **Segue padrões PSR** (PSR-4, PSR-12) e Clean Architecture
+
+**Não é:** Uma aplicação standalone ou sistema completo.
+
+---
+
+## 📚 Documentação
+
+- **[Arquitetura de Refatoração](docs/ARQUITETURA_REFATORACAO.md)** - Proposta completa de refatoração com Clean Architecture
+- **[Guia de Implementação](docs/GUIA_IMPLEMENTACAO.md)** - Exemplos práticos e padrões de código
+- **[Segurança e Compliance](docs/SEGURANCA_COMPLIANCE.md)** - Diretrizes de segurança e conformidade
 
 ## ⚠️⚠️⚠️ AVISOS ⚠️⚠️⚠️
 
@@ -36,7 +59,7 @@ $tools->consultarNfseChave('CHAVE_NFSE', false);
 **Este pacote é desenvolvido para uso do [Composer](https://getcomposer.org/), então não terá nenhuma explicação de instalação alternativa.**
 
 ```bash
-composer require hadder/nfse-nacional
+composer require marcelabeh/emissor-nfse-nacional
 ```
 
 ### Serviços implementados
@@ -67,21 +90,11 @@ Como a Receita só atualiza suas APIs quando está inspirada, listamos abaixo as
 
 - CPF/CNPJ do **prestador** não existente/cadastrado/habilitado na NFSe Nacional/Prefeitura;
 
-# CRÉDITOS (por Fernando Friedrich)
+# Créditos
 
-Este pacote **não caiu do céu**, **não apareceu por geração espontânea** e muito menos foi escrito do zero em um surto de genialidade de minha parte.
+Este pacote é um **fork** do [hadder/nfse-nacional](https://github.com/Rainzart/nfse-nacional), originalmente desenvolvido por **Fernando Friedrich**.
 
-Ele foi **copiado, clonado, analisado, desmontado, reaproveitado, adaptado e por fim ajustado por mim**, tendo como base pacotes de emissão de **NFSe** que eram disponibilizados como **Open Source** pelo Sr. **[Roberto L. Machado](https://github.com/robmachado)** e que, atualmente, não se encontram mais disponíveis publicamente.
+O pacote original foi construído com base nos componentes do [NFePHP](https://github.com/nfephp-org), criado por **[Roberto L. Machado](https://github.com/robmachado)**.
 
-Sim, **variáveis, métodos, classes, estruturas e ideias de arquitetura** foram utilizadas como referência (copiadas) — algumas foram alteradas, outras melhoradas, outras apenas sobreviveram ao tempo — sempre tendo como principal base o projeto **[NFePHP](https://github.com/robmachado/sped-nfse)**.
-
-Na época da criação deste repositório, o cenário era simples:
-eu precisava **emitir notas fiscais para meus clientes**.  
-Não existia nenhuma alternativa Open Source ativa e funcional em PHP, e depender de **APIs pagas** definitivamente não era uma opção para mim (principalmente considerando a realidade financeira do momento).
-
-Diante disso, fica aqui meu agradecimento **mais do que merecido** ao **Roberto**, por criar, manter e disponibilizar gratuitamente projetos como o **NFePHP**, além de sempre contribuir com a comunidade.
-
-Sem esse trabalho prévio, este repositório **muito provavelmente não existiria** — ou, no mínimo, teria me dado muito mais dor de cabeça.
-
-Por fim, meu agradecimento também a todas as pessoas que contribuem com este repositório seja enviando PRs, sugerindo melhorias, corrigindo bugs ou apontando problemas.  
-A lista de contribuidores pode ser vista em: https://github.com/Rainzart/nfse-nacional/graphs/contributors
+Agradecimentos a todos os contribuidores do projeto original:  
+https://github.com/Rainzart/nfse-nacional/graphs/contributors

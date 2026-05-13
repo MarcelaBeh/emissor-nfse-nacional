@@ -119,10 +119,20 @@ try {
 //    $std->infDPS->serv->infoCompl = new stdClass();
 //    $std->infDPS->serv->infoCompl->xInfComp = 'Informações complementares';//Campo livre para preenchimento pelo contribuinte.
 
+//    Dados do Intermediário (opcional)
+//    $std->infDPS->interm = new stdClass();
+//    $std->infDPS->interm->CNPJ = '00000000000000';
+//    $std->infDPS->interm->xNome = 'Intermediário Ltda';
+//    $std->infDPS->interm->fone = '00000000000';
+
     $std->infDPS->valores = new stdClass();
     $std->infDPS->valores->vServPrest = new stdClass();
     //    $std->infDPS->valores->vServPrest->vReceb = 0.0; //Valor monetário recebido pelo intermediário do serviço (R$).
     $std->infDPS->valores->vServPrest->vServ = number_format(1.0, 2, '.', ''); //Valor monetário do serviço (R$).
+
+    //    $std->infDPS->valores->vDescCondIncond = new stdClass();
+    //    $std->infDPS->valores->vDescCondIncond->vDescIncond = number_format(0.50, 2, '.', ''); //Valor do desconto condicional (R$). Opcional, omitido se 0.00
+    //    $std->infDPS->valores->vDescCondIncond->vDescCond = number_format(0.30, 2, '.', ''); //Valor do desconto incondicional (R$). Opcional, omitido se 0.00
 
     $std->infDPS->valores->trib = new stdClass();
     $std->infDPS->valores->trib->tribMun = new stdClass();
@@ -132,6 +142,21 @@ try {
 
     $std->infDPS->valores->trib->totTrib = new stdClass();
     $std->infDPS->valores->trib->totTrib->indTotTrib = 0;
+
+    //Grupo IBSCBS (NT004 RTC) - Obrigatório para contribuintes do Simples Nacional ou IBS/CBS
+//    $std->infDPS->ibscbs = new stdClass();
+//    $std->infDPS->ibscbs->finNFSe = 1; // 1 - Tributável no município; 2 - Tributável no exterior; 3 - Tributável em outro município (NT);
+//    $std->infDPS->ibscbs->indFinal = 1; // 0 - Não; 1 - Consumidor Final;
+//    $std->infDPS->ibscbs->cIndOp = 0; // Código indicador de operação: 0 - Operação interna; 1 - Operação interestadual;
+//    $std->infDPS->ibscbs->indDest = 1; // Indicador do destinatário: 1 - Contribuinte do IBS; 2 - Contribuinte do CBS; 3 - Não contribuinte;
+//    $std->infDPS->ibscbs->dest = new stdClass();
+//    $std->infDPS->ibscbs->dest->CPF = '00000000000';
+//    $std->infDPS->ibscbs->dest->xNome = 'Destinatário IBS/CBS';
+//    $std->infDPS->ibscbs->valores = new stdClass();
+//    $std->infDPS->ibscbs->valores->trib = new stdClass();
+//    $std->infDPS->ibscbs->valores->trib->gibscbs = new stdClass();
+//    $std->infDPS->ibscbs->valores->trib->gibscbs->CST = '01'; // Código da tributação IBS/CBS
+//    $std->infDPS->ibscbs->valores->trib->gibscbs->cClassTrib = '0000000000'; // Código de classificação tributária
 
     $dps = new \Hadder\NfseNacional\Dps($std);
     $response = $tools->enviaDps($dps->render());

@@ -1,5 +1,5 @@
 {
-  "name": "hadder/nfse-nacional",
+  "name": "marcelabeh/emissor-nfse-nacional",
   "description": "Pacote para geração de NFSe Nacional usando componentes NFePHP (https://github.com/nfephp-org)",
   "keywords": [
     "nfse-nacional",

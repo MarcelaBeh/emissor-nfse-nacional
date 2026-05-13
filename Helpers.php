@@ -1,15 +1,11 @@
 <?php
-if (! function_exists('now')) {
-    /**
-     * Create a new Carbon instance for the current time.
-     *
-     * @param DateTimeZone|string|null $tz
-     * @return DateTime
-     * @throws Exception
-     */
-    function now($tz = null)
+
+declare(strict_types=1);
+
+if (!function_exists('now')) {
+    function now(DateTimeZone|string|null $tz = null): DateTime
     {
-        $timezone = $tz ? new DateTimeZone($tz) : null;
+        $timezone = is_string($tz) ? new DateTimeZone($tz) : $tz;
 
         return new DateTime('now', $timezone);
     }

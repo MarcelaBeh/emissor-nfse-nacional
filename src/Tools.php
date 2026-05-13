@@ -1,9 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hadder\NfseNacional;
 
-use DOMDocument;
+use Hadder\NfseNacional\Validators\ChaveAcessoValidator;
+use Hadder\NfseNacional\Validators\XsdValidator;
 use NFePHP\Common\Certificate;
+use RuntimeException;
+use stdClass;
 
 class Tools extends RestCurl
 {
@@ -12,125 +17,119 @@ class Tools extends RestCurl
         parent::__construct($config, $cert);
     }
 
-    public function consultarNfseChave($chave, $encoding = true)
+    public function consultarNfseChave(string $chave, bool $encoding = true): mixed
     {
-        $operacao = str_replace("{chave}", $chave, $this->getOperation('consultar_nfse'));
+        ChaveAcessoValidator::validate($chave);
+        
+        $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_nfse'));
         $retorno = $this->getData($operacao);
 
         if (isset($retorno['erro'])) {
             return $retorno;
         }
-        if ($retorno) {
-            $base_decode = base64_decode($retorno['nfseXmlGZipB64']);
+        if ($retorno && isset($retorno['nfseXmlGZipB64'])) {
+            $base_decode = base64_decode($retorno['nfseXmlGZipB64'], true);
+            if ($base_decode === false) {
+                throw new RuntimeException('Falha ao decodificar base64 da resposta NFSe');
+            }
             $gz_decode = gzdecode($base_decode);
+            if ($gz_decode === false) {
+                throw new RuntimeException('Falha ao descomprimir dados GZip da resposta NFSe');
+            }
             return $encoding ? mb_convert_encoding($gz_decode, 'ISO-8859-1') : $gz_decode;
         }
         return null;
     }
 
-    public function consultarDpsChave($chave)
+    public function consultarDpsChave(string $chave): mixed
     {
-        $operacao = str_replace("{chave}", $chave, $this->getOperation('consultar_dps'));
-        $retorno = $this->getData($operacao);
-
-        return $retorno;
+        ChaveAcessoValidator::validate($chave);
+        
+        $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_dps'));
+        return $this->getData($operacao);
     }
 
-    public function consultarNfseEventos($chave, $tipoEvento = null, $nSequencial = null)
+    public function consultarNfseEventos(string $chave, ?string $tipoEvento = null, ?string $nSequencial = null): mixed
     {
-        $operacao = str_replace("{chave}", $chave, $this->getOperation('consultar_eventos'));
-        if (!$tipoEvento) {
-            $operacao = str_replace("/{tipoEvento}/{nSequencial}", "", $operacao);
-        }
-        $operacao = str_replace("{tipoEvento}", $tipoEvento, $operacao);
+        ChaveAcessoValidator::validate($chave);
+        
+        $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_eventos'));
 
-        if (!$nSequencial) {
-            $operacao = str_replace("/{nSequencial}", "", $operacao);
+        if ($tipoEvento === null || $tipoEvento === '') {
+            $operacao = str_replace('/{tipoEvento}/{nSequencial}', '', $operacao);
+        } else {
+            $operacao = str_replace('{tipoEvento}', $tipoEvento, $operacao);
         }
-        $operacao = str_replace("{nSequencial}", $nSequencial, $operacao);
 
-        $retorno = $this->getData($operacao);
-        return $retorno;
+        if ($nSequencial === null || $nSequencial === '') {
+            $operacao = str_replace('/{nSequencial}', '', $operacao);
+        } else {
+            $operacao = str_replace('{nSequencial}', $nSequencial, $operacao);
+        }
+
+        return $this->getData($operacao);
     }
 
-    public function consultarDanfse($chave)
+    public function consultarDanfse(string $chave): mixed
     {
-        $operacao = str_replace("{chave}", $chave, $this->getOperation('consultar_danfse'));
+        ChaveAcessoValidator::validate($chave);
+        
+        $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_danfse'));
         $retorno = $this->getData($operacao, null, 2);
+
         if (isset($retorno['erro'])) {
             return $retorno;
         }
-        if ($retorno) {
+        if (!empty($retorno)) {
             return $retorno;
         }
-        if(empty($retorno)){
-            return $this->consultarDanfseNfse($chave);
-        }
-        return null;
+        return $this->consultarDanfseNfse($chave);
     }
 
-    /**
-     * Consulta o DANFSe via NFSe caso o serviço direto falhe
-     *
-     * @param string $chave
-     * @return array|binary|null
-     */
-    public function consultarDanfseNfse($chave)
+    public function consultarDanfseNfse(string $chave): mixed
     {
+        ChaveAcessoValidator::validate($chave);
+        
         $operacao = $this->getOperation('consultar_danfse_nfse_certificado');
         $retorno = $this->getData($operacao, null, 3);
-        if(isset($retorno) and isset($retorno['sucesso']) and $retorno['sucesso']==true){
-            $operacao = str_replace("{chave}", $chave, $this->getOperation('consultar_danfse_nfse_download'));
+
+        if (is_array($retorno) && ($retorno['sucesso'] ?? false)) {
+            $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_danfse_nfse_download'));
             $retorno = $this->getData($operacao, null, 3);
         }
+
         if (isset($retorno['erro'])) {
             return $retorno;
         }
-        if ($retorno) {
-            return $retorno;
-        }
-        return null;
+        return $retorno;
     }
 
-    public function enviaDps($content)
+    public function enviaDps(string $content): mixed
     {
-        //$content = $this->canonize($content);
+        XsdValidator::validate($content, 'DPS');
+        
         $content = $this->sign($content, 'infDPS', '', 'DPS');
         $content = '<?xml version="1.0" encoding="UTF-8"?>' . $content;
         $gz = gzencode($content);
         $data = base64_encode($gz);
-        $dados = [
-            'dpsXmlGZipB64' => $data
-        ];
+        $dados = ['dpsXmlGZipB64' => $data];
         $operacao = $this->getOperation('emitir_nfse');
-        $retorno = $this->postData($operacao, json_encode($dados));
-        return $retorno;
+        return $this->postData($operacao, json_encode($dados));
     }
 
-    public function cancelaNfse($std)
+    public function cancelaNfse(stdClass $std): mixed
     {
-        $dps = new \Hadder\NfseNacional\Dps($std);
+        $dps = new Dps($std);
         $content = $dps->renderEvento($std);
-        //$content = $this->canonize($content);
+        
+        XsdValidator::validate($content, 'pedRegEvento');
+        
         $content = $this->sign($content, 'infPedReg', '', 'pedRegEvento');
         $content = '<?xml version="1.0" encoding="UTF-8"?>' . $content;
         $gz = gzencode($content);
         $data = base64_encode($gz);
-        $dados = [
-            'pedidoRegistroEventoXmlGZipB64' => $data
-        ];
-        $operacao = str_replace("{chave}", $std->infPedReg->chNFSe, $this->getOperation('cancelar_nfse'));
-        $retorno = $this->postData($operacao, json_encode($dados));
-        return $retorno;
-    }
-
-    protected function canonize($content)
-    {
-        $dom = new DOMDocument('1.0', 'utf-8');
-        $dom->formatOutput = false;
-        $dom->preserveWhiteSpace = false;
-        $dom->loadXML($content);
-        dump($dom->saveXML());
-        return $dom->C14N(false, false, null, null);
+        $dados = ['pedidoRegistroEventoXmlGZipB64' => $data];
+        $operacao = str_replace('{chave}', $std->infPedReg->chNFSe, $this->getOperation('cancelar_nfse'));
+        return $this->postData($operacao, json_encode($dados));
     }
 }

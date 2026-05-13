@@ -1,48 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hadder\NfseNacional;
 
-/**
- * Class for RPS construction and validation of data
- *
- */
-
-use DOMException;
 use DOMNode;
+use Hadder\NfseNacional\Validators\CnpjValidator;
+use Hadder\NfseNacional\Validators\CodigoIbgeValidator;
+use Hadder\NfseNacional\Validators\CpfValidator;
+use Hadder\NfseNacional\Validators\MotivoSubstituicaoValidator;
 use NFePHP\Common\DOMImproved as Dom;
 use stdClass;
 
-
 class Dps implements DpsInterface
 {
-    /**
-     * @var stdClass
-     */
-    public $std;
-    /**
-     * @var DOMNode
-     */
-    protected $dps;
-    /**
-     * @var DOMNode
-     */
-    protected $evento;
-    /**
-     * @var string
-     */
-    protected $jsonschema;
-    /**
-     * @var Dom
-     */
-    protected $dom;
+    public stdClass $std;
+    protected DOMNode $dpsNode;
+    protected DOMNode $eventoNode;
+    protected Dom $dom;
     private string $dpsId;
     private string $preId;
 
-    /**
-     * Constructor
-     * @param stdClass|null $std
-     * @throws DOMException
-     */
     public function __construct(?stdClass $std = null)
     {
         $this->init($std);
@@ -51,24 +29,17 @@ class Dps implements DpsInterface
         $this->dom->formatOutput = false;
     }
 
-    /**
-     *
-     * @param stdClass|null $dps
-     */
-    private function init(?stdClass $dps = null)
+    private function init(?stdClass $dps = null): void
     {
         if (!empty($dps)) {
-            $this->std = $this->propertiesToLower($dps);
+            $this->std = self::propertiesToLower($dps);
             if (empty($this->std->version)) {
                 $this->std->version = '1.01';
             }
-            //$ver = str_replace('.', '_', $this->std->version);
-            //$this->jsonschema = realpath("../storage/jsonSchemes/v$ver/rps.schema");
-            //$this->validInputData();
         }
     }
 
-    public function render(?stdClass $std = null)
+    public function render(?stdClass $std = null): string
     {
         if ($this->dom->hasChildNodes()) {
             $this->dom = new Dom('1.0', 'UTF-8');
@@ -77,1295 +48,55 @@ class Dps implements DpsInterface
         }
 
         $this->init($std);
-        $this->dps = $this->dom->createElement('DPS');
-        $this->dps->setAttribute('versao', $this->std->version);
-        $this->dps->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
 
-        $infdps_inner = $this->dom->createElement('infDPS');
-        $infdps_inner->setAttribute('Id', $this->generateId());
+        $this->dpsNode = $this->dom->createElement('DPS');
+        $this->dpsNode->setAttribute('versao', $this->std->version);
+        $this->dpsNode->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
 
-        $this->dom->addChild(
-            $infdps_inner,
-            'tpAmb',
-            $this->std->infdps->tpamb,
-            true
-        );
-        $this->dom->addChild(
-            $infdps_inner,
-            'dhEmi',
-            $this->std->infdps->dhemi,
-            true
-        );
-        $this->dom->addChild(
-            $infdps_inner,
-            'verAplic',
-            $this->std->infdps->veraplic,
-            true
-        );
-        $this->dom->addChild(
-            $infdps_inner,
-            'serie',
-            $this->std->infdps->serie,
-            true
-        );
-        $this->dom->addChild(
-            $infdps_inner,
-            'nDPS',
-            $this->std->infdps->ndps,
-            true
-        );
-        $this->dom->addChild(
-            $infdps_inner,
-            'dCompet',
-            $this->std->infdps->dcompet,
-            true
-        );
-        $this->dom->addChild(
-            $infdps_inner,
-            'tpEmit',
-            $this->std->infdps->tpemit,
-            true
-        );
-        if (isset($this->std->infdps->cmotivoemisti)) {
-            $this->dom->addChild(
-                $infdps_inner,
-                'cMotivoEmisTI',
-                $this->std->infdps->cmotivoemisti
-            );
-        }
-        if (isset($this->std->infdps->chnfserej)) {
-            $this->dom->addChild(
-                $infdps_inner,
-                'chNFSeRej',
-                $this->std->infdps->chnfserej
-            );
-        }
-        $this->dom->addChild(
-            $infdps_inner,
-            'cLocEmi',
-            $this->std->infdps->clocemi,
-            true
-        );
+        $infDps = $this->dom->createElement('infDPS');
+        $infDps->setAttribute('Id', $this->generateId());
+
+        $this->addChild($infDps, 'tpAmb', $this->std->infdps->tpamb, true);
+        $this->addChild($infDps, 'dhEmi', $this->std->infdps->dhemi, true);
+        $this->addChild($infDps, 'verAplic', $this->std->infdps->veraplic, true);
+        $this->addChild($infDps, 'serie', $this->std->infdps->serie, true);
+        $this->addChild($infDps, 'nDPS', $this->std->infdps->ndps, true);
+        $this->addChild($infDps, 'dCompet', $this->std->infdps->dcompet, true);
+        $this->addChild($infDps, 'tpEmit', $this->std->infdps->tpemit, true);
+        $this->addChildOptional($infDps, 'cMotivoEmisTI', $this->std->infdps->cmotivoemisti ?? null);
+        $this->addChildOptional($infDps, 'chNFSeRej', $this->std->infdps->chnfserej ?? null);
+        $this->addChild($infDps, 'cLocEmi', $this->std->infdps->clocemi, true);
 
         if (isset($this->std->infdps->subst)) {
-            $subst_inner = $this->dom->createElement('subst');
-            $infdps_inner->appendChild($subst_inner);
-            $this->dom->addChild(
-                $subst_inner,
-                'chSubstda',
-                $this->std->infdps->subst->chsubstda,
-                true
-            );
-            $this->dom->addChild(
-                $subst_inner,
-                'cMotivo',
-                $this->std->infdps->subst->cmotivo,
-                true
-            );
-            $this->dom->addChild(
-                $subst_inner,
-                'xMotivo',
-                $this->std->infdps->subst->xmotivo,
-                true
-            );
+            $this->buildSubst($infDps);
         }
 
         if (isset($this->std->infdps->prest)) {
-            $prest_inner = $this->dom->createElement('prest');
-            $infdps_inner->appendChild($prest_inner);
-            if (isset($this->std->infdps->prest->cnpj)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'CNPJ',
-                    $this->std->infdps->prest->cnpj,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->prest->cpf)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'CPF',
-                    $this->std->infdps->prest->cpf,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->prest->nif)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'NIF',
-                    $this->std->infdps->prest->nif,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->prest->cnaonif)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'cNaoNIF',
-                    $this->std->infdps->prest->cnaonif,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->prest->caepf)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'CAEPF',
-                    $this->std->infdps->prest->caepf,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->prest->im)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'IM',
-                    $this->std->infdps->prest->im,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->prest->xnome)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'xNome',
-                    $this->std->infdps->prest->xnome,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->prest->end)) {
-                $end_inner = $this->dom->createElement('end');
-                $prest_inner->appendChild($end_inner);
-                if (isset($this->std->infdps->prest->end->endnac)) {
-                    $endnac_inner = $this->dom->createElement('endNac');
-                    $end_inner->appendChild($endnac_inner);
-                    $this->dom->addChild(
-                        $endnac_inner,
-                        'cMun',
-                        $this->std->infdps->prest->end->endnac->cmun,
-                        true
-                    );
-                    $this->dom->addChild(
-                        $endnac_inner,
-                        'CEP',
-                        $this->std->infdps->prest->end->endnac->cep,
-                        true
-                    );
-                } elseif (isset($this->std->infdps->prest->end->endext)) {
-                    $endext_inner = $this->dom->createElement('endExt');
-                    $end_inner->appendChild($endext_inner);
-                    $this->dom->addChild(
-                        $endext_inner,
-                        'cPais',
-                        $this->std->infdps->prest->end->endext->cpais,
-                        true
-                    );
-                    $this->dom->addChild(
-                        $endext_inner,
-                        'cEndPost',
-                        $this->std->infdps->prest->end->endext->cendpost,
-                        true
-                    );
-                    $this->dom->addChild(
-                        $endext_inner,
-                        'xCidade',
-                        $this->std->infdps->prest->end->endext->xcidade,
-                        true
-                    );
-                    $this->dom->addChild(
-                        $endext_inner,
-                        'xEstProvReg',
-                        $this->std->infdps->prest->end->endext->xestprovreg,
-                        true
-                    );
-                }
-
-                //                dd($this->std->infdps->prest->end);
-                $this->dom->addChild(
-                    $end_inner,
-                    'xLgr',
-                    $this->std->infdps->prest->end->xlgr,
-                    true
-                );
-                $this->dom->addChild(
-                    $end_inner,
-                    'nro',
-                    $this->std->infdps->prest->end->nro,
-                    true
-                );
-                if (isset($this->std->infdps->prest->end->xcpl)) {
-                    $this->dom->addChild(
-                        $end_inner,
-                        'xCpl',
-                        $this->std->infdps->prest->end->xcpl
-                    );
-                }
-                $this->dom->addChild(
-                    $end_inner,
-                    'xBairro',
-                    $this->std->infdps->prest->end->xbairro,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->prest->fone)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'fone',
-                    $this->std->infdps->prest->fone
-                );
-            }
-            if (isset($this->std->infdps->prest->email)) {
-                $this->dom->addChild(
-                    $prest_inner,
-                    'email',
-                    $this->std->infdps->prest->email
-                );
-            }
-
-            $regtrib_inner = $this->dom->createElement('regTrib');
-            $prest_inner->appendChild($regtrib_inner);
-            $this->dom->addChild(
-                $regtrib_inner,
-                'opSimpNac',
-                $this->std->infdps->prest->regtrib->opsimpnac,
-                true
-            );
-            if (isset($this->std->infdps->prest->regtrib->regaptribsn)) {
-                $this->dom->addChild(
-                    $regtrib_inner,
-                    'regApTribSN',
-                    $this->std->infdps->prest->regtrib->regaptribsn
-                );
-            }
-            $this->dom->addChild(
-                $regtrib_inner,
-                'regEspTrib',
-                $this->std->infdps->prest->regtrib->regesptrib,
-                true
-            );
-
+            $this->buildPrestador($infDps);
         }
+
         if (isset($this->std->infdps->toma)) {
-            $toma_inner = $this->dom->createElement('toma');
-            $infdps_inner->appendChild($toma_inner);
-            if (isset($this->std->infdps->toma->cnpj)) {
-                $this->dom->addChild(
-                    $toma_inner,
-                    'CNPJ',
-                    $this->std->infdps->toma->cnpj,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->toma->cpf)) {
-                $this->dom->addChild(
-                    $toma_inner,
-                    'CPF',
-                    $this->std->infdps->toma->cpf,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->toma->nif)) {
-                $this->dom->addChild(
-                    $toma_inner,
-                    'NIF',
-                    $this->std->infdps->toma->nif,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->toma->cnaonif)) {
-                $this->dom->addChild(
-                    $toma_inner,
-                    'cNaoNIF',
-                    $this->std->infdps->toma->cnaonif,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->toma->caepf)) {
-                $this->dom->addChild(
-                    $toma_inner,
-                    'CAEPF',
-                    $this->std->infdps->toma->caepf,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->toma->im)) {
-                $this->dom->addChild(
-                    $toma_inner,
-                    'IM',
-                    $this->std->infdps->toma->im,
-                    true
-                );
-            }
-            $this->dom->addChild(
-                $toma_inner,
-                'xNome',
-                $this->std->infdps->toma->xnome,
-                true
-            );
-            if (isset($this->std->infdps->toma->end)) {
-                $end_inner = $this->dom->createElement('end');
-                $toma_inner->appendChild($end_inner);
-                if (isset($this->std->infdps->toma->end->endnac)) {
-                    $endnac_inner = $this->dom->createElement('endNac');
-                    $end_inner->appendChild($endnac_inner);
-                    $this->dom->addChild(
-                        $endnac_inner,
-                        'cMun',
-                        $this->std->infdps->toma->end->endnac->cmun,
-                        true
-                    );
-                    $this->dom->addChild(
-                        $endnac_inner,
-                        'CEP',
-                        $this->std->infdps->toma->end->endnac->cep,
-                        true
-                    );
-                } elseif (isset($this->std->infdps->toma->end->endext)) {
-                    $endext_inner = $this->dom->createElement('endExt');
-                    $end_inner->appendChild($endext_inner);
-                    $this->dom->addChild(
-                        $endext_inner,
-                        'cPais',
-                        $this->std->infdps->toma->end->endext->cpais,
-                        true
-                    );
-                    $this->dom->addChild(
-                        $endext_inner,
-                        'cEndPost',
-                        $this->std->infdps->toma->end->endext->cendpost,
-                        true
-                    );
-                    $this->dom->addChild(
-                        $endext_inner,
-                        'xCidade',
-                        $this->std->infdps->toma->end->endext->xcidade,
-                        true
-                    );
-                    $this->dom->addChild(
-                        $endext_inner,
-                        'xEstProvReg',
-                        $this->std->infdps->toma->end->endext->xestprovreg,
-                        true
-                    );
-                }
-                $this->dom->addChild(
-                    $end_inner,
-                    'xLgr',
-                    $this->std->infdps->toma->end->xlgr,
-                    true
-                );
-                $this->dom->addChild(
-                    $end_inner,
-                    'nro',
-                    $this->std->infdps->toma->end->nro,
-                    true
-                );
-                if (isset($this->std->infdps->toma->end->xcpl)) {
-                    $this->dom->addChild(
-                        $end_inner,
-                        'xCpl',
-                        $this->std->infdps->toma->end->xcpl,
-                        false
-                    );
-                }
-                $this->dom->addChild(
-                    $end_inner,
-                    'xBairro',
-                    $this->std->infdps->toma->end->xbairro,
-                    true
-                );
-            }
-            if (isset($this->std->infdps->toma->fone)) {
-                $this->dom->addChild(
-                    $toma_inner,
-                    'fone',
-                    $this->std->infdps->toma->fone
-                );
-            }
-            if (isset($this->std->infdps->toma->email)) {
-                $this->dom->addChild(
-                    $toma_inner,
-                    'email',
-                    $this->std->infdps->toma->email
-                );
-            }
+            $this->buildPessoa($infDps, 'toma', $this->std->infdps->toma);
         }
 
-        //TODO Fazer grupo interm
-        //if (isset($this->std->interm)) {
-        //    $interm_inner = $this->dom->createElement('interm');
-        //    $infdps_inner->appendChild($interm_inner);
-        //}
-
-        $serv_inner = $this->dom->createElement('serv');
-        $infdps_inner->appendChild($serv_inner);
-
-        $locprest_inner = $this->dom->createElement('locPrest');
-        $serv_inner->appendChild($locprest_inner);
-        $this->dom->addChild(
-            $locprest_inner,
-            'cLocPrestacao',
-            $this->std->infdps->serv->locprest->clocprestacao,
-            true
-        );
-        if (isset($this->std->infdps->serv->locprest->cpaisprestacao)) {
-            $this->dom->addChild(
-                $locprest_inner,
-                'cPaisPrestacao',
-                $this->std->infdps->serv->locprest->cpaisprestacao,
-                true
-            );
+        if (isset($this->std->infdps->interm)) {
+            $this->buildPessoa($infDps, 'interm', $this->std->infdps->interm);
         }
 
-        $cserv_inner = $this->dom->createElement('cServ');
-        $serv_inner->appendChild($cserv_inner);
+        $this->buildServico($infDps);
+        $this->buildValores($infDps);
 
-        $this->dom->addChild(
-            $cserv_inner,
-            'cTribNac',
-            $this->std->infdps->serv->cserv->ctribnac,
-            true
-        );
-        if (isset($this->std->infdps->serv->cserv->ctribmun)) {
-            $this->dom->addChild(
-                $cserv_inner,
-                'cTribMun',
-                $this->std->infdps->serv->cserv->ctribmun,
-                true
-            );
-        }
-        $this->dom->addChild(
-            $cserv_inner,
-            'xDescServ',
-            $this->std->infdps->serv->cserv->xdescserv,
-            true
-        );
-        if (isset($this->std->infdps->serv->cserv->cnbs)) {
-            $this->dom->addChild(
-                $cserv_inner,
-                'cNBS',
-                $this->std->infdps->serv->cserv->cnbs,
-                true
-            );
-        }
-        if (isset($this->std->infdps->serv->cserv->cintcontrib)) {
-            $this->dom->addChild(
-                $cserv_inner,
-                'cIntContrib',
-                $this->std->infdps->serv->cserv->cintcontrib,
-                true
-            );
+        if (isset($this->std->infdps->ibscbs)) {
+            $this->buildIbscbs($infDps);
         }
 
-        //grupo comExt
-        if (isset($this->std->infdps->serv->comext)) {
-            $comext_inner = $this->dom->createElement('comExt');
-            $serv_inner->appendChild($comext_inner);
+        $this->dpsNode->appendChild($infDps);
+        $this->dom->appendChild($this->dpsNode);
 
-            $this->dom->addChild(
-                $comext_inner,
-                'mdPrestacao',
-                $this->std->infdps->serv->comext->mdprestacao
-            );
-
-            $this->dom->addChild(
-                $comext_inner,
-                'vincPrest',
-                $this->std->infdps->serv->comext->vincprest
-            );
-
-            $this->dom->addChild(
-                $comext_inner,
-                'tpMoeda',
-                $this->std->infdps->serv->comext->tpmoeda
-            );
-
-            $this->dom->addChild(
-                $comext_inner,
-                'vServMoeda',
-                $this->std->infdps->serv->comext->vservmoeda
-            );
-
-            $this->dom->addChild(
-                $comext_inner,
-                'mecAFComexP',
-                $this->std->infdps->serv->comext->mecafcomexp
-            );
-
-            $this->dom->addChild(
-                $comext_inner,
-                'mecAFComexT',
-                $this->std->infdps->serv->comext->mecafcomext
-            );
-
-            $this->dom->addChild(
-                $comext_inner,
-                'movTempBens',
-                $this->std->infdps->serv->comext->movtempbens
-            );
-
-            if (isset($this->std->infdps->serv->comext->ndi)) {
-                $this->dom->addChild(
-                    $comext_inner,
-                    'nDI',
-                    $this->std->infdps->serv->comext->ndi
-                );
-            }
-
-            if (isset($this->std->infdps->serv->comext->nre)) {
-                $this->dom->addChild(
-                    $comext_inner,
-                    'nRE',
-                    $this->std->infdps->serv->comext->nre
-                );
-            }
-
-
-            $this->dom->addChild(
-                $comext_inner,
-                'mdic',
-                $this->std->infdps->serv->comext->mdic
-            );
-        }
-
-        // Monta grupo obra
-        if (isset($this->std->infdps->serv->obra)) {
-            $obra_inner = $this->dom->createElement('obra');
-            $serv_inner->appendChild($obra_inner);
-
-            // inscImobFisc (opcional)
-            if (isset($this->std->infdps->serv->obra->inscimobfisc)) {
-                $this->dom->addChild(
-                    $obra_inner,
-                    'inscImobFisc',
-                    $this->std->infdps->serv->obra->inscimobfisc,
-                    true
-                );
-            }
-
-            // cObra (normalmente obrigatório quando obra existir)
-            if (isset($this->std->infdps->serv->obra->cobra)) {
-                $this->dom->addChild(
-                    $obra_inner,
-                    'cObra',
-                    $this->std->infdps->serv->obra->cobra,
-                    true
-                );
-            }
-
-            // cCIB (validação do layout pode rejeitar se inválido)
-            if (isset($this->std->infdps->serv->obra->ccib)) {
-                $this->dom->addChild(
-                    $obra_inner,
-                    'cCIB',
-                    $this->std->infdps->serv->obra->ccib,
-                    true
-                );
-            }
-
-            // end (endereço nacional)
-            if (isset($this->std->infdps->serv->obra->end)) {
-                $end_obra_inner = $this->dom->createElement('end');
-                $obra_inner->appendChild($end_obra_inner);
-
-                if (isset($this->std->infdps->serv->obra->end->cep)) {
-                    $this->dom->addChild(
-                        $end_obra_inner,
-                        'CEP',
-                        $this->std->infdps->serv->obra->end->cep,
-                        true
-                    );
-                }
-
-                if (isset($this->std->infdps->serv->obra->end->xlgr)) {
-                    $this->dom->addChild(
-                        $end_obra_inner,
-                        'xLgr',
-                        $this->std->infdps->serv->obra->end->xlgr,
-                        true
-                    );
-                }
-
-                if (isset($this->std->infdps->serv->obra->end->nro)) {
-                    $this->dom->addChild(
-                        $end_obra_inner,
-                        'nro',
-                        $this->std->infdps->serv->obra->end->nro,
-                        true
-                    );
-                }
-
-                // xCpl (opcional)
-                if (isset($this->std->infdps->serv->obra->end->xcpl)) {
-                    $this->dom->addChild(
-                        $end_obra_inner,
-                        'xCpl',
-                        $this->std->infdps->serv->obra->end->xcpl,
-                        true
-                    );
-                }
-
-                if (isset($this->std->infdps->serv->obra->end->xbairro)) {
-                    $this->dom->addChild(
-                        $end_obra_inner,
-                        'xBairro',
-                        $this->std->infdps->serv->obra->end->xbairro,
-                        true
-                    );
-                }
-            }
-        }
-
-        //TODO Fazer grupo lsadppu
-        if (isset($this->std->infdps->serv->atvevento)) {
-            $atvEvento_inner = $this->dom->createElement('atvEvento');
-            $serv_inner->appendChild($atvEvento_inner);
-
-            // Campo: xNome
-            if (isset($this->std->infdps->serv->atvevento->xnome)) {
-                $this->dom->addChild(
-                    $atvEvento_inner,
-                    'xNome',
-                    $this->std->infdps->serv->atvevento->xnome,
-                    true
-                );
-            }
-
-            // Campo: dtIni
-            if (isset($this->std->infdps->serv->atvevento->dtini)) {
-                $this->dom->addChild(
-                    $atvEvento_inner,
-                    'dtIni',
-                    $this->std->infdps->serv->atvevento->dtini,
-                    true
-                );
-            }
-
-            // Campo: dtFim
-            if (isset($this->std->infdps->serv->atvevento->dtfim)) {
-                $this->dom->addChild(
-                    $atvEvento_inner,
-                    'dtFim',
-                    $this->std->infdps->serv->atvevento->dtfim,
-                    true
-                );
-            }
-
-            // Endereço do evento
-            if (isset($this->std->infdps->serv->atvevento->end)) {
-                $end_evento_inner = $this->dom->createElement('end');
-                $atvEvento_inner->appendChild($end_evento_inner);
-
-                if (isset($this->std->infdps->serv->atvevento->end->cep)) {
-                    $this->dom->addChild(
-                        $end_evento_inner,
-                        'CEP',
-                        $this->std->infdps->serv->atvevento->end->cep,
-                        true
-                    );
-                }
-
-                if (isset($this->std->infdps->serv->atvevento->end->xlgr)) {
-                    $this->dom->addChild(
-                        $end_evento_inner,
-                        'xLgr',
-                        $this->std->infdps->serv->atvevento->end->xlgr,
-                        true
-                    );
-                }
-
-                if (isset($this->std->infdps->serv->atvevento->end->nro)) {
-                    $this->dom->addChild(
-                        $end_evento_inner,
-                        'nro',
-                        $this->std->infdps->serv->atvevento->end->nro,
-                        true
-                    );
-                }
-
-                if (isset($this->std->infdps->serv->atvevento->end->xbairro)) {
-                    $this->dom->addChild(
-                        $end_evento_inner,
-                        'xBairro',
-                        $this->std->infdps->serv->atvevento->end->xbairro,
-                        true
-                    );
-                }
-            }
-        }
-        //TODO Fazer grupo explRod
-
-
-        // Grupo de informações complementares disponível para todos os serviços prestados
-        if (isset($this->std->infdps->serv->infocompl->iddoctec)) {
-            if (!isset($infocompl_inner)) {
-                $infocompl_inner = $this->dom->createElement('infoCompl');
-                $serv_inner->appendChild($infocompl_inner);
-            }
-            $this->dom->addChild(
-                $infocompl_inner,
-                'idDocTec',
-                $this->std->infdps->serv->infocompl->iddoctec,
-                true
-            );
-        }
-        if (isset($this->std->infdps->serv->infocompl->docref)) {
-            if (!isset($infocompl_inner)) {
-                $infocompl_inner = $this->dom->createElement('infoCompl');
-                $serv_inner->appendChild($infocompl_inner);
-            }
-            $this->dom->addChild(
-                $infocompl_inner,
-                'docRef',
-                $this->std->infdps->serv->infocompl->docref,
-                true
-            );
-        }
-        if (isset($this->std->infdps->serv->infocompl->xped)) {
-            if (!isset($infocompl_inner)) {
-                $infocompl_inner = $this->dom->createElement('infoCompl');
-                $serv_inner->appendChild($infocompl_inner);
-            }
-            $this->dom->addChild(
-                $infocompl_inner,
-                'xPed',
-                $this->std->infdps->serv->infocompl->xped,
-                true
-            );
-        }
-        if (isset($this->std->infdps->serv->infocompl->gitemped->xitemped)) {
-            if (!isset($infocompl_inner)) {
-                $infocompl_inner = $this->dom->createElement('infoCompl');
-                $serv_inner->appendChild($infocompl_inner);
-            }
-            $gItemPed_inner = $this->dom->createElement('gItemPed');
-            $infocompl_inner->appendChild($gItemPed_inner);
-            $this->dom->addChild(
-                $gItemPed_inner,
-                'xItemPed',
-                $this->std->infdps->serv->infocompl->gitemped->xitemped,
-                true
-            );
-        }
-        if (isset($this->std->infdps->serv->infocompl->xinfcomp)) {
-            if (!isset($infocompl_inner)) {
-                $infocompl_inner = $this->dom->createElement('infoCompl');
-                $serv_inner->appendChild($infocompl_inner);
-            }
-            $this->dom->addChild(
-                $infocompl_inner,
-                'xInfComp',
-                $this->std->infdps->serv->infocompl->xinfcomp,
-                true
-            );
-        }
-
-        $valores_inner = $this->dom->createElement('valores');
-        $infdps_inner->appendChild($valores_inner);
-        $vservprest_inner = $this->dom->createElement('vServPrest');
-        $valores_inner->appendChild($vservprest_inner);
-
-        if (isset($this->std->infdps->valores->vservprest->vreceb)) {
-            $this->dom->addChild(
-                $vservprest_inner,
-                'vReceb',
-                $this->std->infdps->valores->vservprest->vreceb
-            );
-        }
-        $this->dom->addChild(
-            $vservprest_inner,
-            'vServ',
-            $this->std->infdps->valores->vservprest->vserv,
-            true
-        );
-
-        //TODO Fazer grupo vDescCondIncond
-		// Grupo vDescCondIncond (dentro de <valores>)
-		$vDescIncond = $this->std->infdps->valores->vdesccondincond->vdescincond ?? null;
-		$vDescCond   = $this->std->infdps->valores->vdesccondincond->vdesccond   ?? null;
-
-		// regra: considera vazio se null, string vazia, ou "0.00" (ajuste se quiser manter 0.00)
-		$temDescIncond = ($vDescIncond !== null && $vDescIncond !== '' && $vDescIncond !== '0.00');
-		$temDescCond   = ($vDescCond   !== null && $vDescCond   !== '' && $vDescCond   !== '0.00');
-
-		if ($temDescIncond || $temDescCond) {
-			$descontos_inner = $this->dom->createElement('vDescCondIncond');
-			$valores_inner->appendChild($descontos_inner);
-
-			$this->dom->addChild($descontos_inner, 'vDescIncond', $vDescIncond, false);
-			$this->dom->addChild($descontos_inner, 'vDescCond',   $vDescCond,   false);
-		}
-
-
-        //TODO Fazer grupo vDedRed
-
-        $trib_inner = $this->dom->createElement('trib');
-        $valores_inner->appendChild($trib_inner);
-
-        $tribmun_inner = $this->dom->createElement('tribMun');
-        $trib_inner->appendChild($tribmun_inner);
-
-        $this->dom->addChild(
-            $tribmun_inner,
-            'tribISSQN',
-            $this->std->infdps->valores->trib->tribmun->tribissqn,
-            true
-        );
-
-        if (isset($this->std->infdps->valores->trib->tribmun->tribissqn) && $this->std->infdps->valores->trib->tribmun->tribissqn == 
-                2 && isset($this->std->infdps->valores->trib->tribmun->tpimunidade)) {
-            $this->dom->addChild(
-                $tribmun_inner,
-                'tpImunidade',
-                $this->std->infdps->valores->trib->tribmun->tpimunidade,
-                true
-            );
-        }
-
-        if(isset($this->std->infdps->valores->trib->tribmun->tribissqn) && $this->std->infdps->valores->trib->tribmun->tribissqn == 3){
-            $this->dom->addChild(
-                $tribmun_inner,
-                'cPaisResult',
-                $this->std->infdps->valores->trib->tribmun->cpaisresult,
-                true
-            );
-        }
-
-        if (isset($this->std->infdps->valores->trib->tribmun->tpretissqn)) {
-            $this->dom->addChild(
-                $tribmun_inner,
-                'tpRetISSQN',
-                $this->std->infdps->valores->trib->tribmun->tpretissqn,
-                true
-            );
-        }
-
-        if (isset($this->std->infdps->valores->trib->tribmun->paliq)) {
-            $this->dom->addChild(
-                $tribmun_inner,
-                'pAliq',
-                $this->std->infdps->valores->trib->tribmun->paliq,
-                true
-            );
-        }
-
-
-        if (isset($this->std->infdps->valores->trib->tribfed)) {
-            $tribfed_inner = $this->dom->createElement('tribFed');
-            $trib_inner->appendChild($tribfed_inner);
-            if (isset($this->std->infdps->valores->trib->tribfed->piscofins)) {
-                $piscofins_inner = $this->dom->createElement('piscofins');
-                $tribfed_inner->appendChild($piscofins_inner);
-
-                $this->dom->addChild(
-                    $piscofins_inner,
-                    'CST',
-                    $this->std->infdps->valores->trib->tribfed->piscofins->cst,
-                    true
-                );
-                if (isset($this->std->infdps->valores->trib->tribfed->piscofins->vbcpiscofins)) {
-                    $this->dom->addChild(
-                        $piscofins_inner,
-                        'vBCPisCofins',
-                        $this->std->infdps->valores->trib->tribfed->piscofins->vbcpiscofins
-                    );
-                }
-                if (isset($this->std->infdps->valores->trib->tribfed->piscofins->paliqpis)) {
-                    $this->dom->addChild(
-                        $piscofins_inner,
-                        'pAliqPis',
-                        $this->std->infdps->valores->trib->tribfed->piscofins->paliqpis
-                    );
-                }
-                if (isset($this->std->infdps->valores->trib->tribfed->piscofins->paliqcofins)) {
-                    $this->dom->addChild(
-                        $piscofins_inner,
-                        'pAliqCofins',
-                        $this->std->infdps->valores->trib->tribfed->piscofins->paliqcofins
-                    );
-                }
-                if (isset($this->std->infdps->valores->trib->tribfed->piscofins->vpis)) {
-                    $this->dom->addChild(
-                        $piscofins_inner,
-                        'vPis',
-                        $this->std->infdps->valores->trib->tribfed->piscofins->vpis
-                    );
-                }
-                if (isset($this->std->infdps->valores->trib->tribfed->piscofins->vcofins)) {
-                    $this->dom->addChild(
-                        $piscofins_inner,
-                        'vCofins',
-                        $this->std->infdps->valores->trib->tribfed->piscofins->vcofins
-                    );
-                }
-                if (isset($this->std->infdps->valores->trib->tribfed->piscofins->tpretpiscofins)) {
-                    $this->dom->addChild(
-                        $piscofins_inner,
-                        'tpRetPisCofins',
-                        $this->std->infdps->valores->trib->tribfed->piscofins->tpretpiscofins
-                    );
-                }
-            }
-            if (isset($this->std->infdps->valores->trib->tribfed->vretcp)) {
-                $this->dom->addChild(
-                    $tribfed_inner,
-                    'vRetCP',
-                    $this->std->infdps->valores->trib->tribfed->vretcp
-                );
-            }
-            if (isset($this->std->infdps->valores->trib->tribfed->vretirrf)) {
-                $this->dom->addChild(
-                    $tribfed_inner,
-                    'vRetIRRF',
-                    $this->std->infdps->valores->trib->tribfed->vretirrf
-                );
-            }
-            if (isset($this->std->infdps->valores->trib->tribfed->vretcsll)) {
-                $this->dom->addChild(
-                    $tribfed_inner,
-                    'vRetCSLL',
-                    $this->std->infdps->valores->trib->tribfed->vretcsll
-                );
-            }
-        }
-
-        $tottrib_inner = $this->dom->createElement('totTrib');
-        $trib_inner->appendChild($tottrib_inner);
-
-        if (isset($this->std->infdps->valores->trib->tottrib->vtottrib)) {
-            $vtottrib_inner = $this->dom->createElement('vTotTrib');
-            $tottrib_inner->appendChild($vtottrib_inner);
-            if (isset($this->std->infdps->valores->trib->tottrib->vtottrib->vtottribfed)) {
-                $this->dom->addChild(
-                    $vtottrib_inner,
-                    'vTotTribFed',
-                    $this->std->infdps->valores->trib->tottrib->vtottrib->vtottribfed
-                );
-            }
-            if (isset($this->std->infdps->valores->trib->tottrib->vtottrib->vtottribest)) {
-                $this->dom->addChild(
-                    $vtottrib_inner,
-                    'vTotTribEst',
-                    $this->std->infdps->valores->trib->tottrib->vtottrib->vtottribest
-                );
-            }
-            if (isset($this->std->infdps->valores->trib->tottrib->vtottrib->vtottribmun)) {
-                $this->dom->addChild(
-                    $vtottrib_inner,
-                    'vTotTribMun',
-                    $this->std->infdps->valores->trib->tottrib->vtottrib->vtottribmun
-                );
-            }
-        }
-        if (isset($this->std->infdps->valores->trib->tottrib->ptottrib)) {
-            $ptottrib_inner = $this->dom->createElement('pTotTrib');
-            $tottrib_inner->appendChild($ptottrib_inner);
-
-            if (isset($this->std->infdps->valores->trib->tottrib->ptottrib->ptottribfed)) {
-                $this->dom->addChild(
-                    $ptottrib_inner,
-                    'pTotTribFed',
-                    $this->std->infdps->valores->trib->tottrib->ptottrib->ptottribfed
-                );
-            }
-            if (isset($this->std->infdps->valores->trib->tottrib->ptottrib->ptottribest)) {
-                $this->dom->addChild(
-                    $ptottrib_inner,
-                    'pTotTribEst',
-                    $this->std->infdps->valores->trib->tottrib->ptottrib->ptottribest
-                );
-            }
-            if (isset($this->std->infdps->valores->trib->tottrib->ptottrib->ptottribmun)) {
-                $this->dom->addChild(
-                    $ptottrib_inner,
-                    'pTotTribMun',
-                    $this->std->infdps->valores->trib->tottrib->ptottrib->ptottribmun
-                );
-            }
-        }
-
-        if (isset($this->std->infdps->valores->trib->tottrib->indtottrib)) {
-            $this->dom->addChild(
-                $tottrib_inner,
-                'indTotTrib',
-                $this->std->infdps->valores->trib->tottrib->indtottrib
-            );
-        }
-        if (isset($this->std->infdps->valores->trib->tottrib->ptottribsn)) {
-            $this->dom->addChild(
-                $tottrib_inner,
-                'pTotTribSN',
-                $this->std->infdps->valores->trib->tottrib->ptottribsn
-            );
-        }
-
-        //Grupos de IBS/CBS
-//        if (isset($this->std->infdps->ibscbs)) {
-//            $ibscbs_inner = $this->dom->createElement('IBSCBS');
-//            $infdps_inner->appendChild($ibscbs_inner);
-//
-//            $this->dom->addChild(
-//                $ibscbs_inner,
-//                'finNFSe',
-//                $this->std->infdps->ibscbs->finnfse,
-//                true
-//            );
-//            $this->dom->addChild(
-//                $ibscbs_inner,
-//                'indFinal',
-//                $this->std->infdps->ibscbs->indfinal,
-//                true
-//            );
-//            $this->dom->addChild(
-//                $ibscbs_inner,
-//                'cIndOp',
-//                $this->std->infdps->ibscbs->cindop,
-//                true
-//            );
-//            if (isset($this->std->infdps->ibscbs->tpoper)) {
-//                $this->dom->addChild(
-//                    $ibscbs_inner,
-//                    'tpOper',
-//                    $this->std->infdps->ibscbs->tpoper
-//                );
-//            }
-//
-//            //TODO Fazer grupo gRefNFSe
-//
-//            if (isset($this->std->infdps->ibscbs->tpentegov)) {
-//                $this->dom->addChild(
-//                    $ibscbs_inner,
-//                    'tpEnteGov',
-//                    $this->std->infdps->ibscbs->tpentegov
-//                );
-//            }
-//            $this->dom->addChild(
-//                $ibscbs_inner,
-//                'indDest',
-//                $this->std->infdps->ibscbs->inddest,
-//                true
-//            );
-//            if (isset($this->std->infdps->ibscbs->dest)) {
-//                $ibscbs_dest_inner = $this->dom->createElement('dest');
-//                $ibscbs_inner->appendChild($ibscbs_dest_inner);
-//                if (isset($this->std->infdps->ibscbs->dest->cnpj)) {
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_inner,
-//                        'CNPJ',
-//                        $this->std->infdps->ibscbs->dest->cnpj,
-//                        true
-//                    );
-//                }
-//                if (isset($this->std->infdps->ibscbs->dest->cpf)) {
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_inner,
-//                        'CPF',
-//                        $this->std->infdps->ibscbs->dest->cpf,
-//                        true
-//                    );
-//                }
-//                if (isset($this->std->infdps->ibscbs->dest->nif)) {
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_inner,
-//                        'NIF',
-//                        $this->std->infdps->ibscbs->dest->nif,
-//                        true
-//                    );
-//                }
-//                if (isset($this->std->infdps->ibscbs->dest->cnaonif)) {
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_inner,
-//                        'cNaoNIF',
-//                        $this->std->infdps->ibscbs->dest->cnaonif,
-//                        true
-//                    );
-//                }
-//                $this->dom->addChild(
-//                    $ibscbs_dest_inner,
-//                    'xNome',
-//                    $this->std->infdps->ibscbs->dest->xnome,
-//                    true
-//                );
-//                $this->dom->addChild(
-//                    $ibscbs_dest_inner,
-//                    'fone',
-//                    $this->std->infdps->ibscbs->dest->fone
-//                );
-//                $this->dom->addChild(
-//                    $ibscbs_dest_inner,
-//                    'email',
-//                    $this->std->infdps->ibscbs->dest->email
-//                );
-//
-//                if (isset($this->std->infdps->ibscbs->dest->end)) {
-//                    $ibscbs_dest_end_inner = $this->dom->createElement('end');
-//                    $ibscbs_dest_inner->appendChild($ibscbs_dest_end_inner);
-//
-//                    if (isset($this->std->infdps->ibscbs->dest->end->endnac)) {
-//                        $ibscbs_endnac_inner = $this->dom->createElement('endNac');
-//                        $ibscbs_dest_end_inner->appendChild($ibscbs_endnac_inner);
-//                        $this->dom->addChild(
-//                            $ibscbs_endnac_inner,
-//                            'cMun',
-//                            $this->std->infdps->ibscbs->dest->end->endnac->cmun,
-//                            true
-//                        );
-//                        $this->dom->addChild(
-//                            $ibscbs_endnac_inner,
-//                            'CEP',
-//                            $this->std->infdps->ibscbs->dest->end->endnac->cep,
-//                            true
-//                        );
-//                    } elseif (isset($this->std->infdps->ibscbs->dest->end->endext)) {
-//                        $ibscbs_endext_inner = $this->dom->createElement('endExt');
-//                        $ibscbs_dest_end_inner->appendChild($ibscbs_endext_inner);
-//                        $this->dom->addChild(
-//                            $ibscbs_endext_inner,
-//                            'cPais',
-//                            $this->std->infdps->ibscbs->dest->end->endext->cpais,
-//                            true
-//                        );
-//                        $this->dom->addChild(
-//                            $ibscbs_endext_inner,
-//                            'cEndPost',
-//                            $this->std->infdps->ibscbs->dest->end->endext->cendpost,
-//                            true
-//                        );
-//                        $this->dom->addChild(
-//                            $ibscbs_endext_inner,
-//                            'xCidade',
-//                            $this->std->infdps->ibscbs->dest->end->endext->xcidade,
-//                            true
-//                        );
-//                        $this->dom->addChild(
-//                            $ibscbs_endext_inner,
-//                            'xEstProvReg',
-//                            $this->std->infdps->ibscbs->dest->end->endext->xestprovreg,
-//                            true
-//                        );
-//                    }
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_end_inner,
-//                        'xLgr',
-//                        $this->std->infdps->ibscbs->dest->end->xlgr,
-//                        true
-//                    );
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_end_inner,
-//                        'nro',
-//                        $this->std->infdps->ibscbs->dest->end->nro,
-//                        true
-//                    );
-//                    if (isset($this->std->infdps->ibscbs->dest->end->xcpl)) {
-//                        $this->dom->addChild(
-//                            $ibscbs_dest_end_inner,
-//                            'xCpl',
-//                            $this->std->infdps->ibscbs->dest->end->xcpl,
-//                        );
-//                    }
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_end_inner,
-//                        'xBairro',
-//                        $this->std->infdps->ibscbs->dest->end->xbairro,
-//                        true
-//                    );
-//                }
-//                if (isset($this->std->ibscbs->dest->fone)) {
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_inner,
-//                        'fone',
-//                        $this->std->ibscbs->dest->fone
-//                    );
-//                }
-//                if (isset($this->std->ibscbs->dest->email)) {
-//                    $this->dom->addChild(
-//                        $ibscbs_dest_inner,
-//                        'email',
-//                        $this->std->ibscbs->dest->email
-//                    );
-//                }
-//            }
-//
-//            //TODO Fazer grupo imovel
-//
-//            if (isset($this->std->infdps->ibscbs->valores)) {
-//                $ibscbs_valores_inner = $this->dom->createElement('valores');
-//                $ibscbs_inner->appendChild($ibscbs_valores_inner);
-//
-//                $ibscbs_valores_trib_inner = $this->dom->createElement('trib');
-//                $ibscbs_valores_inner->appendChild($ibscbs_valores_trib_inner);
-//
-//                $ibscbs_valores_trib_gibscbs_inner = $this->dom->createElement('gIBSCBS');
-//                $ibscbs_valores_trib_inner->appendChild($ibscbs_valores_trib_gibscbs_inner);
-//                $this->dom->addChild(
-//                    $ibscbs_valores_trib_gibscbs_inner,
-//                    'CST',
-//                    $this->std->infdps->ibscbs->valores->trib->gibscbs->cst,
-//                    true
-//                );
-//                $this->dom->addChild(
-//                    $ibscbs_valores_trib_gibscbs_inner,
-//                    'cClassTrib',
-//                    $this->std->infdps->ibscbs->valores->trib->gibscbs->cclasstrib,
-//                    true
-//                );
-//                if (isset($this->std->infdps->ibscbs->valores->trib->gibscbs->ccredpres)) {
-//                    $this->dom->addChild(
-//                        $ibscbs_valores_trib_gibscbs_inner,
-//                        'cCredPres',
-//                        $this->std->infdps->ibscbs->valores->trib->gibscbs->ccredpres
-//                    );
-//                }
-//
-//                $ibscbs_valores_trib_gtribregular_inner = $this->dom->createElement('gTribRegular');
-//                $ibscbs_valores_trib_inner->appendChild($ibscbs_valores_trib_gtribregular_inner);
-//                $this->dom->addChild(
-//                    $ibscbs_valores_trib_gtribregular_inner,
-//                    'CSTReg',
-//                    $this->std->infdps->ibscbs->valores->trib->gtribregular->cstreg,
-//                    true
-//                );
-//                $this->dom->addChild(
-//                    $ibscbs_valores_trib_gtribregular_inner,
-//                    'cClassTribReg',
-//                    $this->std->infdps->ibscbs->valores->trib->gtribregular->cclasstribreg,
-//                    true
-//                );
-//
-//                $ibscbs_valores_trib_gdif_inner = $this->dom->createElement('gDif');
-//                $ibscbs_valores_trib_inner->appendChild($ibscbs_valores_trib_gdif_inner);
-//                $this->dom->addChild(
-//                    $ibscbs_valores_trib_gdif_inner,
-//                    'pDifUF',
-//                    $this->std->infdps->ibscbs->valores->trib->gdif->pdifuf,
-//                    true
-//                );
-//                $this->dom->addChild(
-//                    $ibscbs_valores_trib_gdif_inner,
-//                    'pDifMun',
-//                    $this->std->infdps->ibscbs->valores->trib->gdif->pdifmun,
-//                    true
-//                );
-//                $this->dom->addChild(
-//                    $ibscbs_valores_trib_gdif_inner,
-//                    'pDifCBS',
-//                    $this->std->infdps->ibscbs->valores->trib->gdif->pdifcbs,
-//                    true
-//                );
-//
-//                //TODO Fazer grupo gReeRepRes
-//
-//
-//            }
-//
-//        }
-
-        $dps = $this->dom->createElement('DPS');
-        $dps->setAttribute('versao', $this->std->version);
-        $dps->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
-        $this->dps->appendChild($infdps_inner);
-        $this->dom->appendChild($this->dps);
-        /*        return str_replace('<?xml version="1.0" encoding="UTF-8"?>', '', $this->dom->saveXML());*/
         return $this->dom->saveXML();
     }
 
-    public function renderEvento(?stdClass $std = null)
+    public function renderEvento(?stdClass $std = null): string
     {
         if ($this->dom->hasChildNodes()) {
             $this->dom = new Dom('1.0', 'UTF-8');
@@ -1374,188 +105,511 @@ class Dps implements DpsInterface
         }
 
         $this->init($std);
-        $this->evento = $this->dom->createElement('pedRegEvento');
-        $this->evento->setAttribute('versao', $this->std->version);
-        $this->evento->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
 
-        $infpedreg_inner = $this->dom->createElement('infPedReg');
-        $infpedreg_inner->setAttribute('Id', $this->generatePre());
+        $this->eventoNode = $this->dom->createElement('pedRegEvento');
+        $this->eventoNode->setAttribute('versao', $this->std->version);
+        $this->eventoNode->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
 
-        $this->dom->addChild(
-            $infpedreg_inner,
-            'tpAmb',
-            $this->std->infpedreg->tpamb,
-            true
-        );
-        $this->dom->addChild(
-            $infpedreg_inner,
-            'verAplic',
-            $this->std->infpedreg->veraplic,
-            true
-        );
-        $this->dom->addChild(
-            $infpedreg_inner,
-            'dhEvento',
-            $this->std->infpedreg->dhevento,
-            true
-        );
-        if (isset($this->std->infpedreg->cnpjautor)) {
-            $this->dom->addChild(
-                $infpedreg_inner,
-                'CNPJAutor',
-                $this->std->infpedreg->cnpjautor,
-                true
-            );
-        }
-        if (isset($this->std->infpedreg->cpfautor)) {
-            $this->dom->addChild(
-                $infpedreg_inner,
-                'CPFAutor',
-                $this->std->infpedreg->cpfautor,
-                true
-            );
-        }
-        $this->dom->addChild(
-            $infpedreg_inner,
-            'chNFSe',
-            $this->std->infpedreg->chnfse,
-            true
-        );
+        $infPedReg = $this->dom->createElement('infPedReg');
+        $infPedReg->setAttribute('Id', $this->generatePre());
 
+        $this->addChild($infPedReg, 'tpAmb', $this->std->infpedreg->tpamb, true);
+        $this->addChild($infPedReg, 'verAplic', $this->std->infpedreg->veraplic, true);
+        $this->addChild($infPedReg, 'dhEvento', $this->std->infpedreg->dhevento, true);
+        $this->addChildOptional($infPedReg, 'CNPJAutor', $this->std->infpedreg->cnpjautor ?? null);
+        $this->addChildOptional($infPedReg, 'CPFAutor', $this->std->infpedreg->cpfautor ?? null);
+        $this->addChild($infPedReg, 'chNFSe', $this->std->infpedreg->chnfse, true);
 
         if (isset($this->std->infpedreg->e101101)) {
-            $e101101_inner = $this->dom->createElement('e101101');
-            $infpedreg_inner->appendChild($e101101_inner);
-            $this->dom->addChild(
-                $e101101_inner,
-                'xDesc',
-                $this->std->infpedreg->e101101->xdesc,
-                true
-            );
-            $this->dom->addChild(
-                $e101101_inner,
-                'cMotivo',
-                $this->std->infpedreg->e101101->cmotivo,
-                true
-            );
-            $this->dom->addChild(
-                $e101101_inner,
-                'xMotivo',
-                $this->std->infpedreg->e101101->xmotivo,
-                true
-            );
+            $evt = $this->dom->createElement('e101101');
+            $infPedReg->appendChild($evt);
+            $this->addChild($evt, 'xDesc', $this->std->infpedreg->e101101->xdesc, true);
+            $this->addChild($evt, 'cMotivo', $this->std->infpedreg->e101101->cmotivo, true);
+            $this->addChild($evt, 'xMotivo', $this->std->infpedreg->e101101->xmotivo, true);
         }
 
-        $dps = $this->dom->createElement('DPS');
-        $dps->setAttribute('versao', $this->std->version);
-        $dps->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
-        $this->evento->appendChild($infpedreg_inner);
-        $this->dom->appendChild($this->evento);
-        /*        return str_replace('<?xml version="1.0" encoding="UTF-8"?>', '', $this->dom->saveXML());*/
+        $this->eventoNode->appendChild($infPedReg);
+        $this->dom->appendChild($this->eventoNode);
+
         return $this->dom->saveXML();
     }
 
-    public function setFormatOutput(bool $formatOutput)
+    private function buildSubst(DOMNode $parent): void
+    {
+        $subst = $this->dom->createElement('subst');
+        $parent->appendChild($subst);
+        $this->addChild($subst, 'chSubstda', $this->std->infdps->subst->chsubstda, true);
+        
+        // Validar e formatar código de motivo (obrigatório zero à esquerda)
+        $codigoMotivo = MotivoSubstituicaoValidator::validateAndFormat(
+            $this->std->infdps->subst->cmotivo
+        );
+        $this->addChild($subst, 'cMotivo', $codigoMotivo, true);
+        
+        $this->addChild($subst, 'xMotivo', $this->std->infdps->subst->xmotivo, true);
+    }
+
+    private function buildPrestador(DOMNode $parent): void
+    {
+        $prest = $this->std->infdps->prest;
+        $prestNode = $this->dom->createElement('prest');
+        $parent->appendChild($prestNode);
+
+        // Validar CNPJ se presente
+        if (isset($prest->cnpj) && $prest->cnpj !== null && $prest->cnpj !== '') {
+            CnpjValidator::validate($prest->cnpj);
+            $this->addChild($prestNode, 'CNPJ', CnpjValidator::clean($prest->cnpj), false);
+        }
+        
+        // Validar CPF se presente
+        if (isset($prest->cpf) && $prest->cpf !== null && $prest->cpf !== '') {
+            CpfValidator::validate($prest->cpf);
+            $this->addChild($prestNode, 'CPF', CpfValidator::clean($prest->cpf), false);
+        }
+        
+        $this->addChildOptional($prestNode, 'NIF', $prest->nif ?? null);
+        $this->addChildOptional($prestNode, 'cNaoNIF', $prest->cnaonif ?? null);
+        $this->addChildOptional($prestNode, 'CAEPF', $prest->caepf ?? null);
+        $this->addChildOptional($prestNode, 'IM', $prest->im ?? null);
+        $this->addChildOptional($prestNode, 'xNome', $prest->xnome ?? null);
+
+        if (isset($prest->end)) {
+            $this->buildEndereco($prestNode, $prest->end);
+        }
+
+        $this->addChildOptional($prestNode, 'fone', $prest->fone ?? null);
+        $this->addChildOptional($prestNode, 'email', $prest->email ?? null);
+
+        $regTrib = $this->dom->createElement('regTrib');
+        $prestNode->appendChild($regTrib);
+        $this->addChild($regTrib, 'opSimpNac', $prest->regtrib->opsimpnac, true);
+        $this->addChildOptional($regTrib, 'regApTribSN', $prest->regtrib->regaptribsn ?? null);
+        $this->addChild($regTrib, 'regEspTrib', $prest->regtrib->regesptrib, true);
+    }
+
+    private function buildPessoa(DOMNode $parent, string $tagName, stdClass $data): void
+    {
+        $node = $this->dom->createElement($tagName);
+        $parent->appendChild($node);
+
+        // Validar CNPJ se presente
+        if (isset($data->cnpj) && $data->cnpj !== null && $data->cnpj !== '') {
+            CnpjValidator::validate($data->cnpj);
+            $this->addChild($node, 'CNPJ', CnpjValidator::clean($data->cnpj), false);
+        }
+        
+        // Validar CPF se presente
+        if (isset($data->cpf) && $data->cpf !== null && $data->cpf !== '') {
+            CpfValidator::validate($data->cpf);
+            $this->addChild($node, 'CPF', CpfValidator::clean($data->cpf), false);
+        }
+        
+        $this->addChildOptional($node, 'NIF', $data->nif ?? null);
+        $this->addChildOptional($node, 'cNaoNIF', $data->cnaonif ?? null);
+        $this->addChildOptional($node, 'CAEPF', $data->caepf ?? null);
+        $this->addChildOptional($node, 'IM', $data->im ?? null);
+        $this->addChild($node, 'xNome', $data->xnome, true);
+
+        if (isset($data->end)) {
+            $this->buildEndereco($node, $data->end);
+        }
+
+        $this->addChildOptional($node, 'fone', $data->fone ?? null);
+        $this->addChildOptional($node, 'email', $data->email ?? null);
+    }
+
+    private function buildEndereco(DOMNode $parent, stdClass $end): void
+    {
+        $endNode = $this->dom->createElement('end');
+        $parent->appendChild($endNode);
+
+        if (isset($end->endnac)) {
+            $nac = $this->dom->createElement('endNac');
+            $endNode->appendChild($nac);
+            
+            // Validar código IBGE (7 dígitos)
+            CodigoIbgeValidator::validate($end->endnac->cmun);
+            
+            $this->addChild($nac, 'cMun', $end->endnac->cmun, true);
+            $this->addChild($nac, 'CEP', $end->endnac->cep, true);
+        } elseif (isset($end->endext)) {
+            $ext = $this->dom->createElement('endExt');
+            $endNode->appendChild($ext);
+            $this->addChild($ext, 'cPais', $end->endext->cpais, true);
+            $this->addChild($ext, 'cEndPost', $end->endext->cendpost, true);
+            $this->addChild($ext, 'xCidade', $end->endext->xcidade, true);
+            $this->addChild($ext, 'xEstProvReg', $end->endext->xestprovreg, true);
+        }
+
+        $this->addChild($endNode, 'xLgr', $end->xlgr, true);
+        $this->addChild($endNode, 'nro', $end->nro, true);
+        $this->addChildOptional($endNode, 'xCpl', $end->xcpl ?? null);
+        $this->addChild($endNode, 'xBairro', $end->xbairro, true);
+    }
+
+    private function buildServico(DOMNode $parent): void
+    {
+        $serv = $this->std->infdps->serv;
+        $servNode = $this->dom->createElement('serv');
+        $parent->appendChild($servNode);
+
+        $locPrest = $this->dom->createElement('locPrest');
+        $servNode->appendChild($locPrest);
+        $this->addChild($locPrest, 'cLocPrestacao', $serv->locprest->clocprestacao, true);
+        $this->addChildOptional($locPrest, 'cPaisPrestacao', $serv->locprest->cpaisprestacao ?? null);
+        $this->addChildOptional($locPrest, 'cPaisConsum', $serv->locprest->cpaisconsum ?? null);
+
+        $cServ = $this->dom->createElement('cServ');
+        $servNode->appendChild($cServ);
+        $this->addChild($cServ, 'cTribNac', $serv->cserv->ctribnac, true);
+        $this->addChildOptional($cServ, 'cTribMun', $serv->cserv->ctribmun ?? null);
+        $this->addChild($cServ, 'xDescServ', $serv->cserv->xdescserv, true);
+        $this->addChildOptional($cServ, 'cNBS', $serv->cserv->cnbs ?? null);
+        $this->addChildOptional($cServ, 'cIntContrib', $serv->cserv->cintcontrib ?? null);
+
+        if (isset($serv->comext)) {
+            $this->buildComExt($servNode, $serv->comext);
+        }
+
+        if (isset($serv->obra)) {
+            $this->buildObra($servNode, $serv->obra);
+        }
+
+        if (isset($serv->atvevento)) {
+            $this->buildAtvEvento($servNode, $serv->atvevento);
+        }
+
+        if (isset($serv->infocompl)) {
+            $this->buildInfoCompl($servNode, $serv->infocompl);
+        }
+    }
+
+    private function buildComExt(DOMNode $parent, stdClass $comext): void
+    {
+        $node = $this->dom->createElement('comExt');
+        $parent->appendChild($node);
+
+        $this->addChild($node, 'mdPrestacao', $comext->mdprestacao, false);
+        $this->addChild($node, 'vincPrest', $comext->vincprest, false);
+        $this->addChild($node, 'tpMoeda', $comext->tpmoeda, false);
+        $this->addChild($node, 'vServMoeda', $comext->vservmoeda, false);
+        $this->addChild($node, 'mecAFComexP', $comext->mecafcomexp, false);
+        $this->addChild($node, 'mecAFComexT', $comext->mecafcomext, false);
+        $this->addChild($node, 'movTempBens', $comext->movtempbens, false);
+        $this->addChildOptional($node, 'nDI', $comext->ndi ?? null);
+        $this->addChildOptional($node, 'nRE', $comext->nre ?? null);
+        $this->addChild($node, 'mdic', $comext->mdic, false);
+    }
+
+    private function buildObra(DOMNode $parent, stdClass $obra): void
+    {
+        $node = $this->dom->createElement('obra');
+        $parent->appendChild($node);
+
+        $this->addChildOptional($node, 'inscImobFisc', $obra->inscimobfisc ?? null);
+        $this->addChildOptional($node, 'cObra', $obra->cobra ?? null);
+        $this->addChildOptional($node, 'cCIB', $obra->ccib ?? null);
+
+        if (isset($obra->end)) {
+            $end = $this->dom->createElement('end');
+            $node->appendChild($end);
+            $this->addChildOptional($end, 'CEP', $obra->end->cep ?? null);
+            $this->addChildOptional($end, 'xLgr', $obra->end->xlgr ?? null);
+            $this->addChildOptional($end, 'nro', $obra->end->nro ?? null);
+            $this->addChildOptional($end, 'xCpl', $obra->end->xcpl ?? null);
+            $this->addChildOptional($end, 'xBairro', $obra->end->xbairro ?? null);
+        }
+    }
+
+    private function buildAtvEvento(DOMNode $parent, stdClass $atv): void
+    {
+        $node = $this->dom->createElement('atvEvento');
+        $parent->appendChild($node);
+
+        $this->addChildOptional($node, 'xNome', $atv->xnome ?? null);
+        $this->addChildOptional($node, 'dtIni', $atv->dtini ?? null);
+        $this->addChildOptional($node, 'dtFim', $atv->dtfim ?? null);
+
+        if (isset($atv->end)) {
+            $end = $this->dom->createElement('end');
+            $node->appendChild($end);
+            $this->addChildOptional($end, 'CEP', $atv->end->cep ?? null);
+            $this->addChildOptional($end, 'xLgr', $atv->end->xlgr ?? null);
+            $this->addChildOptional($end, 'nro', $atv->end->nro ?? null);
+            $this->addChildOptional($end, 'xBairro', $atv->end->xbairro ?? null);
+        }
+    }
+
+    private function buildInfoCompl(DOMNode $parent, stdClass $info): void
+    {
+        $hasContent = isset($info->iddoctec) || isset($info->docref) || isset($info->xped)
+            || isset($info->gitemped) || isset($info->xinfcomp);
+
+        if (!$hasContent) {
+            return;
+        }
+
+        $node = $this->dom->createElement('infoCompl');
+        $parent->appendChild($node);
+
+        $this->addChildOptional($node, 'idDocTec', $info->iddoctec ?? null);
+        $this->addChildOptional($node, 'docRef', $info->docref ?? null);
+        $this->addChildOptional($node, 'xPed', $info->xped ?? null);
+
+        if (isset($info->gitemped)) {
+            $gItem = $this->dom->createElement('gItemPed');
+            $node->appendChild($gItem);
+            $this->addChild($gItem, 'xItemPed', $info->gitemped->xitemped, true);
+        }
+
+        $this->addChildOptional($node, 'xInfComp', $info->xinfcomp ?? null);
+    }
+
+    private function buildValores(DOMNode $parent): void
+    {
+        $val = $this->std->infdps->valores;
+
+        $valNode = $this->dom->createElement('valores');
+        $parent->appendChild($valNode);
+
+        $vServPrest = $this->dom->createElement('vServPrest');
+        $valNode->appendChild($vServPrest);
+        $this->addChildOptional($vServPrest, 'vReceb', $val->vservprest->vreceb ?? null);
+        $this->addChild($vServPrest, 'vServ', $val->vservprest->vserv, true);
+
+        $vDescIncond = $val->vdesccondincond->vdescincond ?? null;
+        $vDescCond = $val->vdesccondincond->vdesccond ?? null;
+
+        $temDescIncond = $vDescIncond !== null && $vDescIncond !== '' && $vDescIncond !== '0.00';
+        $temDescCond = $vDescCond !== null && $vDescCond !== '' && $vDescCond !== '0.00';
+
+        if ($temDescIncond || $temDescCond) {
+            $desc = $this->dom->createElement('vDescCondIncond');
+            $valNode->appendChild($desc);
+            $this->addChildOptional($desc, 'vDescIncond', $temDescIncond ? $vDescIncond : null);
+            $this->addChildOptional($desc, 'vDescCond', $temDescCond ? $vDescCond : null);
+        }
+
+        $this->buildTributacao($valNode, $val->trib);
+    }
+
+    private function buildTributacao(DOMNode $parent, stdClass $trib): void
+    {
+        $tribNode = $this->dom->createElement('trib');
+        $parent->appendChild($tribNode);
+
+        $tribMun = $this->dom->createElement('tribMun');
+        $tribNode->appendChild($tribMun);
+
+        $this->addChild($tribMun, 'tribISSQN', $trib->tribmun->tribissqn, true);
+
+        if (($trib->tribmun->tribissqn ?? null) == 2 && isset($trib->tribmun->tpimunidade)) {
+            $this->addChild($tribMun, 'tpImunidade', $trib->tribmun->tpimunidade, true);
+        }
+
+        if (($trib->tribmun->tribissqn ?? null) == 3) {
+            $this->addChild($tribMun, 'cPaisResult', $trib->tribmun->cpaisresult, true);
+        }
+
+        $this->addChildOptional($tribMun, 'tpRetISSQN', $trib->tribmun->tpretissqn ?? null);
+        $this->addChildOptional($tribMun, 'pAliq', $trib->tribmun->paliq ?? null);
+
+        if (isset($trib->tribfed)) {
+            $this->buildTribFed($tribNode, $trib->tribfed);
+        }
+
+        $this->buildTotTrib($tribNode, $trib->tottrib);
+    }
+
+    private function buildTribFed(DOMNode $parent, stdClass $tribfed): void
+    {
+        $tf = $this->dom->createElement('tribFed');
+        $parent->appendChild($tf);
+
+        if (isset($tribfed->piscofins)) {
+            $pc = $tribfed->piscofins;
+            $pcNode = $this->dom->createElement('piscofins');
+            $tf->appendChild($pcNode);
+            $this->addChild($pcNode, 'CST', $pc->cst, true);
+            $this->addChildOptional($pcNode, 'vBCPisCofins', $pc->vbcpiscofins ?? null);
+            $this->addChildOptional($pcNode, 'pAliqPis', $pc->paliqpis ?? null);
+            $this->addChildOptional($pcNode, 'pAliqCofins', $pc->paliqcofins ?? null);
+            $this->addChildOptional($pcNode, 'vPis', $pc->vpis ?? null);
+            $this->addChildOptional($pcNode, 'vCofins', $pc->vcofins ?? null);
+            $this->addChildOptional($pcNode, 'tpRetPisCofins', $pc->tpretpiscofins ?? null);
+        }
+
+        $this->addChildOptional($tf, 'vRetCP', $tribfed->vretcp ?? null);
+        $this->addChildOptional($tf, 'vRetIRRF', $tribfed->vretirrf ?? null);
+        $this->addChildOptional($tf, 'vRetCSLL', $tribfed->vretcsll ?? null);
+    }
+
+    private function buildTotTrib(DOMNode $parent, stdClass $totTrib): void
+    {
+        $tt = $this->dom->createElement('totTrib');
+        $parent->appendChild($tt);
+
+        if (isset($totTrib->vtottrib)) {
+            $vt = $this->dom->createElement('vTotTrib');
+            $tt->appendChild($vt);
+            $this->addChildOptional($vt, 'vTotTribFed', $totTrib->vtottrib->vtottribfed ?? null);
+            $this->addChildOptional($vt, 'vTotTribEst', $totTrib->vtottrib->vtottribest ?? null);
+            $this->addChildOptional($vt, 'vTotTribMun', $totTrib->vtottrib->vtottribmun ?? null);
+        }
+
+        if (isset($totTrib->ptottrib)) {
+            $pt = $this->dom->createElement('pTotTrib');
+            $tt->appendChild($pt);
+            $this->addChildOptional($pt, 'pTotTribFed', $totTrib->ptottrib->ptottribfed ?? null);
+            $this->addChildOptional($pt, 'pTotTribEst', $totTrib->ptottrib->ptottribest ?? null);
+            $this->addChildOptional($pt, 'pTotTribMun', $totTrib->ptottrib->ptottribmun ?? null);
+        }
+
+        $this->addChildOptional($tt, 'indTotTrib', $totTrib->indtottrib ?? null);
+        $this->addChildOptional($tt, 'pTotTribSN', $totTrib->ptottribsn ?? null);
+    }
+
+    private function buildIbscbs(DOMNode $parent): void
+    {
+        $ibscbs = $this->std->infdps->ibscbs;
+
+        $node = $this->dom->createElement('IBSCBS');
+        $parent->appendChild($node);
+
+        $this->addChild($node, 'finNFSe', $ibscbs->finnfse, true);
+        $this->addChildOptional($node, 'indFinal', $ibscbs->indfinal ?? null);
+        $this->addChild($node, 'cIndOp', $ibscbs->cindop, true);
+        $this->addChildOptional($node, 'tpOper', $ibscbs->tpoper ?? null);
+        $this->addChildOptional($node, 'tpEnteGov', $ibscbs->tpentegov ?? null);
+        $this->addChild($node, 'indDest', $ibscbs->inddest, true);
+
+        if (isset($ibscbs->dest)) {
+            $this->buildIbscbsDest($node, $ibscbs->dest);
+        }
+
+        $this->buildIbscbsValores($node, $ibscbs->valores);
+    }
+
+    private function buildIbscbsDest(DOMNode $parent, stdClass $dest): void
+    {
+        $destNode = $this->dom->createElement('dest');
+        $parent->appendChild($destNode);
+
+        $this->addChildOptional($destNode, 'CNPJ', $dest->cnpj ?? null);
+        $this->addChildOptional($destNode, 'CPF', $dest->cpf ?? null);
+        $this->addChildOptional($destNode, 'NIF', $dest->nif ?? null);
+        $this->addChildOptional($destNode, 'cNaoNIF', $dest->cnaonif ?? null);
+        $this->addChild($destNode, 'xNome', $dest->xnome, true);
+        $this->addChildOptional($destNode, 'fone', $dest->fone ?? null);
+        $this->addChildOptional($destNode, 'email', $dest->email ?? null);
+
+        if (isset($dest->end)) {
+            $this->buildEndereco($destNode, $dest->end);
+        }
+    }
+
+    private function buildIbscbsValores(DOMNode $parent, stdClass $valores): void
+    {
+        $valNode = $this->dom->createElement('valores');
+        $parent->appendChild($valNode);
+
+        $tribNode = $this->dom->createElement('trib');
+        $valNode->appendChild($tribNode);
+
+        $gIbscbs = $this->dom->createElement('gIBSCBS');
+        $tribNode->appendChild($gIbscbs);
+        $this->addChild($gIbscbs, 'CST', $valores->trib->gibscbs->cst, true);
+        $this->addChild($gIbscbs, 'cClassTrib', $valores->trib->gibscbs->cclasstrib, true);
+        $this->addChildOptional($gIbscbs, 'cCredPres', $valores->trib->gibscbs->ccredpres ?? null);
+
+        if (isset($valores->trib->gtribregular)) {
+            $gReg = $this->dom->createElement('gTribRegular');
+            $tribNode->appendChild($gReg);
+            $this->addChild($gReg, 'CSTReg', $valores->trib->gtribregular->cstreg, true);
+            $this->addChild($gReg, 'cClassTribReg', $valores->trib->gtribregular->cclasstribreg, true);
+        }
+
+        if (isset($valores->trib->gdif)) {
+            $gDif = $this->dom->createElement('gDif');
+            $tribNode->appendChild($gDif);
+            $this->addChild($gDif, 'pDifUF', $valores->trib->gdif->pdifuf, true);
+            $this->addChild($gDif, 'pDifMun', $valores->trib->gdif->pdifmun, true);
+            $this->addChild($gDif, 'pDifCBS', $valores->trib->gdif->pdifcbs, true);
+        }
+    }
+
+    public function setFormatOutput(bool $formatOutput): void
     {
         $this->dom->formatOutput = $formatOutput;
     }
 
-    public function setStd(stdClass $std)
+    public function setStd(stdClass $std): void
     {
         $this->init($std);
     }
 
-    /**
-     * Mudar todas proprioedades da stdClass para minúsculas
-     * @param stdClass $data
-     * @return stdClass
-     */
-    public static function propertiesToLower(stdClass $data)
+    public static function propertiesToLower(stdClass $data): stdClass
     {
-        $properties = get_object_vars($data);
         $clone = new stdClass();
-        foreach ($properties as $key => $value) {
-            if ($value instanceof stdClass) {
-                $value = self::propertiesToLower($value);
-            }
-            $newkey = strtolower($key);
-            $clone->{$newkey} = $value;
+        foreach (get_object_vars($data) as $key => $value) {
+            $clone->{strtolower($key)} = $value instanceof stdClass
+                ? self::propertiesToLower($value)
+                : $value;
         }
         return $clone;
     }
 
-    //    /**
-    //     * Validation json data from json Schema
-    //     * @param stdClass $data
-    //     * @return boolean
-    //     * @throws \RuntimeException
-    //     */
-    //    protected function validInputData()
-    //    {
-    //        if (!is_file($this->jsonschema)) {
-    //            return true;
-    //        }
-    //        $validator = new JsonValid();
-    //        $validator->check($this->std, (object)['$ref' => 'file://' . $this->jsonschema]);
-    //        if (!$validator->isValid()) {
-    //            $msg = "";
-    //            foreach ($validator->getErrors() as $error) {
-    //                $msg .= sprintf("[%s] %s\n", $error['property'], $error['message']);
-    //            }
-    //            throw new InvalidArgumentException($msg);
-    //        }
-    //        return true;
-    //    }
-
-    public function getDpsId()
+    public function getDpsId(): string
     {
         return $this->dpsId;
     }
 
-    public function getEventoId()
+    public function getEventoId(): string
     {
         return $this->preId;
     }
 
-    private function generateId()
+    private function generateId(): string
     {
-        $string = 'DPS';
-        $string .= substr($this->std->infdps->clocemi, 0, 7); //Cód.Mun. (7) +
-        $string .= isset($this->std->infdps->prest->cnpj) ? 2 : 1; //Tipo de Inscrição Federal (1) +
-        if (isset($this->std->infdps->prest->cnpj)) {
-            $inscricao = $this->std->infdps->prest->cnpj;
-        } else {
-            $inscricao = $this->std->infdps->prest->cpf;
+        $id = 'DPS';
+        $id .= substr($this->std->infdps->clocemi, 0, 7);
+        $id .= isset($this->std->infdps->prest->cnpj) ? '2' : '1';
+        $inscricao = $this->std->infdps->prest->cnpj ?? $this->std->infdps->prest->cpf;
+        $id .= str_pad($inscricao, 14, '0', STR_PAD_LEFT);
+        $id .= str_pad((string)$this->std->infdps->serie, 5, '0', STR_PAD_LEFT);
+        $id .= str_pad((string)$this->std->infdps->ndps, 15, '0', STR_PAD_LEFT);
+
+        $this->dpsId = $id;
+        return $id;
+    }
+
+    private function generatePre(): string
+    {
+        $this->preId = 'PRE'
+            . $this->std->infpedreg->chnfse
+            . $this->codigoEvento();
+
+        return $this->preId;
+    }
+
+    private function codigoEvento(): string
+    {
+        return match (true) {
+            isset($this->std->infpedreg->e101101) => '101101',
+            isset($this->std->infpedreg->e105102) => '105102',
+            default => '000000',
+        };
+    }
+
+    private function addChild(DOMNode $parent, string $name, mixed $value, bool $force = false): void
+    {
+        $this->dom->addChild($parent, $name, $value, $force);
+    }
+
+    private function addChildOptional(DOMNode $parent, string $name, mixed $value): void
+    {
+        if ($value !== null && $value !== '') {
+            $this->dom->addChild($parent, $name, $value, false);
         }
-        $string .= str_pad($inscricao, 14, 0, STR_PAD_LEFT); //Inscrição Federal (14 - CPF completar com 000 à esquerda) +
-        $string .= str_pad($this->std->infdps->serie, 5, 0, STR_PAD_LEFT); //Série DPS (5) +
-        $string .= str_pad($this->std->infdps->ndps, 15, 0, STR_PAD_LEFT); //Série DPS (5) +
-        $this->dpsId = $string;
-        return $string;
     }
-
-    private function generatePre()
-    {
-        $string = 'PRE';
-        $string .= $this->std->infpedreg->chnfse; //Chave de acesso da NFS-e (50) +
-        $string .= $this->codigoEvento(); //Código do evento (6)
-        $this->preId = $string;
-        return $string;
-    }
-
-    private function codigoEvento()
-    {
-        $codigo = '000000';
-        switch (true) {
-            case isset($this->std->infpedreg->e101101):
-                $codigo = '101101';
-                break;
-            case isset($this->std->infpedreg->e105102):
-                $codigo = '105102';
-                break;
-        }
-
-        return $codigo;
-    }
-
 }

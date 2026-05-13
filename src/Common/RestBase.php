@@ -1,221 +1,146 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hadder\NfseNacional\Common;
 
-use Exception;
+use DateTime;
+use DateInterval;
 use NFePHP\Common\Certificate;
+use NFePHP\Common\Certificate\Exception\Expired;
 use NFePHP\Common\Exception\RuntimeException;
 use NFePHP\Common\Files;
 use NFePHP\Common\Strings;
+use Throwable;
 
 class RestBase
 {
-    protected $certificate;
-    protected $disableCertValidation = false;
-    protected $tempdir;
+    protected Certificate $certificate;
+    protected bool $disableCertValidation = false;
+    protected string $tempdir;
     private Files $filesystem;
     private string $certsdir;
-    protected $prifile;
-    protected $pubfile;
-    protected $certfile;
-    public $waitingTime = 45;
+    protected string $prifile;
+    protected string $pubfile;
+    protected string $certfile;
+    public int $waitingTime = 45;
 
     public function __construct(?Certificate $certificate = null)
     {
         $this->loadCertificate($certificate);
     }
 
-    /**
-     * Setao certificado pra comunicação SSL
-     * @param Certificate $certificate
-     * @return void
-     */
-    public function loadCertificate(?Certificate $certificate = null)
+    public function loadCertificate(?Certificate $certificate = null): void
     {
         $this->isCertificateExpired($certificate);
-        if (null !== $certificate) {
+        if ($certificate !== null) {
             $this->certificate = $certificate;
         }
     }
 
-    /**
-     * Verifica se o certificado é valido na data atual
-     * @param Certificate $certificate
-     * @return void
-     * @throws Certificate\Exception\Expired
-     */
-    private function isCertificateExpired(?Certificate $certificate = null)
+    private function isCertificateExpired(?Certificate $certificate = null): void
     {
-        if (!$this->disableCertValidation) {
-            if (null !== $certificate && $certificate->isExpired()) {
-                throw new Certificate\Exception\Expired($certificate);
-            }
+        if (!$this->disableCertValidation && $certificate !== null && $certificate->isExpired()) {
+            throw new Expired($certificate);
         }
     }
 
-    /**
-     * Apenas para testes, seta a validação de validade do certificado
-     * @param bool $flag
-     * @return bool
-     */
-    public function disableCertValidation($flag = true)
+    public function disableCertValidation(bool $flag = true): bool
     {
-        return $this->disableCertValidation = $flag;
+        $this->disableCertValidation = $flag;
+        return $this->disableCertValidation;
     }
 
-    /**
-     * Set another temporayfolder for saving certificates for SOAP utilization
-     * @param string | null $folderRealPath
-     * @return void
-     */
-    public function setTemporaryFolder($folderRealPath = null)
+    public function setTemporaryFolder(?string $folderRealPath = null): void
     {
-        $mapto = !empty($this->certificate->getCnpj())
-            ? $this->certificate->getCnpj()
-            : $this->certificate->getCpf();
+        $mapto = $this->certificate->getCnpj() ?? $this->certificate->getCpf();
         if (empty($mapto)) {
-            throw new RuntimeException(
-                'Foi impossivel identificar o OID do CNPJ ou do CPF.'
-            );
+            throw new RuntimeException('Foi impossivel identificar o OID do CNPJ ou do CPF.');
         }
         if (empty($folderRealPath)) {
-            $path = '/nfse-'
-                . $this->uid()
-                . '/'
-                . $mapto
-                . '/';
-            $folderRealPath = sys_get_temp_dir() . $path;
+            $folderRealPath = sys_get_temp_dir()
+                . '/nfse-' . $this->uid() . '/'
+                . $mapto . '/';
         }
-        if (substr($folderRealPath, -1) !== '/') {
+        if (!str_ends_with($folderRealPath, '/')) {
             $folderRealPath .= '/';
         }
         $this->tempdir = $folderRealPath;
         $this->setLocalFolder($folderRealPath);
     }
 
-    /**
-     * Temporarily saves the certificate keys for use cURL or SoapClient
-     * @return void
-     */
-    public function saveTemporarilyKeyFiles()
+    public function saveTemporarilyKeyFiles(): void
     {
-        //certs already exists
         if (!empty($this->certsdir)) {
             return;
         }
-        if (!is_object($this->certificate)) {
-            throw new RuntimeException(
-                'Certificate not found.'
-            );
+        if (!isset($this->certificate)) {
+            throw new RuntimeException('Certificate not found.');
         }
-        if (empty($this->filesystem)) {
+        if (!isset($this->filesystem)) {
             $this->setTemporaryFolder();
         }
-        //clear dir cert
         $this->removeTemporarilyFiles();
         $this->certsdir = 'certs/';
         $this->prifile = $this->randomName();
         $this->pubfile = $this->randomName();
         $this->certfile = $this->randomName();
-        $ret = true;
-        //load private key pem
         $private = $this->certificate->privateKey;
-//        if ($this->encriptPrivateKey) {
-//            //replace private key pem with password
-//            $this->temppass = Strings::randomString(16);
-//            //encripta a chave privada entes da gravação do filesystem
-//            openssl_pkey_export(
-//                $this->certificate->privateKey,
-//                $private,
-//                $this->temppass
-//            );
-//        }
-        $ret &= $this->filesystem->put(
-            $this->prifile,
-            $private
-        );
-        $ret &= $this->filesystem->put(
-            $this->pubfile,
-            $this->certificate->publicKey
-        );
-        $ret &= $this->filesystem->put(
-            $this->certfile,
-            $private . "{$this->certificate}"
-        );
-        if (!$ret) {
-            throw new RuntimeException(
-                'Unable to save temporary key files in folder.'
-            );
-        }
+        
+        // Salvar arquivos
+        $this->filesystem->put($this->prifile, $private);
+        $this->filesystem->put($this->pubfile, $this->certificate->publicKey);
+        $this->filesystem->put($this->certfile, $private . $this->certificate);
+        
+        // Aplicar permissões restritas (0600 - somente dono lê/escreve)
+        // Crítico para segurança: impede outros usuários de lerem chaves privadas
+        chmod($this->tempdir . $this->prifile, 0600);
+        chmod($this->tempdir . $this->pubfile, 0600);
+        chmod($this->tempdir . $this->certfile, 0600);
     }
 
-    /**
-     * Return uid from user
-     * @return string
-     */
-    protected function uid()
+    protected function uid(): string
     {
-        return function_exists('posix_getuid') ? posix_getuid() : getmyuid();
+        return (string)(function_exists('posix_getuid') ? posix_getuid() : getmyuid());
     }
 
-    /**
-     * Set Local folder for flysystem
-     * @param string $folder
-     * @throws Exception
-     */
-    protected function setLocalFolder($folder = '')
+    protected function setLocalFolder(string $folder = ''): void
     {
         $this->filesystem = new Files($folder);
     }
 
-    /**
-     * Delete all files in folder
-     * @return void
-     */
-    public function removeTemporarilyFiles()
+    public function removeTemporarilyFiles(): void
     {
         try {
-            if (empty($this->filesystem) || empty($this->certsdir)) {
+            if (!isset($this->filesystem) || empty($this->certsdir)) {
                 return;
             }
-            //remove os certificados
             $this->filesystem->delete($this->certfile);
             $this->filesystem->delete($this->prifile);
             $this->filesystem->delete($this->pubfile);
-            //remove todos os arquivos antigos
             $contents = $this->filesystem->listContents($this->certsdir, true);
-            $dt = new \DateTime();
-            $tint = new \DateInterval("PT" . $this->waitingTime . "M");
+            $dt = new DateTime();
+            $tint = new DateInterval('PT' . $this->waitingTime . 'M');
             $tint->invert = 1;
             $tsLimit = $dt->add($tint)->getTimestamp();
             foreach ($contents as $item) {
-                if ($item['type'] == 'file') {
-                    if ($this->filesystem->has($item['path'])) {
-                        $timestamp = $this->filesystem->getTimestamp($item['path']);
-                        if ($timestamp < $tsLimit) {
-                            $this->filesystem->delete($item['path']);
-                        }
+                if ($item['type'] === 'file' && $this->filesystem->has($item['path'])) {
+                    $timestamp = $this->filesystem->getTimestamp($item['path']);
+                    if ($timestamp < $tsLimit) {
+                        $this->filesystem->delete($item['path']);
                     }
                 }
             }
-        } catch (\Throwable $e) {
-            //impedir de ocorrer exception em ambientes muito comporrentes
-            //porem nesses casos devem ser feitas limpezas periodicas caso
-            //não seja usado o diretorio /tmp pois não será auto limpante
+        } catch (Throwable) {
         }
     }
 
-    /**
-     * Create a unique random file name
-     * @param integer $n
-     * @return string
-     */
-    protected function randomName($n = 10)
+    protected function randomName(int $n = 10): string
     {
         $name = $this->certsdir . Strings::randomString($n) . '.pem';
         if (!$this->filesystem->has($name)) {
             return $name;
         }
-        $this->randomName($n + 5);
+        return $this->randomName($n + 5);
     }
 }
