@@ -20,9 +20,11 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
@@ -1038,7 +1040,65 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         );
     }
 
-    private function createDpsWithIbscbs(?IbsCbsInfo $ibscbs = null, ?Servico $servico = null): Dps
+    public function test_build_xml_with_intermediario(): void
+    {
+        $endereco = new Endereco(
+            logradouro: 'Rua Intermediario',
+            numero: '456',
+            complemento: null,
+            bairro: 'Centro',
+            codigoMunicipio: new CodigoMunicipio('3550308'),
+            uf: 'SP',
+            cep: new Cep('01001001'),
+        );
+        $intermediario = new Intermediario(
+            documento: new Cnpj('11444777000161'),
+            razaoSocial: 'Intermediario Ltda',
+            inscricaoMunicipal: '78901',
+            telefone: null,
+            email: null,
+            endereco: $endereco,
+        );
+        $ibscbs = $this->createIbscbs();
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs, intermediario: $intermediario);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, '<interm>');
+        $this->assertXmlContains($xml, 'Intermediario Ltda');
+        $this->assertXmlContains($xml, '<IM>78901</IM>');
+    }
+
+    public function test_build_xml_with_substituicao(): void
+    {
+        $chave = new ChaveAcesso('12345678901234567890123456789012345678901234567890');
+        $substituicao = new Substituicao(
+            chaveSubstituida: $chave,
+            codigoMotivo: '02',
+        );
+        $ibscbs = $this->createIbscbs();
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs, substituicao: $substituicao);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, '<subst>');
+        $this->assertXmlContains($xml, '<cMotivo>02</cMotivo>');
+        $this->assertXmlContains($xml, '<chSubstda');
+    }
+
+    public function test_build_xml_without_intermediario(): void
+    {
+        $dps = $this->createDpsWithIbscbs();
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlNotContains($xml, '<interm>');
+    }
+
+    private function createDpsWithIbscbs(?IbsCbsInfo $ibscbs = null, ?Servico $servico = null, ?Intermediario $intermediario = null, ?Substituicao $substituicao = null): Dps
     {
         $cnpj = new Cnpj('11444777000161');
         $endereco = new Endereco(
@@ -1089,6 +1149,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
                 codigoNbs: '12345678',
             ),
             ibscbs: $ibscbs,
+            intermediario: $intermediario,
+            substituicao: $substituicao,
         );
     }
 
@@ -1149,6 +1211,15 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             $expected,
             $xml,
             "XML deve conter '{$expected}'"
+        );
+    }
+
+    private function assertXmlNotContains(string $xml, string $expected): void
+    {
+        $this->assertStringNotContainsString(
+            $expected,
+            $xml,
+            "XML não deve conter '{$expected}'"
         );
     }
 }

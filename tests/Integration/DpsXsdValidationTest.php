@@ -20,9 +20,11 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
@@ -688,6 +690,51 @@ final class DpsXsdValidationTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    public function test_dps_with_intermediario_validates_against_xsd(): void
+    {
+        $endereco = new Endereco(
+            logradouro: 'Rua Intermediario',
+            numero: '456',
+            complemento: null,
+            bairro: 'Centro',
+            codigoMunicipio: new CodigoMunicipio('3550308'),
+            uf: 'SP',
+            cep: new Cep('01001001'),
+        );
+        $intermediario = new Intermediario(
+            documento: new Cnpj('11444777000161'),
+            razaoSocial: 'Intermediario Ltda',
+            inscricaoMunicipal: '78901',
+            telefone: null,
+            email: null,
+            endereco: $endereco,
+        );
+        $dps = $this->createDps(ibscbs: $this->createIbscbs(), intermediario: $intermediario);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_substituicao_validates_against_xsd(): void
+    {
+        $chave = new ChaveAcesso('12345678901234567890123456789012345678901234567890');
+        $substituicao = new Substituicao(
+            chaveSubstituida: $chave,
+            codigoMotivo: '01',
+            descricaoMotivo: 'Cancelamento da NFSe anterior',
+        );
+        $dps = $this->createDps(ibscbs: $this->createIbscbs(), substituicao: $substituicao);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
     private function createIbscbs(
         ?IbsCbsImovel $imovel = null,
         ?IbsCbsReeRepRes $reeRepRes = null,
@@ -736,6 +783,8 @@ final class DpsXsdValidationTest extends TestCase
     private function createDps(
         ?Servico $servico = null,
         ?IbsCbsInfo $ibscbs = null,
+        ?Intermediario $intermediario = null,
+        ?Substituicao $substituicao = null,
     ): Dps {
         $endereco = $this->createEndereco();
         $cnpj = new Cnpj('11444777000161');
@@ -778,6 +827,8 @@ final class DpsXsdValidationTest extends TestCase
                 codigoNbs: '123456789',
             ),
             ibscbs: $ibscbs,
+            intermediario: $intermediario,
+            substituicao: $substituicao,
         );
     }
 
