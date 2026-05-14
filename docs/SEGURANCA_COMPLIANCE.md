@@ -1,8 +1,9 @@
 # Segurança e Compliance - NFSe Nacional
 
 **Complemento aos documentos:**
-- [ARQUITETURA_REFATORACAO.md](ARQUITETURA_REFATORACAO.md)
+- [ARQUITETURA.md](ARQUITETURA.md)
 - [GUIA_IMPLEMENTACAO.md](GUIA_IMPLEMENTACAO.md)
+- [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---
 

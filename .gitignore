@@ -1,7 +1,7 @@
 .idea/
 vendor/
-exemples/certs/
-exemples/local/
+examples/certs/
+examples/local/
 .php-cs-fixer.cache
 .phpunit.cache/
 .phpstan-cache/

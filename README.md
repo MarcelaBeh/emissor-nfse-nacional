@@ -1,128 +1,126 @@
 # NFSe Padrão Nacional
 
-**Biblioteca PHP para integração com NFSe Nacional** - Pacote Composer reutilizável para emissão, consulta e cancelamento de Notas Fiscais de Serviço Eletrônicas no padrão nacional (https://www.nfse.gov.br/).
-
-Desenvolvido com componentes NFePHP (https://github.com/nfephp-org).
+**Biblioteca PHP para integração com NFSe Nacional** - Pacote Composer reutilizável para emissão, consulta e cancelamento de Notas Fiscais de Serviço Eletrônicas no padrão nacional.
 
 **Status:** Em desenvolvimento. Use por sua conta e risco.
 
 ---
 
-## 📦 O que é este projeto?
-
-Este é um **pacote Composer (biblioteca)** que:
-
-- ✅ **Integra com APIs do Governo** (NFSe Nacional - SEFIN)
-- ✅ **Funciona em qualquer projeto PHP** (Laravel, Symfony, CakePHP, vanilla PHP)
-- ✅ **É instalado via Composer** (`composer require marcelabeh/emissor-nfse-nacional`)
-- ✅ **Será usado por outros desenvolvedores** em seus próprios projetos
-- ✅ **É independente de framework** - Zero acoplamento
-- ✅ **Segue padrões PSR** (PSR-4, PSR-12) e Clean Architecture
-- ✅ **Clean Architecture** (Domain, Application, Infrastructure, Presentation)
-
-**Não é:** Uma aplicação standalone ou sistema completo.
-
----
-
-## 📚 Documentação
-
-- **[Arquitetura de Refatoração](docs/ARQUITETURA_REFATORACAO.md)** - Proposta completa de refatoração com Clean Architecture
-- **[Guia de Implementação](docs/GUIA_IMPLEMENTACAO.md)** - Exemplos práticos e padrões de código
-- **[Segurança e Compliance](docs/SEGURANCA_COMPLIANCE.md)** - Diretrizes de segurança e conformidade
-- **[Princípios de Design](docs/LIBRARY_DESIGN.md)** - Como construir uma biblioteca reutilizável
-- **[Roadmap](docs/ROADMAP.md)** - Progresso da refatoração
-- **[Checklist Diário](docs/CHECKLIST_DIARIO.md)** - Checklist de qualidade para desenvolvimento
-
-## ⚠️⚠️⚠️ AVISOS ⚠️⚠️⚠️
-
-###  Configuração da Prefeitura
-
-Na configuração do sistema, a variável `prefeitura` pode receber atualmente dois tipos de valores:
-
-- Um identificador textual, por exemplo: `americana-sp`
-- O código IBGE do município
-
-⚠️ **Importante:** no momento, ambos os formatos são aceitos por compatibilidade.  
-Porém, **futuramente o padrão adotado será exclusivamente o código IBGE**.  
-Recomenda-se desde já utilizar o código IBGE para evitar ajustes em versões futuras.
-
-### Método consultarNfseChave() e encoding
-
-O arquivo XML após o gz_decode está vindo em ISO-8859-1. O método vai passar pelo mb_convert_encoding mantendo ISO, caso você tenha problemas utilize o segundo parâmetro como false como exemplo abaixo:
-
-```
-//Retorna ISO, padrão.
-$tools->consultarNfseChave('CHAVE_NFSE');
-
-//Retorna XML cru, sem passar por mb_convert_enconding
-$tools->consultarNfseChave('CHAVE_NFSE', false);
-```
-
-## Install
-
-**Este pacote é desenvolvido para uso do [Composer](https://getcomposer.org/), então não terá nenhuma explicação de instalação alternativa.**
+## 📦 Instalação
 
 ```bash
 composer require marcelabeh/emissor-nfse-nacional
 ```
 
-## Quality Tools
+## 🚀 Uso Rápido
 
-Este projeto utiliza ferramentas automatizadas de qualidade:
+```php
+use MarcelaBeh\EmissorNfseNacional\Presentation\Facade\NfseNacionalFacade;
+use MarcelaBeh\EmissorNfseNacional\Presentation\Factory\ConfigFactory;
+use NFePHP\Common\Certificate;
 
-| Ferramenta | Comando | Descrição |
-|-----------|---------|-----------|
-| PHP-CS-Fixer | `composer cs` / `composer cs:fix` | Padrão PSR-12 |
-| PHPStan (nível 8) | `composer stan` | Análise estática |
-| PHPUnit | `composer test` | Testes unitários e integração |
+// 1. Carregar certificado
+$certificado = Certificate::loadPfx($caminhoCertificado, $senha);
 
-**Check completo:** `composer check` (executa CS → PHPStan → PHPUnit em sequência).
+// 2. Criar configuração
+$config = ConfigFactory::createHomologacao('codigo-ibge-municipio');
 
-### Serviços implementados
+// 3. Criar facade
+$nfse = NfseNacionalFacade::create((array)$config, $certificado);
 
-| Serviço | Legacy (v1) | Nova Arquitetura (v2) |
-|---------|-------------|----------------------|
-| Emitir DPS | ✅ `enviaDps()` | ✅ `EmitirDpsService` |
-| Consultar NFSe por Chave | ✅ `consultarNfseChave()` | ✅ `ConsultarNfseService` |
-| Consultar DPS por Chave | ✅ `consultarDpsChave()` | ✅ via `ConsultarNfseService` |
-| Consultar Eventos | ✅ `consultarNfseEventos()` | ✅ via `ConsultarNfseService` |
-| Consultar DANFSe | ✅ `consultarDanfse()` | ✅ via `ConsultarNfseService` |
-| Cancelar NFSe | ✅ `cancelaNfse()` | ✅ `CancelarNfseService` |
+// 4. Emitir DPS
+$response = $nfse->emitirDps($dpsRequest);
+```
 
-**API Unificada:** `NfseNacionalFacade` — ponto único de entrada para todos os serviços.
+## 📚 Documentação
 
-## Requerimentos
+| Documento | Descrição |
+|-----------|-----------|
+| [GUIA_IMPLEMENTACAO.md](docs/GUIA_IMPLEMENTACAO.md) | Guia completo de uso com exemplos |
+| [ARQUITETURA.md](docs/ARQUITETURA.md) | Arquitetura do sistema e decisões de design |
+| [SEGURANCA.md](docs/SEGURANCA.md) | Diretrizes de segurança |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Como contribuir |
+| [CHANGELOG.md](CHANGELOG.md) | Histórico de alterações |
+| [examples/](examples/) | Exemplos práticos de uso |
+
+## ✅ Requisitos
 
 - PHP 8.3+
-- ext-dom
-- ext-curl
-- ext-zlib
-- ext-openssl
-- ext-mbstring
+- ext-dom, ext-curl, ext-zlib, ext-openssl, ext-mbstring
 
-## FAQ - E999 - Erro não catalogado
+## 🔧 Qualidade de Código
 
-Podem existir diversos motivos para esse erro ocorrer, já que ele se refere a uma falha não catalogada pela própria Receita, incluindo erros de servidor (500) e outros problemas aleatórios.
+```bash
+composer test    # PHPUnit (481 testes)
+composer cs     # PHP-CS-Fixer (dry-run)
+composer cs:fix # PHP-CS-Fixer (aplicar)
+composer stan    # PHPStan nível 8
+composer check   # Tudo junto
+```
 
-Vale mencionar que, no ambiente de **homologação**, esses erros costumam aparecer sem motivo algum, enquanto no ambiente de **produção** a nota normalmente é emitida sem problemas.
+| Badge | Info |
+|-------|------|
+| ![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php) | PHP 8.3+ |
+| ![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen) | Análise estática |
+| ![Tests](https://img.shields.io/badge/tests-481%20passing-brightgreen) | 100% passando |
+| ![PSR-12](https://img.shields.io/badge/code%20style-PSR--12-blue) | Código limpo |
 
-Como a Receita só atualiza suas APIs quando está inspirada, listamos abaixo as causas mais comuns com base nos relatos que já recebemos:
+## 📁 Estrutura
 
-- CPF/CNPJ do **prestador** não existente/cadastrado/habilitado na NFSe Nacional/Prefeitura;
+```
+src/
+├── Domain/           # Entidades e Value Objects
+├── Application/     # Services e DTOs
+├── Infrastructure/  # HTTP, XML, Segurança
+└── Presentation/    # Facade e Factories
+```
 
-## Status
+## 📄 API Principal
 
-![CI](https://github.com/marcelabeh/emissor-nfse-nacional/actions/workflows/ci.yml/badge.svg)
-![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php)
-![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen)
-![Tests](https://img.shields.io/badge/tests-25%20passing-brightgreen)
-![PHP CS Fixer](https://img.shields.io/badge/code%20style-PSR--12-blue)
+**NfseNacionalFacade** - Ponto único de entrada:
 
-# Créditos
+- `emitirDps(DpsRequest)` → `NfseResponse`
+- `consultarPorChave(string)` → `NfseResponse|null`
+- `consultarDpsPorChave(string)` → `array`
+- `cancelar(EventoRequest)` → `EventoResponse`
+- `consultarEventos(string)` → `array`
+- `consultarDanfse(string)` → `string|array`
+- `consultarDanfseNfse(string)` → `string|array`
 
-Este pacote é um **fork** do [hadder/nfse-nacional](https://github.com/Rainzart/nfse-nacional), originalmente desenvolvido por **Fernando Friedrich**.
+## ⚠️ Avisos Importantes
 
-O pacote original foi construído com base nos componentes do [NFePHP](https://github.com/nfephp-org), criado por **[Roberto L. Machado](https://github.com/robmachado)**.
+### Configuração do Município
 
-Agradecimentos a todos os contribuidores do projeto original:  
-https://github.com/Rainzart/nfse-nacional/graphs/contributors
+A variável `prefeitura` aceita:
+- Código IBGE do município (recomendado)
+- Identificador textual (ex: `americana-sp`) - temporário
+
+### Encoding XML
+
+O XML pode vir em ISO-8859-1. Use o segundo parâmetro se necessário:
+```php
+$nfse->consultarNfseChave('CHAVE', false);
+```
+
+## 🐛 FAQ - Erro E999
+
+O erro E999 indica falha não catalogada pela Receita. Causas comuns:
+- CNPJ/CPF do prestador não cadastrado/habilitado na NFSe Nacional
+- Erros de servidor (500)
+- Problemas no ambiente de homologação (comum)
+
+## 📦 API Legado (v1)
+
+| Serviço | Método |
+|---------|--------|
+| Emitir DPS | `enviaDps()` |
+| Consultar NFSe | `consultarNfseChave()` |
+| Cancelar | `cancelaNfse()` |
+
+Consulte `examples/` para detalhes.
+
+## 🤝 Créditos
+
+- **Original:** [hadder/nfse-nacional](https://github.com/Rainzart/nfse-nacional) por Fernando Friedrich
+- **Baseado em:** [NFePHP](https://github.com/nfephp-org) por Roberto L. Machado
+- **Mantido por:** Marcela Beatriz

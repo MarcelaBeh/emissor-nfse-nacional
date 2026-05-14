@@ -1,6 +1,8 @@
-# Guia de Implementação - Refatoração NFSe Nacional
+# Guia de Implementação - NFSe Nacional
 
-**Complemento ao documento:** [ARQUITETURA_REFATORACAO.md](ARQUITETURA_REFATORACAO.md)
+**Biblioteca PHP para emissão e consulta de NFS-e no padrão nacional.**
+
+Consulte também: [ARQUITETURA.md](ARQUITETURA.md) para entender a estrutura interna.
 
 ---
 
@@ -1084,8 +1086,9 @@ vendor/bin/phpunit --filter=EmitirDpsTest
 
 **Status da Implementação:**
 
-✅ **Fases 1-5 Concluídas** (Domain, Infrastructure, Application, Presentation)
-⏳ **Fase 6:** Testes e documentação final
+✅ **Fases 1-5 Concluídas** (Domain, Infrastructure, Application, Presentation)  
+✅ **Fase 6:** PHPStan nível 8 concluído  
+⏳ **Fase 6:** Testes e documentação final  
 ⏳ **Fase 7:** Migração e release
 
 **Próximos Passos:**
@@ -1095,7 +1098,7 @@ vendor/bin/phpunit --filter=EmitirDpsTest
 3. Criar testes de integração (XML builders, API Connector)
 4. Criar testes end-to-end (fluxo completo)
 5. Configurar CI/CD (GitHub Actions)
-6. Revisar e atualizar exemplos em `/exemples`
+6. Revisar e atualizar exemplos em `/examples`
 7. Publicar release v2.0.0
 
 ---
