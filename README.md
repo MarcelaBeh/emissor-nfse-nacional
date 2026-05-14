@@ -1,5 +1,9 @@
 # NFSe Padrão Nacional
 
+<p align="center">
+  <img src="images/logo-nfs-e-horizontal.png" alt="NFSe Nacional" width="400">
+</p>
+
 **Biblioteca PHP para integração com NFSe Nacional** - Pacote Composer reutilizável para emissão, consulta e cancelamento de Notas Fiscais de Serviço Eletrônicas no padrão nacional.
 
 **Status:** Em desenvolvimento. Use por sua conta e risco.
