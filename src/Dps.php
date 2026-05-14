@@ -134,7 +134,7 @@ class Dps implements DpsInterface
         return $this->dom->saveXML();
     }
 
-    private function buildSubst(DOMNode $parent): void
+    private function buildSubst(\DOMElement $parent): void
     {
         $subst = $this->dom->createElement('subst');
         $parent->appendChild($subst);
@@ -149,20 +149,18 @@ class Dps implements DpsInterface
         $this->addChild($subst, 'xMotivo', $this->std->infdps->subst->xmotivo, true);
     }
 
-    private function buildPrestador(DOMNode $parent): void
+    private function buildPrestador(\DOMElement $parent): void
     {
         $prest = $this->std->infdps->prest;
         $prestNode = $this->dom->createElement('prest');
         $parent->appendChild($prestNode);
 
-        // Validar CNPJ se presente
-        if (isset($prest->cnpj) && $prest->cnpj !== null && $prest->cnpj !== '') {
+        if (isset($prest->cnpj) && $prest->cnpj !== '') {
             CnpjValidator::validate($prest->cnpj);
             $this->addChild($prestNode, 'CNPJ', CnpjValidator::clean($prest->cnpj), false);
         }
 
-        // Validar CPF se presente
-        if (isset($prest->cpf) && $prest->cpf !== null && $prest->cpf !== '') {
+        if (isset($prest->cpf) && $prest->cpf !== '') {
             CpfValidator::validate($prest->cpf);
             $this->addChild($prestNode, 'CPF', CpfValidator::clean($prest->cpf), false);
         }
@@ -187,19 +185,17 @@ class Dps implements DpsInterface
         $this->addChild($regTrib, 'regEspTrib', $prest->regtrib->regesptrib, true);
     }
 
-    private function buildPessoa(DOMNode $parent, string $tagName, stdClass $data): void
+    private function buildPessoa(\DOMElement $parent, string $tagName, stdClass $data): void
     {
         $node = $this->dom->createElement($tagName);
         $parent->appendChild($node);
 
-        // Validar CNPJ se presente
-        if (isset($data->cnpj) && $data->cnpj !== null && $data->cnpj !== '') {
+        if (isset($data->cnpj) && $data->cnpj !== '') {
             CnpjValidator::validate($data->cnpj);
             $this->addChild($node, 'CNPJ', CnpjValidator::clean($data->cnpj), false);
         }
 
-        // Validar CPF se presente
-        if (isset($data->cpf) && $data->cpf !== null && $data->cpf !== '') {
+        if (isset($data->cpf) && $data->cpf !== '') {
             CpfValidator::validate($data->cpf);
             $this->addChild($node, 'CPF', CpfValidator::clean($data->cpf), false);
         }
@@ -218,7 +214,7 @@ class Dps implements DpsInterface
         $this->addChildOptional($node, 'email', $data->email ?? null);
     }
 
-    private function buildEndereco(DOMNode $parent, stdClass $end): void
+    private function buildEndereco(\DOMElement $parent, stdClass $end): void
     {
         $endNode = $this->dom->createElement('end');
         $parent->appendChild($endNode);
@@ -247,7 +243,7 @@ class Dps implements DpsInterface
         $this->addChild($endNode, 'xBairro', $end->xbairro, true);
     }
 
-    private function buildServico(DOMNode $parent): void
+    private function buildServico(\DOMElement $parent): void
     {
         $serv = $this->std->infdps->serv;
         $servNode = $this->dom->createElement('serv');
@@ -284,7 +280,7 @@ class Dps implements DpsInterface
         }
     }
 
-    private function buildComExt(DOMNode $parent, stdClass $comext): void
+    private function buildComExt(\DOMElement $parent, stdClass $comext): void
     {
         $node = $this->dom->createElement('comExt');
         $parent->appendChild($node);
@@ -301,7 +297,7 @@ class Dps implements DpsInterface
         $this->addChild($node, 'mdic', $comext->mdic, false);
     }
 
-    private function buildObra(DOMNode $parent, stdClass $obra): void
+    private function buildObra(\DOMElement $parent, stdClass $obra): void
     {
         $node = $this->dom->createElement('obra');
         $parent->appendChild($node);
@@ -321,7 +317,7 @@ class Dps implements DpsInterface
         }
     }
 
-    private function buildAtvEvento(DOMNode $parent, stdClass $atv): void
+    private function buildAtvEvento(\DOMElement $parent, stdClass $atv): void
     {
         $node = $this->dom->createElement('atvEvento');
         $parent->appendChild($node);
@@ -340,7 +336,7 @@ class Dps implements DpsInterface
         }
     }
 
-    private function buildInfoCompl(DOMNode $parent, stdClass $info): void
+    private function buildInfoCompl(\DOMElement $parent, stdClass $info): void
     {
         $hasContent = isset($info->iddoctec) || isset($info->docref) || isset($info->xped)
             || isset($info->gitemped) || isset($info->xinfcomp);
@@ -365,7 +361,7 @@ class Dps implements DpsInterface
         $this->addChildOptional($node, 'xInfComp', $info->xinfcomp ?? null);
     }
 
-    private function buildValores(DOMNode $parent): void
+    private function buildValores(\DOMElement $parent): void
     {
         $val = $this->std->infdps->valores;
 
@@ -393,7 +389,7 @@ class Dps implements DpsInterface
         $this->buildTributacao($valNode, $val->trib);
     }
 
-    private function buildTributacao(DOMNode $parent, stdClass $trib): void
+    private function buildTributacao(\DOMElement $parent, stdClass $trib): void
     {
         $tribNode = $this->dom->createElement('trib');
         $parent->appendChild($tribNode);
@@ -421,7 +417,7 @@ class Dps implements DpsInterface
         $this->buildTotTrib($tribNode, $trib->tottrib);
     }
 
-    private function buildTribFed(DOMNode $parent, stdClass $tribfed): void
+    private function buildTribFed(\DOMElement $parent, stdClass $tribfed): void
     {
         $tf = $this->dom->createElement('tribFed');
         $parent->appendChild($tf);
@@ -444,7 +440,7 @@ class Dps implements DpsInterface
         $this->addChildOptional($tf, 'vRetCSLL', $tribfed->vretcsll ?? null);
     }
 
-    private function buildTotTrib(DOMNode $parent, stdClass $totTrib): void
+    private function buildTotTrib(\DOMElement $parent, stdClass $totTrib): void
     {
         $tt = $this->dom->createElement('totTrib');
         $parent->appendChild($tt);
@@ -469,7 +465,7 @@ class Dps implements DpsInterface
         $this->addChildOptional($tt, 'pTotTribSN', $totTrib->ptottribsn ?? null);
     }
 
-    private function buildIbscbs(DOMNode $parent): void
+    private function buildIbscbs(\DOMElement $parent): void
     {
         $ibscbs = $this->std->infdps->ibscbs;
 
@@ -490,7 +486,7 @@ class Dps implements DpsInterface
         $this->buildIbscbsValores($node, $ibscbs->valores);
     }
 
-    private function buildIbscbsDest(DOMNode $parent, stdClass $dest): void
+    private function buildIbscbsDest(\DOMElement $parent, stdClass $dest): void
     {
         $destNode = $this->dom->createElement('dest');
         $parent->appendChild($destNode);
@@ -508,7 +504,7 @@ class Dps implements DpsInterface
         }
     }
 
-    private function buildIbscbsValores(DOMNode $parent, stdClass $valores): void
+    private function buildIbscbsValores(\DOMElement $parent, stdClass $valores): void
     {
         $valNode = $this->dom->createElement('valores');
         $parent->appendChild($valNode);
@@ -601,12 +597,12 @@ class Dps implements DpsInterface
         };
     }
 
-    private function addChild(DOMNode $parent, string $name, mixed $value, bool $force = false): void
+    private function addChild(\DOMElement $parent, string $name, mixed $value, bool $force = false): void
     {
         $this->dom->addChild($parent, $name, $value, $force);
     }
 
-    private function addChildOptional(DOMNode $parent, string $name, mixed $value): void
+    private function addChildOptional(\DOMElement $parent, string $name, mixed $value): void
     {
         if ($value !== null && $value !== '') {
             $this->dom->addChild($parent, $name, $value, false);

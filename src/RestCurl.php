@@ -40,7 +40,7 @@ class RestCurl extends RestBase
     private string $url_api;
     private int $connection_timeout = 30;
     private int $timeout = 60; // Aumentado para 60s - APIs do governo são lentas
-    private ?int $httpver = null;
+    private $httpver = null;
     public string $soaperror = '';
     public int $soaperror_code = 0;
     public array $soapinfo = [];
@@ -123,14 +123,14 @@ class RestCurl extends RestBase
             CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
             CURLOPT_CONNECTTIMEOUT => $this->connection_timeout,
             CURLOPT_TIMEOUT => $this->timeout,
-            CURLOPT_HEADER => 1,
+            CURLOPT_HEADER => true,
             CURLOPT_HTTP_VERSION => $this->httpver ?? CURL_HTTP_VERSION_NONE,
             CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_SSL_VERIFYPEER => 1,
+            CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSLVERSION => CURL_SSLVERSION_DEFAULT,
             CURLOPT_SSLCERT => $this->tempdir . $this->certfile,
             CURLOPT_SSLKEY => $this->tempdir . $this->prifile,
-            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_RETURNTRANSFER => true,
         ]);
 
         if (!empty($this->temppass)) {
@@ -139,7 +139,7 @@ class RestCurl extends RestBase
 
         $isPost = $forcePost || ($data !== null && $data !== '');
         if ($isPost) {
-            curl_setopt($oCurl, CURLOPT_POST, 1);
+            curl_setopt($oCurl, CURLOPT_POST, true);
             curl_setopt($oCurl, CURLOPT_POSTFIELDS, $data);
             curl_setopt($oCurl, CURLOPT_HTTPHEADER, $parameters);
         } elseif ($origem === 3 && $this->cookies !== '') {
