@@ -12,13 +12,15 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone;
 class Intermediario
 {
     public function __construct(
-        private Cnpj|Cpf $documento,
+        private Cnpj|Cpf|null $documento,
         private string $razaoSocial,
         private ?string $inscricaoMunicipal,
         private ?Telefone $telefone,
         private ?Email $email,
         private Endereco $endereco,
         private ?string $nif = null,
+        private ?string $codigoNaoNif = null,
+        private ?string $caepf = null,
     ) {
         $this->validate();
     }
@@ -28,9 +30,13 @@ class Intermediario
         if (empty($this->razaoSocial)) {
             throw new \InvalidArgumentException('Razão social do intermediário é obrigatória');
         }
+
+        if (strlen($this->razaoSocial) > 150) {
+            throw new \InvalidArgumentException('Razão social do intermediário deve ter no máximo 150 caracteres');
+        }
     }
 
-    public function getDocumento(): Cnpj|Cpf
+    public function getDocumento(): Cnpj|Cpf|null
     {
         return $this->documento;
     }
@@ -78,5 +84,15 @@ class Intermediario
     public function getNif(): ?string
     {
         return $this->nif;
+    }
+
+    public function getCodigoNaoNif(): ?string
+    {
+        return $this->codigoNaoNif;
+    }
+
+    public function getCaepf(): ?string
+    {
+        return $this->caepf;
     }
 }

@@ -20,6 +20,8 @@ class Tomador
         private Endereco $endereco,
         private ?string $nif = null,
         private ?string $inscricaoMunicipal = null,
+        private ?string $codigoNaoNif = null,
+        private ?string $caepf = null,
     ) {
         $this->validate();
     }
@@ -88,5 +90,15 @@ class Tomador
     public function getInscricaoMunicipal(): ?string
     {
         return $this->inscricaoMunicipal;
+    }
+
+    public function getCodigoNaoNif(): ?string
+    {
+        return $this->codigoNaoNif;
+    }
+
+    public function getCaepf(): ?string
+    {
+        return $this->caepf;
     }
 }

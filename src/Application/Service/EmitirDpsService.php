@@ -151,11 +151,50 @@ class EmitirDpsService
                 $request->tomador->bairro,
                 $request->tomador->codigoMunicipio,
                 $request->tomador->uf,
-                $request->tomador->cep
+                $request->tomador->cep,
+                $request->tomador->codigoPais,
+                $request->tomador->codigoPostalExterior,
+                $request->tomador->nomeCidadeExterior,
+                $request->tomador->estadoProvinciaExterior,
             ),
             nif: $request->tomador->nif,
             inscricaoMunicipal: $request->tomador->inscricaoMunicipal,
         );
+
+        $intermediario = null;
+        if ($request->intermediario !== null) {
+            $i = $request->intermediario;
+            $documentoIntermediario = null;
+            if ($i->documento) {
+                $documentoIntermediario = $i->isCnpj
+                    ? new Cnpj($i->documento)
+                    : new Cpf($i->documento);
+            }
+
+            $intermediario = new Intermediario(
+                documento: $documentoIntermediario,
+                razaoSocial: $i->razaoSocial,
+                inscricaoMunicipal: $i->inscricaoMunicipal,
+                telefone: $i->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($i->telefone) : null,
+                email: $i->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($i->email) : null,
+                endereco: $this->criarEndereco(
+                    $i->logradouro,
+                    $i->numero,
+                    $i->complemento,
+                    $i->bairro,
+                    $i->codigoMunicipio,
+                    $i->uf,
+                    $i->cep,
+                    $i->codigoPais,
+                    $i->codigoPostalExterior,
+                    $i->nomeCidadeExterior,
+                    $i->estadoProvinciaExterior,
+                ),
+                nif: $i->nif,
+                codigoNaoNif: $i->codigoNaoNif,
+                caepf: $i->caepf,
+            );
+        }
 
         $obra = null;
         if ($request->servico->obra !== null) {
@@ -347,6 +386,7 @@ class EmitirDpsService
             prestador: $prestador,
             tomador: $tomador,
             servico: $servico,
+            intermediario: $intermediario,
             substituicao: $substituicao,
             ibscbs: $ibscbs,
         );
@@ -392,7 +432,11 @@ class EmitirDpsService
         string $bairro,
         string $codigoMunicipio,
         string $uf,
-        string $cep
+        string $cep,
+        ?string $codigoPais = null,
+        ?string $codigoPostalExterior = null,
+        ?string $nomeCidadeExterior = null,
+        ?string $estadoProvinciaExterior = null,
     ): Endereco {
         return new Endereco(
             logradouro: $logradouro,
@@ -401,7 +445,11 @@ class EmitirDpsService
             bairro: $bairro,
             codigoMunicipio: new CodigoMunicipio($codigoMunicipio),
             uf: $uf,
-            cep: new Cep($cep)
+            cep: new Cep($cep),
+            codigoPais: $codigoPais,
+            codigoPostalExterior: $codigoPostalExterior,
+            nomeCidadeExterior: $nomeCidadeExterior,
+            estadoProvinciaExterior: $estadoProvinciaExterior,
         );
     }
 

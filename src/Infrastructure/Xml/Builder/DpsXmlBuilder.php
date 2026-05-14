@@ -111,13 +111,12 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $prestNode = $this->dom->createElement('prest');
         $parent->appendChild($prestNode);
 
+        // XSD TCInfoPrestador: choice CNPJ | CPF | NIF | cNaoNIF (exatamente um)
         if ($prestador->getCnpj()) {
             $this->addChild($prestNode, 'CNPJ', $prestador->getCnpj()->getNumero(), false);
         } elseif ($prestador->getCpf()) {
             $this->addChild($prestNode, 'CPF', $prestador->getCpf()->getNumero(), false);
-        }
-
-        if ($prestador->getNif()) {
+        } elseif ($prestador->getNif()) {
             $this->addChild($prestNode, 'NIF', $prestador->getNif(), false);
         }
 
@@ -157,17 +156,22 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $node = $this->dom->createElement($tagName);
         $parent->appendChild($node);
 
-        if ($pessoa->getCnpj()) {
-            $this->addChild($node, 'CNPJ', $pessoa->getCnpj()->getNumero(), false);
-        } elseif ($pessoa->getCpf()) {
-            $this->addChild($node, 'CPF', $pessoa->getCpf()->getNumero(), false);
-        }
-
-        if ($pessoa->getNif()) {
+        // XSD TCInfoPessoa: choice CNPJ | CPF | NIF | cNaoNIF (exatamente um)
+        if ($pessoa->getNif() !== null) {
             $this->addChild($node, 'NIF', $pessoa->getNif(), false);
+        } elseif ($pessoa->getCnpj() !== null) {
+            $this->addChild($node, 'CNPJ', $pessoa->getCnpj()->getNumero(), false);
+        } elseif ($pessoa->getCpf() !== null) {
+            $this->addChild($node, 'CPF', $pessoa->getCpf()->getNumero(), false);
+        } elseif ($pessoa->getCodigoNaoNif() !== null) {
+            $this->addChild($node, 'cNaoNIF', $pessoa->getCodigoNaoNif(), false);
         }
 
-        if ($pessoa->getInscricaoMunicipal()) {
+        if ($pessoa->getCaepf() !== null) {
+            $this->addChild($node, 'CAEPF', $pessoa->getCaepf(), false);
+        }
+
+        if ($pessoa->getInscricaoMunicipal() !== null) {
             $this->addChild($node, 'IM', $pessoa->getInscricaoMunicipal(), false);
         }
 

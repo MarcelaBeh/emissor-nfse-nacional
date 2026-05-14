@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
-final readonly class TomadorRequest
+final readonly class IntermediarioRequest
 {
     public function __construct(
-        public ?string $documento,
+        public string $documento,
         public bool $isCnpj,
         public string $razaoSocial,
-        public ?string $nomeFantasia,
         public ?string $telefone,
         public ?string $email,
         public string $logradouro,

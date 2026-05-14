@@ -19,7 +19,7 @@ final readonly class DpsRequest
         public TomadorRequest $tomador,
         public ServicoRequest $servico,
         public ?SubstituicaoRequest $substituicao = null,
-        public ?array $intermediario = null,
+        public ?IntermediarioRequest $intermediario = null,
         public ?IbsCbsRequest $ibscbs = null,
     ) {
     }
