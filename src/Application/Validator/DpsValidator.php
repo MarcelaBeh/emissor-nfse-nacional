@@ -64,23 +64,23 @@ class DpsValidator
                 $errors[] = 'E1508: Código NBS é obrigatório quando informações de IBS/CBS são declaradas';
             }
 
-            if (empty($req->finNFSe)) {
+            if ($req->finNFSe === '') {
                 $errors[] = 'Finalidade da NFS-e (finNFSe) é obrigatória para IBS/CBS';
             }
 
-            if (empty($req->cIndOp)) {
+            if ($req->cIndOp === '') {
                 $errors[] = 'Código indicador da operação (cIndOp) é obrigatório para IBS/CBS';
             }
 
-            if (empty($req->indDest)) {
+            if ($req->indDest === '') {
                 $errors[] = 'Indicador de destinação (indDest) é obrigatório para IBS/CBS';
             }
 
-            if (empty($req->cst)) {
+            if ($req->cst === '') {
                 $errors[] = 'Código de Situação Tributária (CST) é obrigatório para IBS/CBS';
             }
 
-            if (empty($req->cClassTrib)) {
+            if ($req->cClassTrib === '') {
                 $errors[] = 'Código de Classificação Tributária (cClassTrib) é obrigatório para IBS/CBS';
             }
 

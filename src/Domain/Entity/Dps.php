@@ -51,10 +51,14 @@ class Dps
             return $this->chaveAcesso;
         }
 
+        $documento = $this->prestador->getDocumento()->__toString();
+        $tpInsc = strlen($documento) === 14 ? '2' : '1';
+
         $codigo = sprintf(
-            '%s%s%02d%015d',
-            $this->prestador->getDocumento()->__toString(),
-            $this->dataEmissao->format('YmdHis'),
+            '%s%s%s%05d%015d00000000',
+            $this->codigoMunicipioEmissor->getCodigo(),
+            $tpInsc,
+            $documento,
             $this->serie,
             $this->numero
         );
