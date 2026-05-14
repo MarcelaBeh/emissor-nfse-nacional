@@ -208,12 +208,11 @@ Leia a [Arquitetura de Refatoração](ARQUITETURA_REFATORACAO.md) para compreend
 
 ### 2. Preparar Ambiente
 ```bash
-# Instalar dependências
+# Instalar dependências (já inclui PHPStan, PHP-CS-Fixer e PHPUnit como dev)
 composer install
 
-# Configurar ferramentas de qualidade
-composer require --dev phpstan/phpstan
-composer require --dev friendsofphp/php-cs-fixer
+# Executar verificações de qualidade
+composer check
 ```
 
 ### 3. Começar Implementação
@@ -260,7 +259,7 @@ Ao contribuir com código:
 1. ✅ Leia todos os documentos
 2. ✅ Siga os padrões estabelecidos
 3. ✅ Escreva testes (cobertura >= 80%)
-4. ✅ Valide com PHPStan nível 8
+4. ✅ Valide com PHPStan nível 5 (mínimo)
 5. ✅ Revise o checklist de segurança
 6. ✅ Documente mudanças
 

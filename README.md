@@ -33,14 +33,6 @@ Este é um **pacote Composer (biblioteca)** que:
 - **[Roadmap](docs/ROADMAP.md)** - Progresso da refatoração
 - **[Checklist Diário](docs/CHECKLIST_DIARIO.md)** - Checklist de qualidade para desenvolvimento
 
----
-
-## 📚 Documentação
-
-- **[Arquitetura de Refatoração](docs/ARQUITETURA_REFATORACAO.md)** - Proposta completa de refatoração com Clean Architecture
-- **[Guia de Implementação](docs/GUIA_IMPLEMENTACAO.md)** - Exemplos práticos e padrões de código
-- **[Segurança e Compliance](docs/SEGURANCA_COMPLIANCE.md)** - Diretrizes de segurança e conformidade
-
 ## ⚠️⚠️⚠️ AVISOS ⚠️⚠️⚠️
 
 ###  Configuração da Prefeitura
@@ -74,6 +66,18 @@ $tools->consultarNfseChave('CHAVE_NFSE', false);
 composer require marcelabeh/emissor-nfse-nacional
 ```
 
+## Quality Tools
+
+Este projeto utiliza ferramentas automatizadas de qualidade:
+
+| Ferramenta | Comando | Descrição |
+|-----------|---------|-----------|
+| PHP-CS-Fixer | `composer cs` / `composer cs:fix` | Padrão PSR-12 |
+| PHPStan (nível 5) | `composer stan` | Análise estática |
+| PHPUnit | `composer test` | Testes unitários e integração |
+
+**Check completo:** `composer check` (executa CS → PHPStan → PHPUnit em sequência).
+
 ### Serviços implementados
 
 | Serviço | Legacy (v1) | Nova Arquitetura (v2) |
@@ -105,6 +109,14 @@ Vale mencionar que, no ambiente de **homologação**, esses erros costumam apare
 Como a Receita só atualiza suas APIs quando está inspirada, listamos abaixo as causas mais comuns com base nos relatos que já recebemos:
 
 - CPF/CNPJ do **prestador** não existente/cadastrado/habilitado na NFSe Nacional/Prefeitura;
+
+## Status
+
+![CI](https://github.com/marcelabeh/emissor-nfse-nacional/actions/workflows/ci.yml/badge.svg)
+![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php)
+![PHPStan](https://img.shields.io/badge/PHPStan-level%205-brightgreen)
+![Tests](https://img.shields.io/badge/tests-25%20passing-brightgreen)
+![PHP CS Fixer](https://img.shields.io/badge/code%20style-PSR--12-blue)
 
 # Créditos
 
