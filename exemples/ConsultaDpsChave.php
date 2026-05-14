@@ -1,7 +1,10 @@
 <?php
+
+// Configurações apenas para exemplo (remover em produção)
 error_reporting(E_ALL);
 ini_set('display_errors', 'On');
-date_default_timezone_set('America/Sao_Paulo');
+
+date_default_timezone_set('America/Manaus');
 include __DIR__ . '/../vendor/autoload.php';
 
 try {

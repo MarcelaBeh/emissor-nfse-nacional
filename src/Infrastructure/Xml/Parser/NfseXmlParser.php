@@ -8,8 +8,15 @@ class NfseXmlParser
 {
     public function parse(string $xml): array
     {
+        if (empty(trim($xml))) {
+            return [];
+        }
+
         $dom = new \DOMDocument('1.0', 'UTF-8');
-        $dom->loadXML($xml);
+        $loaded = @$dom->loadXML($xml);
+        if (!$loaded) {
+            return [];
+        }
 
         $data = [];
 

@@ -41,12 +41,12 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $dpsNode->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
 
         $infDpsNode = $this->dom->createElement('infDPS');
-        $infDpsNode->setAttribute('Id', 'DPS' . $entity->getChaveAcesso()->getChave());
+        $infDpsNode->setAttribute('Id', 'DPS' . substr($entity->getChaveAcesso()->getChave(), 0, 42));
 
         $this->addChild($infDpsNode, 'tpAmb', $entity->getTipoAmbiente()->value);
         $this->addChild($infDpsNode, 'dhEmi', $entity->getDataEmissao()->format('Y-m-d\TH:i:sP'));
         $this->addChild($infDpsNode, 'verAplic', $entity->getVersaoAplicacao());
-        $this->addChild($infDpsNode, 'serie', $entity->getSerie());
+        $this->addChild($infDpsNode, 'serie', sprintf('%05d', $entity->getSerie()));
         $this->addChild($infDpsNode, 'nDPS', $entity->getNumero());
         $this->addChild($infDpsNode, 'dCompet', $entity->getDataCompetencia()->format('Y-m-d'));
         $this->addChild($infDpsNode, 'tpEmit', $entity->getTipoEmissao()->value);
@@ -57,13 +57,15 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         }
 
         $this->buildPrestador($infDpsNode, $entity->getPrestador());
-        $this->buildPessoa($infDpsNode, $entity->getTomador(), 'tomador');
+        $this->buildPessoa($infDpsNode, $entity->getTomador(), 'toma');
 
         if ($entity->getIntermediario() !== null) {
-            $this->buildPessoa($infDpsNode, $entity->getIntermediario(), 'intermediario');
+            $this->buildPessoa($infDpsNode, $entity->getIntermediario(), 'interm');
         }
 
         $this->buildServico($infDpsNode, $entity->getServico());
+
+        $this->buildValores($infDpsNode, $entity->getServico());
 
         if ($entity->getIbsCbs() !== null) {
             $this->buildIbscbs($infDpsNode, $entity->getIbsCbs());
@@ -138,6 +140,16 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         if ($prestador->getEmail()) {
             $this->addChild($prestNode, 'email', $prestador->getEmail()->getEmail(), false);
         }
+
+        $regTrib = $this->dom->createElement('regTrib');
+        $prestNode->appendChild($regTrib);
+        $opSimpNac = match ($prestador->getRegimeTributario()->value) {
+            2 => '1',
+            3 => '2',
+            default => '3',
+        };
+        $this->addChild($regTrib, 'opSimpNac', $opSimpNac, true);
+        $this->addChild($regTrib, 'regEspTrib', '0', true);
     }
 
     private function buildPessoa(\DOMNode $parent, Tomador|Intermediario $pessoa, string $tagName): void
@@ -262,6 +274,41 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $this->addChild($endNode, 'xBairro', $end->getXBairro(), true);
     }
 
+    private function buildValores(\DOMNode $parent, Servico $servico): void
+    {
+        $valNode = $this->dom->createElement('valores');
+        $parent->appendChild($valNode);
+
+        $vServPrest = $this->dom->createElement('vServPrest');
+        $valNode->appendChild($vServPrest);
+        $this->addChild($vServPrest, 'vServ', number_format($servico->getValorTotal()->getValue(), 2, '.', ''), true);
+
+        if ($servico->getDescontoIncondicionado()->isPositive() || $servico->getDescontoCondicionado()->isPositive()) {
+            $desc = $this->dom->createElement('vDescCondIncond');
+            $valNode->appendChild($desc);
+            $this->addChild($desc, 'vDescIncond', number_format($servico->getDescontoIncondicionado()->getValue(), 2, '.', ''), false);
+            $this->addChild($desc, 'vDescCond', number_format($servico->getDescontoCondicionado()->getValue(), 2, '.', ''), false);
+        }
+
+        $tribNode = $this->dom->createElement('trib');
+        $valNode->appendChild($tribNode);
+
+        $tribMun = $this->dom->createElement('tribMun');
+        $tribNode->appendChild($tribMun);
+        $this->addChild($tribMun, 'tribISSQN', $servico->getTribISSQN() ?? '1', true);
+        $this->addChild($tribMun, 'cPaisResult', null, false);
+        $this->addChild($tribMun, 'tpRetISSQN', $servico->getTpRetISSQN() ?? '1', true);
+        $this->addChild($tribMun, 'pAliq', $servico->getAliquotaIss(), true);
+
+        $tt = $this->dom->createElement('totTrib');
+        $tribNode->appendChild($tt);
+        $vt = $this->dom->createElement('vTotTrib');
+        $tt->appendChild($vt);
+        $this->addChild($vt, 'vTotTribFed', '0.00', true);
+        $this->addChild($vt, 'vTotTribEst', '0.00', true);
+        $this->addChild($vt, 'vTotTribMun', number_format($servico->getValorIss()->getValue(), 2, '.', ''), true);
+    }
+
     private function buildIbscbs(\DOMNode $parent, IbsCbsInfo $ibscbs): void
     {
         $node = $this->dom->createElement('IBSCBS');
@@ -316,12 +363,13 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $this->addChild($destNode, 'cNaoNIF', $dest->getCodigoNaoNif(), false);
         $this->addChild($destNode, 'xNome', $dest->getXNome(), true);
-        $this->addChild($destNode, 'fone', $dest->getFone(), false);
-        $this->addChild($destNode, 'email', $dest->getEmail(), false);
 
         if ($dest->getEndereco() !== null) {
             $this->buildEndereco($destNode, $dest->getEndereco());
         }
+
+        $this->addChild($destNode, 'fone', $dest->getFone(), false);
+        $this->addChild($destNode, 'email', $dest->getEmail(), false);
     }
 
     private function buildIbscbsImovel(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel $imovel): void
@@ -392,9 +440,9 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         if ($ibscbs->getDiferimento() !== null) {
             $gDif = $this->dom->createElement('gDif');
             $gIbscbs->appendChild($gDif);
-            $this->addChild($gDif, 'pDifUF', $ibscbs->getDiferimento()->getPDifUF(), true);
-            $this->addChild($gDif, 'pDifMun', $ibscbs->getDiferimento()->getPDifMun(), true);
-            $this->addChild($gDif, 'pDifCBS', $ibscbs->getDiferimento()->getPDifCBS(), true);
+            $this->addChild($gDif, 'pDifUF', number_format($ibscbs->getDiferimento()->getPDifUF(), 2, '.', ''), true);
+            $this->addChild($gDif, 'pDifMun', number_format($ibscbs->getDiferimento()->getPDifMun(), 2, '.', ''), true);
+            $this->addChild($gDif, 'pDifCBS', number_format($ibscbs->getDiferimento()->getPDifCBS(), 2, '.', ''), true);
         }
     }
 

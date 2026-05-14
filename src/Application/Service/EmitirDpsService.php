@@ -200,6 +200,8 @@ class EmitirDpsService
             codigoNbs: $request->servico->codigoNbs,
             codigoCnae: $request->servico->codigoCnae,
             obra: $obra,
+            tribISSQN: $request->servico->tribISSQN,
+            tpRetISSQN: $request->servico->tpRetISSQN,
         );
 
         $substituicao = null;

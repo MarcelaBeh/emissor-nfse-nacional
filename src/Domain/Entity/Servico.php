@@ -25,6 +25,8 @@ class Servico
         private ?string $codigoNbs = null,
         private ?string $codigoCnae = null,
         private ?Obra $obra = null,
+        private ?string $tribISSQN = null,
+        private ?string $tpRetISSQN = null,
     ) {
         $this->calcularValores($valorServicos);
         $this->validate();
@@ -121,5 +123,15 @@ class Servico
     public function getObra(): ?Obra
     {
         return $this->obra;
+    }
+
+    public function getTribISSQN(): ?string
+    {
+        return $this->tribISSQN;
+    }
+
+    public function getTpRetISSQN(): ?string
+    {
+        return $this->tpRetISSQN;
     }
 }
