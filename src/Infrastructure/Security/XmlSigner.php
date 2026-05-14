@@ -17,6 +17,7 @@ class XmlSigner implements Contract\XmlSignerInterface
         $this->certificate = $certificate;
     }
 
+    #[\Override]
     public function sign(string $xml, string $tagname, string $rootname): string
     {
         return Signer::sign(

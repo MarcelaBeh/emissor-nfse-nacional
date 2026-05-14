@@ -52,7 +52,11 @@ class Configuration implements Contract\ConfigInterface
 
         $configFile = __DIR__ . '/../../../storage/prefeituras.json';
         if (file_exists($configFile)) {
-            $json = json_decode(file_get_contents($configFile), true);
+            $content = file_get_contents($configFile);
+            if (!json_validate($content)) {
+                throw new ConfigException("Arquivo de configuração inválido: {$configFile}");
+            }
+            $json = json_decode($content, true);
             $prefeitura = $this->config['prefeitura'];
 
             if (isset($json[$prefeitura]['urls'])) {
@@ -76,7 +80,11 @@ class Configuration implements Contract\ConfigInterface
 
         $configFile = __DIR__ . '/../../../storage/prefeituras.json';
         if (file_exists($configFile)) {
-            $json = json_decode(file_get_contents($configFile), true);
+            $content = file_get_contents($configFile);
+            if (!json_validate($content)) {
+                throw new ConfigException("Arquivo de configuração inválido: {$configFile}");
+            }
+            $json = json_decode($content, true);
             $prefeitura = $this->config['prefeitura'];
 
             if (isset($json[$prefeitura]['operations'])) {
@@ -85,16 +93,19 @@ class Configuration implements Contract\ConfigInterface
         }
     }
 
+    #[\Override]
     public function getTipoAmbiente(): TipoAmbiente
     {
         return TipoAmbiente::from($this->config['tpAmb']);
     }
 
+    #[\Override]
     public function getTipoApi(): string
     {
         return $this->tipoApi;
     }
 
+    #[\Override]
     public function getUrl(string $key): string
     {
         if (!isset($this->urls[$key])) {
@@ -104,6 +115,7 @@ class Configuration implements Contract\ConfigInterface
         return $this->urls[$key];
     }
 
+    #[\Override]
     public function getOperation(string $key): string
     {
         if (!isset($this->operations[$key])) {
@@ -113,11 +125,13 @@ class Configuration implements Contract\ConfigInterface
         return $this->operations[$key];
     }
 
+    #[\Override]
     public function get(string $key, mixed $default = null): mixed
     {
         return $this->config[$key] ?? $default;
     }
 
+    #[\Override]
     public function getVersion(): string
     {
         return '2.0.0';

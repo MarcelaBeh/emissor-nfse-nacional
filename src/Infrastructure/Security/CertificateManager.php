@@ -11,10 +11,12 @@ class CertificateManager implements Contract\CertificateManagerInterface
 {
     private Certificate $certificate;
     private string $tempDir;
+    private \Random\Randomizer $randomizer;
 
     public function __construct(Certificate $certificate)
     {
         $this->certificate = $certificate;
+        $this->randomizer = new \Random\Randomizer();
         $this->validate();
         $this->setupTempDirectory();
     }
@@ -53,12 +55,14 @@ class CertificateManager implements Contract\CertificateManagerInterface
         }
     }
 
+    #[\Override]
     public function saveTemporaryFiles(): array
     {
+        $alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
         $files = [
-            'private' => $this->tempDir . bin2hex(random_bytes(8)) . '.pem',
-            'public' => $this->tempDir . bin2hex(random_bytes(8)) . '.pem',
-            'cert' => $this->tempDir . bin2hex(random_bytes(8)) . '.pem',
+            'private' => $this->tempDir . $this->randomizer->getBytesFromString($alphabet, 16) . '.pem',
+            'public' => $this->tempDir . $this->randomizer->getBytesFromString($alphabet, 16) . '.pem',
+            'cert' => $this->tempDir . $this->randomizer->getBytesFromString($alphabet, 16) . '.pem',
         ];
 
         file_put_contents($files['private'], $this->certificate->privateKey);
@@ -72,6 +76,7 @@ class CertificateManager implements Contract\CertificateManagerInterface
         return $files;
     }
 
+    #[\Override]
     public function cleanTemporaryFiles(array $files): void
     {
         foreach ($files as $file) {
@@ -81,6 +86,7 @@ class CertificateManager implements Contract\CertificateManagerInterface
         }
     }
 
+    #[\Override]
     public function getCertificate(): Certificate
     {
         return $this->certificate;

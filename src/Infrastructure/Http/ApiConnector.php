@@ -70,16 +70,17 @@ class ApiConnector
         $status = $response['status'];
 
         if (is_string($body) && str_contains($body, 'nfseXmlGZipB64')) {
-            $decoded = json_decode($body, true);
-            if (isset($decoded['nfseXmlGZipB64'])) {
-                $body = $this->decodeGzipBase64($decoded['nfseXmlGZipB64']);
+            if (json_validate($body)) {
+                $decoded = json_decode($body, true);
+                if (isset($decoded['nfseXmlGZipB64'])) {
+                    $body = $this->decodeGzipBase64($decoded['nfseXmlGZipB64']);
+                }
             }
         }
 
         if (is_string($body)) {
-            $decoded = json_decode($body, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $body = $decoded;
+            if (json_validate($body)) {
+                $body = json_decode($body, true);
             }
         }
 

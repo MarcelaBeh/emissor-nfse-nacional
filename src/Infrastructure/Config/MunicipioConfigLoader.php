@@ -21,11 +21,12 @@ class MunicipioConfigLoader
         }
 
         $content = file_get_contents($jsonPath);
-        $this->configs = json_decode($content, true);
 
-        if (!is_array($this->configs)) {
+        if (!json_validate($content)) {
             throw new \RuntimeException("JSON inválido em {$jsonPath}");
         }
+
+        $this->configs = json_decode($content, true);
     }
 
     public function getUrls(string $codigoPrefeitura): array

@@ -18,8 +18,20 @@ Este é um **pacote Composer (biblioteca)** que:
 - ✅ **Será usado por outros desenvolvedores** em seus próprios projetos
 - ✅ **É independente de framework** - Zero acoplamento
 - ✅ **Segue padrões PSR** (PSR-4, PSR-12) e Clean Architecture
+- ✅ **Clean Architecture** (Domain, Application, Infrastructure, Presentation)
 
 **Não é:** Uma aplicação standalone ou sistema completo.
+
+---
+
+## 📚 Documentação
+
+- **[Arquitetura de Refatoração](docs/ARQUITETURA_REFATORACAO.md)** - Proposta completa de refatoração com Clean Architecture
+- **[Guia de Implementação](docs/GUIA_IMPLEMENTACAO.md)** - Exemplos práticos e padrões de código
+- **[Segurança e Compliance](docs/SEGURANCA_COMPLIANCE.md)** - Diretrizes de segurança e conformidade
+- **[Princípios de Design](docs/LIBRARY_DESIGN.md)** - Como construir uma biblioteca reutilizável
+- **[Roadmap](docs/ROADMAP.md)** - Progresso da refatoração
+- **[Checklist Diário](docs/CHECKLIST_DIARIO.md)** - Checklist de qualidade para desenvolvimento
 
 ---
 
@@ -64,16 +76,20 @@ composer require marcelabeh/emissor-nfse-nacional
 
 ### Serviços implementados
 
-- consultarNfseChave
-- consultarDpsChave
-- consultarNfseEventos
-- consultarDanfse
-- enviaDps
-- cancelaNfse
+| Serviço | Legacy (v1) | Nova Arquitetura (v2) |
+|---------|-------------|----------------------|
+| Emitir DPS | ✅ `enviaDps()` | ✅ `EmitirDpsService` |
+| Consultar NFSe por Chave | ✅ `consultarNfseChave()` | ✅ `ConsultarNfseService` |
+| Consultar DPS por Chave | ✅ `consultarDpsChave()` | ✅ via `ConsultarNfseService` |
+| Consultar Eventos | ✅ `consultarNfseEventos()` | ✅ via `ConsultarNfseService` |
+| Consultar DANFSe | ✅ `consultarDanfse()` | ✅ via `ConsultarNfseService` |
+| Cancelar NFSe | ✅ `cancelaNfse()` | ✅ `CancelarNfseService` |
+
+**API Unificada:** `NfseNacionalFacade` — ponto único de entrada para todos os serviços.
 
 ## Requerimentos
 
-- PHP 8.2+
+- PHP 8.3+
 - ext-dom
 - ext-curl
 - ext-zlib

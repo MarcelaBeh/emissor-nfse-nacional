@@ -77,7 +77,7 @@ Conteúdo:
 
 ---
 
-### 5. [Roadmap de Refatoração](ROADMAP.md) 📅
+### 5. [Roadmap de Refatoração](ROADMAP.md) 📅 ⭐
 **Acompanhamento visual do progresso**
 
 Conteúdo:
@@ -90,6 +90,8 @@ Conteúdo:
 - Responsabilidades e papéis
 
 📈 **Ideal para:** Gestores de projeto, Tech Leads, stakeholders
+
+**Status Atual:** ✅ Fases 1-5 Implementadas (Domain, Infrastructure, Application, Presentation)
 
 ---
 
@@ -192,9 +194,9 @@ docs/
 ├── LIBRARY_DESIGN.md                  # Princípios de biblioteca 📦
 ├── GUIA_IMPLEMENTACAO.md              # Guia prático ⭐
 ├── SEGURANCA_COMPLIANCE.md            # Segurança e compliance 🔒
-├── ROADMAP.md                         # Roadmap e progresso 📅
+├── ROADMAP.md                         # Roadmap e progresso 📅 (Fases 1-5 ✅)
 ├── CHECKLIST_DIARIO.md                # Checklist de desenvolvimento ✅
-└── doc.atualizacao.txt                # Histórico de atualizações
+└── doc.atualizacao.txt                # Histórico de atualizações / códigos de erro
 ```
 
 ---

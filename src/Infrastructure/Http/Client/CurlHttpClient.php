@@ -21,11 +21,13 @@ class CurlHttpClient implements HttpClientInterface
         private ?string $keyPassword = null,
     ) {}
 
+    #[\Override]
     public function get(string $url, array $headers = []): array
     {
         return $this->request('GET', $url, null, $headers);
     }
 
+    #[\Override]
     public function post(string $url, mixed $data, array $headers = []): array
     {
         return $this->request('POST', $url, $data, $headers);

@@ -18,6 +18,7 @@ class EventoXmlBuilder implements Contract\XmlBuilderInterface
         $this->dom->formatOutput = false;
     }
 
+    #[\Override]
     public function build(object $entity): string
     {
         if (!$entity instanceof Evento) {

@@ -24,6 +24,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $this->dom->formatOutput = false;
     }
 
+    #[\Override]
     public function build(object $entity): string
     {
         if (!$entity instanceof Dps) {
