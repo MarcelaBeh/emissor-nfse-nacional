@@ -22,6 +22,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
@@ -156,6 +157,37 @@ class EmitirDpsService
             inscricaoMunicipal: $request->tomador->inscricaoMunicipal,
         );
 
+        $obra = null;
+        if ($request->servico->obra !== null) {
+            $o = $request->servico->obra;
+            $endObra = null;
+            if ($o->endereco !== null) {
+                $e = $o->endereco;
+                $endExt = null;
+                if ($e->endExt !== null) {
+                    $endExt = new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoExterior(
+                        cEndPost: $e->endExt->cEndPost,
+                        xCidade: $e->endExt->xCidade,
+                        xEstProvReg: $e->endExt->xEstProvReg,
+                    );
+                }
+                $endObra = new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra(
+                    cep: $e->cep,
+                    endExt: $endExt,
+                    xLgr: $e->xLgr,
+                    nro: $e->nro,
+                    xCpl: $e->xCpl,
+                    xBairro: $e->xBairro,
+                );
+            }
+            $obra = new Obra(
+                inscImobFisc: $o->inscImobFisc,
+                cObra: $o->cObra,
+                cCIB: $o->cCIB !== null ? new CodigoCIB($o->cCIB) : null,
+                endereco: $endObra,
+            );
+        }
+
         $servico = new Servico(
             discriminacao: $request->servico->discriminacao,
             codigoTributacao: $request->servico->codigoTributacao,
@@ -167,6 +199,7 @@ class EmitirDpsService
             aliquotaIss: $request->servico->aliquotaIss,
             codigoNbs: $request->servico->codigoNbs,
             codigoCnae: $request->servico->codigoCnae,
+            obra: $obra,
         );
 
         $substituicao = null;

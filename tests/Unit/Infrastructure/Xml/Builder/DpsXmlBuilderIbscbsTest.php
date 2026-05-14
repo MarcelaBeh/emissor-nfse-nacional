@@ -14,6 +14,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
@@ -427,6 +428,145 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         $this->assertNotFalse($valoresIdx, 'valores deve estar presente');
         $this->assertLessThan($valoresIdx, $imovelIdx, 'imovel deve vir antes de valores');
         $this->assertGreaterThan($destIdx, $imovelIdx, 'imovel deve vir depois de dest');
+    }
+
+    public function test_build_xml_with_obra(): void
+    {
+        $obra = new Obra(
+            cObra: 'CNO123456789',
+            inscImobFisc: '99999',
+        );
+        $endereco = new Endereco(
+            logradouro: 'Rua Teste',
+            numero: '123',
+            complemento: null,
+            bairro: 'Centro',
+            codigoMunicipio: new CodigoMunicipio('3550308'),
+            uf: 'SP',
+            cep: new Cep('01001001'),
+        );
+        $servico = new Servico(
+            discriminacao: 'Serviço de obra',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(5000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            obra: $obra,
+        );
+        $dps = new Dps(
+            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
+            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
+            versaoAplicacao: '1.0.0',
+            serie: 1,
+            numero: 123,
+            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
+            tipoEmissao: TipoEmissao::PRESTADOR,
+            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
+            prestador: new Prestador(
+                documento: new Cnpj('11444777000161'),
+                inscricaoMunicipal: '123456',
+                razaoSocial: 'Prestador Ltda',
+                nomeFantasia: null,
+                telefone: null,
+                email: null,
+                endereco: $endereco,
+                regimeTributario: RegimeTributario::SIMPLES_NACIONAL,
+            ),
+            tomador: new Tomador(
+                documento: new Cnpj('33444555000181'),
+                razaoSocial: 'Tomador Ltda',
+                nomeFantasia: null,
+                telefone: null,
+                email: null,
+                endereco: $endereco,
+            ),
+            servico: $servico,
+        );
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'obra');
+        $this->assertXmlContains($xml, 'cObra');
+        $this->assertXmlContains($xml, 'CNO123456789');
+        $this->assertXmlContains($xml, 'inscImobFisc');
+        $this->assertXmlContains($xml, '99999');
+    }
+
+    public function test_build_xml_with_obra_endereco(): void
+    {
+        $endObra = new IbsCbsEnderecoObra(
+            cep: '01001001',
+            xLgr: 'Rua da Obra',
+            nro: '500',
+            xCpl: 'Galpão 2',
+            xBairro: 'Industrial',
+        );
+        $obra = new Obra(endereco: $endObra);
+        $endereco = new Endereco(
+            logradouro: 'Rua Teste',
+            numero: '123',
+            complemento: null,
+            bairro: 'Centro',
+            codigoMunicipio: new CodigoMunicipio('3550308'),
+            uf: 'SP',
+            cep: new Cep('01001001'),
+        );
+        $servico = new Servico(
+            discriminacao: 'Serviço de obra',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(5000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            obra: $obra,
+        );
+        $dps = new Dps(
+            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
+            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
+            versaoAplicacao: '1.0.0',
+            serie: 1,
+            numero: 123,
+            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
+            tipoEmissao: TipoEmissao::PRESTADOR,
+            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
+            prestador: new Prestador(
+                documento: new Cnpj('11444777000161'),
+                inscricaoMunicipal: '123456',
+                razaoSocial: 'Prestador Ltda',
+                nomeFantasia: null,
+                telefone: null,
+                email: null,
+                endereco: $endereco,
+                regimeTributario: RegimeTributario::SIMPLES_NACIONAL,
+            ),
+            tomador: new Tomador(
+                documento: new Cnpj('33444555000181'),
+                razaoSocial: 'Tomador Ltda',
+                nomeFantasia: null,
+                telefone: null,
+                email: null,
+                endereco: $endereco,
+            ),
+            servico: $servico,
+        );
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'obra');
+        $this->assertXmlContains($xml, 'end');
+        $this->assertXmlContains($xml, 'Rua da Obra');
+        $this->assertXmlContains($xml, '500');
+        $this->assertXmlContains($xml, 'Galpão 2');
+        $this->assertXmlContains($xml, 'Industrial');
     }
 
     /** @param ChaveAcesso[]|null $refNFSeList */

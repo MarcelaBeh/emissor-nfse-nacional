@@ -520,14 +520,14 @@ class Dps implements DpsInterface
 
         if (isset($valores->trib->gtribregular)) {
             $gReg = $this->dom->createElement('gTribRegular');
-            $tribNode->appendChild($gReg);
+            $gIbscbs->appendChild($gReg);
             $this->addChild($gReg, 'CSTReg', $valores->trib->gtribregular->cstreg, true);
             $this->addChild($gReg, 'cClassTribReg', $valores->trib->gtribregular->cclasstribreg, true);
         }
 
         if (isset($valores->trib->gdif)) {
             $gDif = $this->dom->createElement('gDif');
-            $tribNode->appendChild($gDif);
+            $gIbscbs->appendChild($gDif);
             $this->addChild($gDif, 'pDifUF', $valores->trib->gdif->pdifuf, true);
             $this->addChild($gDif, 'pDifMun', $valores->trib->gdif->pdifmun, true);
             $this->addChild($gDif, 'pDifCBS', $valores->trib->gdif->pdifcbs, true);

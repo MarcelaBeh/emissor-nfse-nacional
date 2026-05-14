@@ -24,6 +24,7 @@ class Servico
         private float $aliquotaIss,
         private ?string $codigoNbs = null,
         private ?string $codigoCnae = null,
+        private ?Obra $obra = null,
     ) {
         $this->calcularValores($valorServicos);
         $this->validate();
@@ -115,5 +116,10 @@ class Servico
     public function getCodigoCnae(): ?string
     {
         return $this->codigoCnae;
+    }
+
+    public function getObra(): ?Obra
+    {
+        return $this->obra;
     }
 }

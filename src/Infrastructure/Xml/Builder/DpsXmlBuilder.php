@@ -218,6 +218,48 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         if ($servico->getCodigoNbs()) {
             $this->addChild($cServ, 'cNBS', $servico->getCodigoNbs(), false);
         }
+
+        if ($servico->getObra() !== null) {
+            $this->buildObra($servNode, $servico->getObra());
+        }
+    }
+
+    private function buildObra(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra $obra): void
+    {
+        $node = $this->dom->createElement('obra');
+        $parent->appendChild($node);
+
+        $this->addChild($node, 'inscImobFisc', $obra->getInscImobFisc(), false);
+
+        if ($obra->getCObra() !== null) {
+            $this->addChild($node, 'cObra', $obra->getCObra(), true);
+        } elseif ($obra->getCCIB() !== null) {
+            $this->addChild($node, 'cCIB', $obra->getCCIB()->getCodigo(), true);
+        } elseif ($obra->getEndereco() !== null) {
+            $this->buildObraEndereco($node, $obra->getEndereco());
+        }
+    }
+
+    private function buildObraEndereco(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra $end): void
+    {
+        $endNode = $this->dom->createElement('end');
+        $parent->appendChild($endNode);
+
+        if ($end->getCEp() !== null) {
+            $this->addChild($endNode, 'CEP', $end->getCEp(), true);
+        } elseif ($end->getEndExt() !== null) {
+            $ext = $end->getEndExt();
+            $extNode = $this->dom->createElement('endExt');
+            $endNode->appendChild($extNode);
+            $this->addChild($extNode, 'cEndPost', $ext->getCEndPost(), true);
+            $this->addChild($extNode, 'xCidade', $ext->getXCidade(), true);
+            $this->addChild($extNode, 'xEstProvReg', $ext->getXEstProvReg(), true);
+        }
+
+        $this->addChild($endNode, 'xLgr', $end->getXLgr(), true);
+        $this->addChild($endNode, 'nro', $end->getNro(), true);
+        $this->addChild($endNode, 'xCpl', $end->getXCpl(), false);
+        $this->addChild($endNode, 'xBairro', $end->getXBairro(), true);
     }
 
     private function buildIbscbs(\DOMNode $parent, IbsCbsInfo $ibscbs): void
@@ -342,14 +384,14 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         if ($ibscbs->getTribRegular() !== null) {
             $gReg = $this->dom->createElement('gTribRegular');
-            $tribNode->appendChild($gReg);
+            $gIbscbs->appendChild($gReg);
             $this->addChild($gReg, 'CSTReg', $ibscbs->getTribRegular()->getCstReg()->getCodigo(), true);
             $this->addChild($gReg, 'cClassTribReg', $ibscbs->getTribRegular()->getCClassTribReg()->getCodigo(), true);
         }
 
         if ($ibscbs->getDiferimento() !== null) {
             $gDif = $this->dom->createElement('gDif');
-            $tribNode->appendChild($gDif);
+            $gIbscbs->appendChild($gDif);
             $this->addChild($gDif, 'pDifUF', $ibscbs->getDiferimento()->getPDifUF(), true);
             $this->addChild($gDif, 'pDifMun', $ibscbs->getDiferimento()->getPDifMun(), true);
             $this->addChild($gDif, 'pDifCBS', $ibscbs->getDiferimento()->getPDifCBS(), true);

@@ -17,6 +17,7 @@ final readonly class ServicoRequest
         public float $aliquotaIss,
         public ?string $codigoNbs = null,
         public ?string $codigoCnae = null,
+        public ?ObraRequest $obra = null,
     ) {
     }
 }

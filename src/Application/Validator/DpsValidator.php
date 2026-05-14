@@ -55,6 +55,41 @@ class DpsValidator
             $errors[] = 'Valor dos serviços deve ser maior que zero';
         }
 
+        // Validações do grupo obra
+        if ($request->servico->obra !== null) {
+            $o = $request->servico->obra;
+
+            if ($o->cObra !== null && (strlen($o->cObra) < 1 || strlen($o->cObra) > 30)) {
+                $errors[] = 'cObra deve ter entre 1 e 30 caracteres';
+            }
+
+            if ($o->cCIB !== null && !preg_match('/^[0-9]{8}$/', $o->cCIB)) {
+                $errors[] = 'cCIB deve ter exatamente 8 dígitos numéricos';
+            }
+
+            $hasCObra = $o->cObra !== null;
+            $hasCCIB = $o->cCIB !== null;
+            $hasEnd = $o->endereco !== null;
+            $choices = ($hasCObra ? 1 : 0) + ($hasCCIB ? 1 : 0) + ($hasEnd ? 1 : 0);
+
+            if ($choices === 0) {
+                $errors[] = 'É obrigatório informar cObra, cCIB ou endereço (end) no grupo obra';
+            }
+            if ($choices > 1) {
+                $errors[] = 'cObra, cCIB e endereço (end) são mutuamente exclusivos — informe apenas um deles';
+            }
+
+            if ($o->endereco !== null) {
+                $e = $o->endereco;
+                if (empty($e->xLgr)) {
+                    $errors[] = 'Logradouro (xLgr) é obrigatório no endereço da obra';
+                }
+                if (empty($e->xBairro)) {
+                    $errors[] = 'Bairro (xBairro) é obrigatório no endereço da obra';
+                }
+            }
+        }
+
         if ($request->ibscbs !== null) {
             $req = $request->ibscbs;
 

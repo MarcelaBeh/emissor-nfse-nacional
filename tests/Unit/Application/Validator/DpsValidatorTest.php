@@ -13,6 +13,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsImovelRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsReeRepResRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsTribRegularRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ObraRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TomadorRequest;
@@ -745,6 +746,7 @@ final class DpsValidatorTest extends TestCase
         float $valorServicos = 1000.0,
         ?string $codigoNbs = '12345678',
         ?IbsCbsRequest $ibscbs = null,
+        ?ObraRequest $obra = null,
     ): DpsRequest {
         return new DpsRequest(
             tipoAmbiente: $tipoAmbiente,
@@ -797,9 +799,77 @@ final class DpsValidatorTest extends TestCase
                 descontoCondicionado: 0,
                 aliquotaIss: $aliquotaIss,
                 codigoNbs: $codigoNbs,
+                obra: $obra,
             ),
             ibscbs: $ibscbs,
         );
+    }
+
+    public function test_obra_with_cobra_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            obra: new ObraRequest(cObra: 'CNO123456789'),
+        );
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_obra_with_cib_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            obra: new ObraRequest(cCIB: '12345678'),
+        );
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_obra_with_endereco_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            obra: new ObraRequest(
+                endereco: new IbsCbsEnderecoObraRequest(
+                    cep: '01001001',
+                    xLgr: 'Rua da Obra',
+                    nro: '100',
+                    xBairro: 'Industrial',
+                ),
+            ),
+        );
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_obra_without_any_choice_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            obra: new ObraRequest(),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('cObra, cCIB ou endereço');
+        $this->validator->validate($request);
+    }
+
+    public function test_obra_with_multiple_choices_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            obra: new ObraRequest(
+                cObra: 'CNO123',
+                cCIB: '12345678',
+            ),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('mutuamente exclusivos');
+        $this->validator->validate($request);
+    }
+
+    public function test_obra_invalid_cib_format_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            obra: new ObraRequest(cCIB: '1234567'),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('8 dígitos');
+        $this->validator->validate($request);
     }
 
     public function test_ibscbs_imovel_with_cib_passes(): void
