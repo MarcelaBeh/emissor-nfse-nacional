@@ -8,12 +8,107 @@ enum TipoEvento: string
 {
     case CANCELAMENTO = '101101';
     case SUBSTITUICAO = '105102';
+    case SOLICITACAO_ANALISE_FISCAL = '101103';
+    case CANCELAMENTO_DEFERIDO = '105104';
+    case CANCELAMENTO_INDEFERIDO = '105105';
+    case CONFIRMACAO_PRESTADOR = '202201';
+    case CONFIRMACAO_TOMADOR = '203202';
+    case CONFIRMACAO_INTERMEDIARIO = '204203';
+    case CONFIRMACAO_TACITA = '205204';
+    case REJEICAO_PRESTADOR = '202205';
+    case REJEICAO_TOMADOR = '203206';
+    case REJEICAO_INTERMEDIARIO = '204207';
+    case ANULACAO_REJEICAO = '205208';
+    case CANCELAMENTO_OFICIO = '305101';
+    case BLOQUEIO_OFICIO = '305102';
+    case DESBLOQUEIO_OFICIO = '305103';
 
     public function descricao(): string
     {
         return match ($this) {
             self::CANCELAMENTO => 'Cancelamento',
             self::SUBSTITUICAO => 'Substituição',
+            self::SOLICITACAO_ANALISE_FISCAL => 'Solicitação de Análise Fiscal',
+            self::CANCELAMENTO_DEFERIDO => 'Cancelamento Deferido',
+            self::CANCELAMENTO_INDEFERIDO => 'Cancelamento Indeferido',
+            self::CONFIRMACAO_PRESTADOR => 'Confirmação do Prestador',
+            self::CONFIRMACAO_TOMADOR => 'Confirmação do Tomador',
+            self::CONFIRMACAO_INTERMEDIARIO => 'Confirmação do Intermediário',
+            self::CONFIRMACAO_TACITA => 'Confirmação Tácita',
+            self::REJEICAO_PRESTADOR => 'Rejeição do Prestador',
+            self::REJEICAO_TOMADOR => 'Rejeição do Tomador',
+            self::REJEICAO_INTERMEDIARIO => 'Rejeição do Intermediário',
+            self::ANULACAO_REJEICAO => 'Anulação da Rejeição',
+            self::CANCELAMENTO_OFICIO => 'Cancelamento por Ofício',
+            self::BLOQUEIO_OFICIO => 'Bloqueio por Ofício',
+            self::DESBLOQUEIO_OFICIO => 'Desbloqueio por Ofício',
         };
+    }
+
+    public function xDesc(): string
+    {
+        return match ($this) {
+            self::CANCELAMENTO => 'Cancelamento de NFS-e',
+            self::SUBSTITUICAO => 'Cancelamento de NFS-e por Substituição',
+            self::SOLICITACAO_ANALISE_FISCAL => 'Solicitação de Análise Fiscal para Cancelamento de NFS-e',
+            self::CANCELAMENTO_DEFERIDO => 'Cancelamento de NFS-e Deferido por Análise Fiscal',
+            self::CANCELAMENTO_INDEFERIDO => 'Cancelamento de NFS-e Indeferido por Análise Fiscal',
+            self::CONFIRMACAO_PRESTADOR => 'Manifestação de NFS-e - Confirmação do Prestador',
+            self::CONFIRMACAO_TOMADOR => 'Manifestação de NFS-e - Confirmação do Tomador',
+            self::CONFIRMACAO_INTERMEDIARIO => 'Manifestação de NFS-e - Confirmação do Intermediário',
+            self::CONFIRMACAO_TACITA => 'Manifestação de NFS-e - Confirmação Tácita',
+            self::REJEICAO_PRESTADOR => 'Manifestação de NFS-e - Rejeição do Prestador',
+            self::REJEICAO_TOMADOR => 'Manifestação de NFS-e - Rejeição do Tomador',
+            self::REJEICAO_INTERMEDIARIO => 'Manifestação de NFS-e - Rejeição do Intermediário',
+            self::ANULACAO_REJEICAO => 'Manifestação de NFS-e - Anulação da Rejeição',
+            self::CANCELAMENTO_OFICIO => 'Cancelamento de NFS-e por Ofício',
+            self::BLOQUEIO_OFICIO => 'Bloqueio de NFS-e por Ofício',
+            self::DESBLOQUEIO_OFICIO => 'Desbloqueio de NFS-e por Ofício',
+        };
+    }
+
+    public function eventTypeTag(): string
+    {
+        return 'e' . $this->value;
+    }
+
+    public function needsChSubstituta(): bool
+    {
+        return $this === self::SUBSTITUICAO;
+    }
+
+    public function needsCpfAgTrib(): bool
+    {
+        return in_array($this, [
+            self::CANCELAMENTO_DEFERIDO,
+            self::CANCELAMENTO_INDEFERIDO,
+            self::ANULACAO_REJEICAO,
+            self::CANCELAMENTO_OFICIO,
+            self::BLOQUEIO_OFICIO,
+            self::DESBLOQUEIO_OFICIO,
+        ], true);
+    }
+
+    public function needsNumeroProcesso(): bool
+    {
+        return in_array($this, [
+            self::CANCELAMENTO_DEFERIDO,
+            self::CANCELAMENTO_INDEFERIDO,
+            self::CANCELAMENTO_OFICIO,
+        ], true);
+    }
+
+    public function hasMotivo(): bool
+    {
+        return in_array($this, [
+            self::CANCELAMENTO,
+            self::SUBSTITUICAO,
+            self::SOLICITACAO_ANALISE_FISCAL,
+            self::CANCELAMENTO_DEFERIDO,
+            self::CANCELAMENTO_INDEFERIDO,
+            self::REJEICAO_PRESTADOR,
+            self::REJEICAO_TOMADOR,
+            self::REJEICAO_INTERMEDIARIO,
+        ], true);
     }
 }

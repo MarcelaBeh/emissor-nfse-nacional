@@ -44,10 +44,22 @@ class CancelarNfseService
                 chaveNfse: new ChaveAcesso($request->chaveNfse),
                 dataEvento: new \DateTimeImmutable($request->dataEvento),
                 versaoAplicacao: $request->versaoAplicacao,
+                tipoAmbiente: $request->tipoAmbiente,
                 cnpjAutor: $request->cnpjAutor,
                 cpfAutor: $request->cpfAutor,
                 codigoMotivo: $request->codigoMotivo,
                 descricaoMotivo: $request->descricaoMotivo,
+                nSeqEvento: $request->nSeqEvento,
+                ambGer: $request->ambGer,
+                dhProc: $request->dhProc !== null ? new \DateTimeImmutable($request->dhProc) : null,
+                nDFSe: $request->nDFSe,
+                chSubstituta: $request->chSubstituta,
+                cpfAgTrib: $request->cpfAgTrib,
+                nProcAdm: $request->nProcAdm,
+                xProcAdm: $request->xProcAdm,
+                idEvManifRej: $request->idEvManifRej,
+                codEventoBloqueio: $request->codEventoBloqueio,
+                idBloqOfic: $request->idBloqOfic,
             );
 
             $xml = $this->xmlBuilder->build($evento);

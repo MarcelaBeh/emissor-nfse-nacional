@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder;
 
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Evento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
 use NFePHP\Common\DOMImproved as Dom;
 
 class EventoXmlBuilder implements Contract\XmlBuilderInterface
@@ -27,41 +28,190 @@ class EventoXmlBuilder implements Contract\XmlBuilderInterface
 
         $this->reset();
 
-        $eventoNode = $this->dom->createElement('pedRegEvento');
-        $eventoNode->setAttribute('versao', '1.01');
-        $eventoNode->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
+        $pedRegEvento = $this->dom->createElement('pedRegEvento');
+        $pedRegEvento->setAttribute('versao', '1.01');
+        $pedRegEvento->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
 
         $infPedReg = $this->dom->createElement('infPedReg');
-        $infPedReg->setAttribute('Id', 'PRE' . $entity->getChaveNfse());
+        $infPedReg->setAttribute('Id', $this->gerarIdPedRegEvento($entity));
 
-        $this->addChild($infPedReg, 'tpAmb', $entity->getTipo() === \MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento::CANCELAMENTO ? '1' : '2');
+        $this->addChild($infPedReg, 'tpAmb', $entity->getTipoAmbiente());
         $this->addChild($infPedReg, 'verAplic', $entity->getVersaoAplicacao());
         $this->addChild($infPedReg, 'dhEvento', $entity->getDataEvento()->format('Y-m-d\TH:i:sP'));
 
         if ($entity->getCnpjAutor()) {
-            $this->addChild($infPedReg, 'CNPJAutor', $entity->getCnpjAutor(), false);
+            $this->addChild($infPedReg, 'CNPJAutor', $entity->getCnpjAutor(), true);
         } elseif ($entity->getCpfAutor()) {
-            $this->addChild($infPedReg, 'CPFAutor', $entity->getCpfAutor(), false);
+            $this->addChild($infPedReg, 'CPFAutor', $entity->getCpfAutor(), true);
         }
 
         $this->addChild($infPedReg, 'chNFSe', $entity->getChaveNfse(), true);
 
-        $evtNode = $this->dom->createElement('e101101');
-        $infPedReg->appendChild($evtNode);
+        $this->buildEventoEspecifico($infPedReg, $entity);
 
-        if ($entity->getDescricaoMotivo()) {
-            $this->addChild($evtNode, 'xDesc', $entity->getDescricaoMotivo(), true);
-        }
-
-        if ($entity->getCodigoMotivo()) {
-            $this->addChild($evtNode, 'cMotivo', $entity->getCodigoMotivo(), true);
-            $this->addChild($evtNode, 'xMotivo', $entity->getDescricaoMotivo(), true);
-        }
-
-        $eventoNode->appendChild($infPedReg);
-        $this->dom->appendChild($eventoNode);
+        $pedRegEvento->appendChild($infPedReg);
+        $this->dom->appendChild($pedRegEvento);
 
         return $this->dom->saveXML();
+    }
+
+    private function buildEventoEspecifico(\DOMNode $parent, Evento $evento): void
+    {
+        $tipo = $evento->getTipo();
+        $tag = $tipo->eventTypeTag();
+
+        $evtNode = $this->dom->createElement($tag);
+        $parent->appendChild($evtNode);
+
+        $this->addChild($evtNode, 'xDesc', $tipo->xDesc(), true);
+
+        match ($tipo) {
+            TipoEvento::CANCELAMENTO,
+            TipoEvento::SOLICITACAO_ANALISE_FISCAL => $this->buildMotivoCancelamento($evtNode, $evento),
+
+            TipoEvento::SUBSTITUICAO => $this->buildSubstituicao($evtNode, $evento),
+
+            TipoEvento::CANCELAMENTO_DEFERIDO => $this->buildDeferido($evtNode, $evento),
+            TipoEvento::CANCELAMENTO_INDEFERIDO => $this->buildIndeferido($evtNode, $evento),
+
+            TipoEvento::CONFIRMACAO_PRESTADOR,
+            TipoEvento::CONFIRMACAO_TOMADOR,
+            TipoEvento::CONFIRMACAO_INTERMEDIARIO,
+            TipoEvento::CONFIRMACAO_TACITA => null,
+
+            TipoEvento::REJEICAO_PRESTADOR,
+            TipoEvento::REJEICAO_TOMADOR,
+            TipoEvento::REJEICAO_INTERMEDIARIO => $this->buildRejeicao($evtNode, $evento),
+
+            TipoEvento::ANULACAO_REJEICAO => $this->buildAnulacaoRejeicao($evtNode, $evento),
+
+            TipoEvento::CANCELAMENTO_OFICIO => $this->buildCancelamentoOficio($evtNode, $evento),
+
+            TipoEvento::BLOQUEIO_OFICIO => $this->buildBloqueioOficio($evtNode, $evento),
+
+            TipoEvento::DESBLOQUEIO_OFICIO => $this->buildDesbloqueioOficio($evtNode, $evento),
+        };
+    }
+
+    private function buildMotivoCancelamento(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCodigoMotivo()) {
+            $this->addChild($parent, 'cMotivo', $evento->getCodigoMotivo(), true);
+        }
+        if ($evento->getDescricaoMotivo()) {
+            $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), true);
+        }
+    }
+
+    private function buildSubstituicao(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCodigoMotivo()) {
+            $this->addChild($parent, 'cMotivo', $evento->getCodigoMotivo(), true);
+        }
+        if ($evento->getDescricaoMotivo()) {
+            $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), false);
+        }
+        if ($evento->getChSubstituta()) {
+            $this->addChild($parent, 'chSubstituta', $evento->getChSubstituta(), true);
+        }
+    }
+
+    private function buildDeferido(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCpfAgTrib()) {
+            $this->addChild($parent, 'CPFAgTrib', $evento->getCpfAgTrib(), true);
+        }
+        if ($evento->getNProcAdm()) {
+            $this->addChild($parent, 'nProcAdm', $evento->getNProcAdm(), false);
+        }
+        if ($evento->getCodigoMotivo()) {
+            $this->addChild($parent, 'cMotivo', $evento->getCodigoMotivo(), true);
+        }
+        if ($evento->getDescricaoMotivo()) {
+            $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), true);
+        }
+    }
+
+    private function buildIndeferido(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCpfAgTrib()) {
+            $this->addChild($parent, 'CPFAgTrib', $evento->getCpfAgTrib(), true);
+        }
+        if ($evento->getNProcAdm()) {
+            $this->addChild($parent, 'nProcAdm', $evento->getNProcAdm(), false);
+        }
+        if ($evento->getCodigoMotivo()) {
+            $this->addChild($parent, 'cMotivo', $evento->getCodigoMotivo(), true);
+        }
+        if ($evento->getDescricaoMotivo()) {
+            $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), true);
+        }
+    }
+
+    private function buildRejeicao(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCodigoMotivo()) {
+            $this->addChild($parent, 'cMotivo', $evento->getCodigoMotivo(), true);
+        }
+        if ($evento->getDescricaoMotivo()) {
+            $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), false);
+        }
+    }
+
+    private function buildAnulacaoRejeicao(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCpfAgTrib()) {
+            $this->addChild($parent, 'CPFAgTrib', $evento->getCpfAgTrib(), true);
+        }
+        if ($evento->getIdEvManifRej()) {
+            $this->addChild($parent, 'idEvManifRej', $evento->getIdEvManifRej(), true);
+        }
+        if ($evento->getDescricaoMotivo()) {
+            $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), true);
+        }
+    }
+
+    private function buildCancelamentoOficio(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCpfAgTrib()) {
+            $this->addChild($parent, 'CPFAgTrib', $evento->getCpfAgTrib(), true);
+        }
+        if ($evento->getNProcAdm()) {
+            $this->addChild($parent, 'nProcAdm', $evento->getNProcAdm(), true);
+        }
+        if ($evento->getXProcAdm()) {
+            $this->addChild($parent, 'xProcAdm', $evento->getXProcAdm(), true);
+        }
+    }
+
+    private function buildBloqueioOficio(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCpfAgTrib()) {
+            $this->addChild($parent, 'CPFAgTrib', $evento->getCpfAgTrib(), true);
+        }
+        if ($evento->getCodEventoBloqueio()) {
+            $this->addChild($parent, 'codEvento', $evento->getCodEventoBloqueio(), true);
+        }
+        if ($evento->getDescricaoMotivo()) {
+            $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), true);
+        }
+    }
+
+    private function buildDesbloqueioOficio(\DOMNode $parent, Evento $evento): void
+    {
+        if ($evento->getCpfAgTrib()) {
+            $this->addChild($parent, 'CPFAgTrib', $evento->getCpfAgTrib(), true);
+        }
+        if ($evento->getIdBloqOfic()) {
+            $this->addChild($parent, 'idBloqOfic', $evento->getIdBloqOfic(), true);
+        }
+    }
+
+    private function gerarIdPedRegEvento(Evento $evento): string
+    {
+        return 'PRE'
+            . $evento->getChaveNfse()
+            . $evento->getTipo()->value;
     }
 
     private function reset(): void
