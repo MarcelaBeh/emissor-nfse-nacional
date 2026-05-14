@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Enum;
+
+enum IndicadorDestinacao: string
+{
+    case TOMADOR = '0';
+    case TERCEIRO = '1';
+
+    public function descricao(): string
+    {
+        return match ($this) {
+            self::TOMADOR => 'Destinatário é o próprio tomador',
+            self::TERCEIRO => 'Destinatário é terceiro (diferente do tomador)',
+        };
+    }
+}

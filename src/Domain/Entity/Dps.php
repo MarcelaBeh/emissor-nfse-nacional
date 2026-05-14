@@ -29,6 +29,7 @@ class Dps
         private VersaoSchema $versao = VersaoSchema::V1_01,
         private ?Intermediario $intermediario = null,
         private ?Substituicao $substituicao = null,
+        private ?IbsCbsInfo $ibscbs = null,
     ) {
         $this->validate();
     }
@@ -135,5 +136,10 @@ class Dps
     public function getSubstituicao(): ?Substituicao
     {
         return $this->substituicao;
+    }
+
+    public function getIbsCbs(): ?IbsCbsInfo
+    {
+        return $this->ibscbs;
     }
 }

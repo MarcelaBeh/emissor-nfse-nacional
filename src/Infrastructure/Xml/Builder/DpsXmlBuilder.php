@@ -6,6 +6,10 @@ namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder;
 
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
@@ -61,6 +65,10 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         }
 
         $this->buildServico($infDpsNode, $entity->getServico());
+
+        if ($entity->getIbsCbs() !== null) {
+            $this->buildIbscbs($infDpsNode, $entity->getIbsCbs());
+        }
 
         $dpsNode->appendChild($infDpsNode);
         $this->dom->appendChild($dpsNode);
@@ -210,6 +218,78 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         if ($servico->getCodigoNbs()) {
             $this->addChild($cServ, 'cNBS', $servico->getCodigoNbs(), false);
+        }
+    }
+
+    private function buildIbscbs(\DOMNode $parent, IbsCbsInfo $ibscbs): void
+    {
+        $node = $this->dom->createElement('IBSCBS');
+        $parent->appendChild($node);
+
+        $this->addChild($node, 'finNFSe', $ibscbs->getFinNFSe()->value, true);
+        $this->addChild($node, 'indFinal', $ibscbs->getIndFinal()?->value, false);
+        $this->addChild($node, 'cIndOp', $ibscbs->getCIndOp()->getCodigo(), true);
+        $this->addChild($node, 'tpOper', $ibscbs->getTpOper()?->value, false);
+        $this->addChild($node, 'tpEnteGov', $ibscbs->getTpEnteGov()?->value, false);
+        $this->addChild($node, 'indDest', $ibscbs->getIndDest()->value, true);
+
+        if ($ibscbs->getDest() !== null) {
+            $this->buildIbscbsDest($node, $ibscbs->getDest());
+        }
+
+        $this->buildIbscbsValores($node, $ibscbs);
+    }
+
+    private function buildIbscbsDest(\DOMNode $parent, IbsCbsDest $dest): void
+    {
+        $destNode = $this->dom->createElement('dest');
+        $parent->appendChild($destNode);
+
+        if ($dest->getCnpj()) {
+            $this->addChild($destNode, 'CNPJ', $dest->getCnpj()->getNumero(), false);
+        } elseif ($dest->getCpf()) {
+            $this->addChild($destNode, 'CPF', $dest->getCpf()->getNumero(), false);
+        } elseif ($dest->getNif()) {
+            $this->addChild($destNode, 'NIF', $dest->getNif(), false);
+        }
+
+        $this->addChild($destNode, 'cNaoNIF', $dest->getCodigoNaoNif(), false);
+        $this->addChild($destNode, 'xNome', $dest->getXNome(), true);
+        $this->addChild($destNode, 'fone', $dest->getFone(), false);
+        $this->addChild($destNode, 'email', $dest->getEmail(), false);
+
+        if ($dest->getEndereco() !== null) {
+            $this->buildEndereco($destNode, $dest->getEndereco());
+        }
+    }
+
+    private function buildIbscbsValores(\DOMNode $parent, IbsCbsInfo $ibscbs): void
+    {
+        $valNode = $this->dom->createElement('valores');
+        $parent->appendChild($valNode);
+
+        $tribNode = $this->dom->createElement('trib');
+        $valNode->appendChild($tribNode);
+
+        $gIbscbs = $this->dom->createElement('gIBSCBS');
+        $tribNode->appendChild($gIbscbs);
+        $this->addChild($gIbscbs, 'CST', $ibscbs->getCst()->getCodigo(), true);
+        $this->addChild($gIbscbs, 'cClassTrib', $ibscbs->getCClassTrib()->getCodigo(), true);
+        $this->addChild($gIbscbs, 'cCredPres', $ibscbs->getCCredPres()?->getCodigo(), false);
+
+        if ($ibscbs->getTribRegular() !== null) {
+            $gReg = $this->dom->createElement('gTribRegular');
+            $tribNode->appendChild($gReg);
+            $this->addChild($gReg, 'CSTReg', $ibscbs->getTribRegular()->getCstReg()->getCodigo(), true);
+            $this->addChild($gReg, 'cClassTribReg', $ibscbs->getTribRegular()->getCClassTribReg()->getCodigo(), true);
+        }
+
+        if ($ibscbs->getDiferimento() !== null) {
+            $gDif = $this->dom->createElement('gDif');
+            $tribNode->appendChild($gDif);
+            $this->addChild($gDif, 'pDifUF', $ibscbs->getDiferimento()->getPDifUF(), true);
+            $this->addChild($gDif, 'pDifMun', $ibscbs->getDiferimento()->getPDifMun(), true);
+            $this->addChild($gDif, 'pDifCBS', $ibscbs->getDiferimento()->getPDifCBS(), true);
         }
     }
 }

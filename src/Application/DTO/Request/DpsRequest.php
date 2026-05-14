@@ -20,6 +20,7 @@ final readonly class DpsRequest
         public ServicoRequest $servico,
         public ?SubstituicaoRequest $substituicao = null,
         public ?array $intermediario = null,
+        public ?IbsCbsRequest $ibscbs = null,
     ) {
     }
 }
