@@ -23,7 +23,7 @@ class ConsultarNfseService
     ) {
     }
 
-    public function consultarPorChave(string $chave): ?NfseResponse
+    public function consultarPorChave(string $chave, bool $encoding = false): ?NfseResponse
     {
         try {
             $this->validator->validate(new ConsultaRequest($chave));
@@ -41,11 +41,12 @@ class ConsultarNfseService
             $data = $response['data'];
 
             if (is_string($data) && str_contains($data, '<')) {
-                $parsed = $this->nfseXmlParser->parse($data);
+                $xml = $encoding ? mb_convert_encoding($data, 'ISO-8859-1') : $data;
+                $parsed = $this->nfseXmlParser->parse($xml);
                 return new NfseResponse(
                     success: true,
                     dados: $parsed,
-                    xml: $data,
+                    xml: $xml,
                 );
             }
 
@@ -149,7 +150,7 @@ class ConsultarNfseService
         }
     }
 
-    private function consultarDanfseNfse(string $chave): string|array
+    public function consultarDanfseNfse(string $chave): string|array
     {
         $endpointCert = $this->apiEndpoints->consultarDanfseNfseCertificado();
         $response = $this->apiConnector->get($endpointCert);

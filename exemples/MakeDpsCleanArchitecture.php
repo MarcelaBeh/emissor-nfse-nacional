@@ -26,7 +26,9 @@ use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
 use MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Client\CurlHttpClient;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\FileCstClassTribRepository;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
@@ -44,14 +46,28 @@ $certPassword = 'senha_certificado';
 $cert = \NFePHP\Common\Certificate::readPfx($certContent, $certPassword);
 
 // ─── 2. Infra ────────────────────────────────────────────────────────────────
-$apiConnector  = new ApiConnector(/* ... */);
-$xmlSigner     = new XmlSigner($cert);
-$xsdValidator  = new XsdValidator();
-$requestBuilder = new RequestBuilder(/* ... */);
+$configuration = new Configuration([
+    'tpAmb' => $config->tpamb,
+    'prefeitura' => '3501608', // Americana-SP (substituir pelo município do prestador)
+]);
 
-// Opcional: tabela cClassTrib baixada da URL oficial
-// $repo = new FileCstClassTribRepository('caminho/para/cClassTrib.json');
-$repo = null;
+// Extrair cert/key do PFX para CurlHttpClient (arquivos .pem)
+$pemCert = __DIR__ . '/cert.pem';
+$pemKey  = __DIR__ . '/key.pem';
+if (!file_exists($pemCert) || !file_exists($pemKey)) {
+    openssl_pkcs12_read($certContent, $certs, $certPassword);
+    file_put_contents($pemCert, ($certs['extracerts'] ?? '') . "\n" . $certs['cert']);
+    file_put_contents($pemKey, $certs['pkey']);
+}
+
+$httpClient     = new CurlHttpClient(certPath: $pemCert, privateKeyPath: $pemKey, keyPassword: $certPassword);
+$apiConnector   = new ApiConnector($configuration, $httpClient);
+$xmlSigner      = new XmlSigner($cert);
+$xsdValidator   = new XsdValidator();
+$requestBuilder = new RequestBuilder();
+
+// Tabela cClassTrib (baixada da URL oficial e convertida para o formato da biblioteca)
+$repo = new FileCstClassTribRepository(__DIR__ . '/../storage/cClassTrib.json');
 
 // ─── 3. Request DTO ──────────────────────────────────────────────────────────
 

@@ -37,9 +37,9 @@ class NfseNacionalFacade
         return $this->emitirDpsService->executar($request);
     }
 
-    public function consultarPorChave(string $chave): ?NfseResponse
+    public function consultarPorChave(string $chave, bool $encoding = false): ?NfseResponse
     {
-        return $this->consultarNfseService->consultarPorChave($chave);
+        return $this->consultarNfseService->consultarPorChave($chave, $encoding);
     }
 
     public function consultarDpsPorChave(string $chave): array
@@ -67,6 +67,11 @@ class NfseNacionalFacade
     public function consultarDanfse(string $chave): string|array
     {
         return $this->consultarNfseService->consultarDanfse($chave);
+    }
+
+    public function consultarDanfseNfse(string $chave): string|array
+    {
+        return $this->consultarNfseService->consultarDanfseNfse($chave);
     }
 
     private function inicializarServicos(): void

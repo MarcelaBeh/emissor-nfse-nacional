@@ -3,7 +3,6 @@ parameters:
     paths:
         - src
     excludePaths:
-        - src/Common
         - src/Support
     tmpDir: .phpstan-cache
     parallel:
