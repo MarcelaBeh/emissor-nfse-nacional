@@ -1,0 +1,14 @@
+<?php
+
+declare(strict_types=1);
+
+namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
+
+final readonly class SubstituicaoRequest
+{
+    public function __construct(
+        public string $chaveSubstituida,
+        public string $codigoMotivo,
+        public string $descricaoMotivo,
+    ) {}
+}

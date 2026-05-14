@@ -11,7 +11,7 @@ try {
     $content = file_get_contents('certificado.pfx');
     $password = 'senha_certificado';
     $cert = \NFePHP\Common\Certificate::readPfx($content, $password);
-    $tools = new \Hadder\NfseNacional\Tools($configJson, $cert);
+    $tools = new \emissorNfseNacional\NfseNacional\Tools($configJson, $cert);
 
     $std = new stdClass();
     $std->infPedReg = new stdClass();

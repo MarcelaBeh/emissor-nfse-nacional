@@ -43,9 +43,9 @@ Essa ordem garante que:
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Domain\ValueObject;
+namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
 
-use Hadder\NfseNacional\Domain\Exception\InvalidCnpjException;
+use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidCnpjException;
 
 /**
  * Value Object que representa um CNPJ válido
@@ -155,9 +155,9 @@ final readonly class Cnpj
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Domain\ValueObject;
+namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
 
-use Hadder\NfseNacional\Domain\Exception\InvalidChaveAcessoException;
+use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidChaveAcessoException;
 
 /**
  * Chave de Acesso da NFSe Nacional (50 caracteres)
@@ -216,7 +216,7 @@ final readonly class ChaveAcesso
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Domain\ValueObject;
+namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
 
 /**
  * Value Object para valores monetários
@@ -307,13 +307,13 @@ final readonly class Money
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Domain\Entity;
+namespace emissorNfseNacional\NfseNacional\Domain\Entity;
 
-use Hadder\NfseNacional\Domain\ValueObject\Cnpj;
-use Hadder\NfseNacional\Domain\ValueObject\Cpf;
-use Hadder\NfseNacional\Domain\ValueObject\Email;
-use Hadder\NfseNacional\Domain\ValueObject\Telefone;
-use Hadder\NfseNacional\Domain\Enum\RegimeTributario;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cnpj;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cpf;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Email;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Telefone;
+use emissorNfseNacional\NfseNacional\Domain\Enum\RegimeTributario;
 
 class Prestador
 {
@@ -383,10 +383,10 @@ class Prestador
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Domain\Entity;
+namespace emissorNfseNacional\NfseNacional\Domain\Entity;
 
-use Hadder\NfseNacional\Domain\ValueObject\Money;
-use Hadder\NfseNacional\Domain\ValueObject\CodigoMunicipio;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Money;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\CodigoMunicipio;
 
 class Servico
 {
@@ -471,10 +471,10 @@ class Servico
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Infrastructure\Config;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Config;
 
-use Hadder\NfseNacional\Domain\Enum\TipoAmbiente;
-use Hadder\NfseNacional\Infrastructure\Config\Exception\ConfigException;
+use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
+use emissorNfseNacional\NfseNacional\Infrastructure\Config\Exception\ConfigException;
 
 class Configuration implements Contract\ConfigInterface
 {
@@ -600,19 +600,19 @@ class Configuration implements Contract\ConfigInterface
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Presentation\Factory;
+namespace emissorNfseNacional\NfseNacional\Presentation\Factory;
 
-use Hadder\NfseNacional\Application\Service\EmitirDpsService;
-use Hadder\NfseNacional\Application\Service\ConsultarNfseService;
-use Hadder\NfseNacional\Application\Service\CancelarNfseService;
-use Hadder\NfseNacional\Application\Validator\DpsValidator;
-use Hadder\NfseNacional\Infrastructure\Config\Configuration;
-use Hadder\NfseNacional\Infrastructure\Http\ApiConnector;
-use Hadder\NfseNacional\Infrastructure\Http\Client\CurlHttpClient;
-use Hadder\NfseNacional\Infrastructure\Security\CertificateManager;
-use Hadder\NfseNacional\Infrastructure\Security\XmlSigner;
-use Hadder\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
-use Hadder\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
+use emissorNfseNacional\NfseNacional\Application\Service\EmitirDpsService;
+use emissorNfseNacional\NfseNacional\Application\Service\ConsultarNfseService;
+use emissorNfseNacional\NfseNacional\Application\Service\CancelarNfseService;
+use emissorNfseNacional\NfseNacional\Application\Validator\DpsValidator;
+use emissorNfseNacional\NfseNacional\Infrastructure\Config\Configuration;
+use emissorNfseNacional\NfseNacional\Infrastructure\Http\ApiConnector;
+use emissorNfseNacional\NfseNacional\Infrastructure\Http\Client\CurlHttpClient;
+use emissorNfseNacional\NfseNacional\Infrastructure\Security\CertificateManager;
+use emissorNfseNacional\NfseNacional\Infrastructure\Security\XmlSigner;
+use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
+use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 use NFePHP\Common\Certificate;
 
 class ServiceFactory
@@ -664,7 +664,7 @@ class ServiceFactory
     {
         return new CancelarNfseService(
             apiConnector: $this->apiConnector,
-            xmlBuilder: new \Hadder\NfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder(),
+            xmlBuilder: new \emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder(),
             xmlSigner: new XmlSigner($this->certificateManager->getCertificate()),
             xsdValidator: new XsdValidator(),
         );
@@ -1002,8 +1002,8 @@ class XsdValidator
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
-use Hadder\NfseNacional\Presentation\Facade\NfseNacionalFacade;
-use Hadder\NfseNacional\Application\DTO\Request\DpsRequest;
+use emissorNfseNacional\NfseNacional\Presentation\Facade\NfseNacionalFacade;
+use emissorNfseNacional\NfseNacional\Application\DTO\Request\DpsRequest;
 use NFePHP\Common\Certificate;
 
 class EmitirDpsTest extends TestCase

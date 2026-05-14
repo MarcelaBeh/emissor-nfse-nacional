@@ -1,0 +1,105 @@
+<?php
+
+declare(strict_types=1);
+
+namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cnpj;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cpf;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Email;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Telefone;
+use emissorNfseNacional\NfseNacional\Domain\Enum\RegimeTributario;
+
+class Prestador
+{
+    public function __construct(
+        private Cnpj|Cpf $documento,
+        private ?string $inscricaoMunicipal,
+        private string $razaoSocial,
+        private ?string $nomeFantasia,
+        private ?Telefone $telefone,
+        private ?Email $email,
+        private Endereco $endereco,
+        private RegimeTributario $regimeTributario,
+        private ?string $nif = null,
+        private ?string $caepf = null,
+    ) {
+        $this->validate();
+    }
+
+    private function validate(): void
+    {
+        if (empty($this->razaoSocial)) {
+            throw new \InvalidArgumentException('Razão social é obrigatória');
+        }
+
+        if (strlen($this->razaoSocial) > 150) {
+            throw new \InvalidArgumentException('Razão social deve ter no máximo 150 caracteres');
+        }
+    }
+
+    public function getDocumento(): Cnpj|Cpf
+    {
+        return $this->documento;
+    }
+
+    public function isCnpj(): bool
+    {
+        return $this->documento instanceof Cnpj;
+    }
+
+    public function getCnpj(): ?Cnpj
+    {
+        return $this->isCnpj() ? $this->documento : null;
+    }
+
+    public function getCpf(): ?Cpf
+    {
+        return !$this->isCnpj() ? $this->documento : null;
+    }
+
+    public function getInscricaoMunicipal(): ?string
+    {
+        return $this->inscricaoMunicipal;
+    }
+
+    public function getRazaoSocial(): string
+    {
+        return $this->razaoSocial;
+    }
+
+    public function getNomeFantasia(): ?string
+    {
+        return $this->nomeFantasia;
+    }
+
+    public function getTelefone(): ?Telefone
+    {
+        return $this->telefone;
+    }
+
+    public function getEmail(): ?Email
+    {
+        return $this->email;
+    }
+
+    public function getEndereco(): Endereco
+    {
+        return $this->endereco;
+    }
+
+    public function getRegimeTributario(): RegimeTributario
+    {
+        return $this->regimeTributario;
+    }
+
+    public function getNif(): ?string
+    {
+        return $this->nif;
+    }
+
+    public function getCaepf(): ?string
+    {
+        return $this->caepf;
+    }
+}

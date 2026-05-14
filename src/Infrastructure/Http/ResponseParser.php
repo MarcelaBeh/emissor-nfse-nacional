@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Http;
+
+class ResponseParser
+{
+    private const ERRO_NAO_CATALOGADO = 'E999';
+    private const ERRO_CERTIFICADO_INVALIDO = 'E001';
+    private const ERRO_CERTIFICADO_EXPIRADO = 'E002';
+
+    public function parseError(array $response): array
+    {
+        $codigo = $response['codigo'] ?? self::ERRO_NAO_CATALOGADO;
+        $mensagem = $response['mensagem'] ?? 'Erro não identificado';
+        $detalhes = $response['detalhes'] ?? [];
+
+        return [
+            'codigo' => $codigo,
+            'mensagem' => $this->traduzirMensagem($codigo, $mensagem),
+            'detalhes' => $detalhes,
+            'recuperavel' => $this->isRecuperavel($codigo),
+        ];
+    }
+
+    private function traduzirMensagem(string $codigo, string $mensagem): string
+    {
+        return match ($codigo) {
+            self::ERRO_NAO_CATALOGADO => 'Erro não catalogado. Se persistir em produção, contate o suporte.',
+            self::ERRO_CERTIFICADO_INVALIDO => 'Certificado digital inválido ou não autorizado.',
+            self::ERRO_CERTIFICADO_EXPIRADO => 'Certificado digital expirado.',
+            default => $mensagem,
+        };
+    }
+
+    private function isRecuperavel(string $codigo): bool
+    {
+        $recuperaveis = [
+            self::ERRO_NAO_CATALOGADO,
+            'E500',
+            'E503',
+        ];
+
+        return in_array($codigo, $recuperaveis);
+    }
+}

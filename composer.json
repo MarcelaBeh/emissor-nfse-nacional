@@ -9,7 +9,7 @@
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "Hadder\\NfseNacional\\": "src/"
+      "namespace emissorNfseNacional\\NfseNacional\\": "src/"
     },
     "files": [
       "Helpers.php"

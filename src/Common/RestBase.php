@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Common;
+namespace emissorNfseNacional\NfseNacional\Common;
 
 use DateTime;
 use DateInterval;

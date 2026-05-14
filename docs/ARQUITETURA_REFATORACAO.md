@@ -252,8 +252,8 @@ $this->app->singleton(NfseNacionalFacade::class, function ($app) {
 ```yaml
 # config/services.yaml
 services:
-    Hadder\NfseNacional\Presentation\Facade\NfseNacionalFacade:
-        factory: ['Hadder\NfseNacional\Presentation\Facade\NfseNacionalFacade', 'create']
+    emissorNfseNacional\NfseNacional\Presentation\Facade\NfseNacionalFacade:
+        factory: ['emissorNfseNacional\NfseNacional\Presentation\Facade\NfseNacionalFacade', 'create']
         arguments:
             - tpAmb: '%env(NFSE_AMBIENTE)%'
               prefeitura: '%env(NFSE_PREFEITURA)%'
@@ -296,7 +296,7 @@ composer require marcelabeh/emissor-nfse-nacional:^2.0
 {
     "autoload": {
         "psr-4": {
-            "Hadder\\NfseNacional\\": "src/"
+            "emissorNfseNacional\\NfseNacional\\": "src/"
         }
     }
 }
@@ -570,11 +570,11 @@ Objetos com identidade única que representam conceitos de negócio.
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Domain\Entity;
+namespace emissorNfseNacional\NfseNacional\Domain\Entity;
 
-use Hadder\NfseNacional\Domain\ValueObject\Cnpj;
-use Hadder\NfseNacional\Domain\ValueObject\ChaveAcesso;
-use Hadder\NfseNacional\Domain\Enum\TipoAmbiente;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cnpj;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\ChaveAcesso;
+use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
 
 class Dps
 {
@@ -632,9 +632,9 @@ Objetos imutáveis que representam conceitos sem identidade.
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Domain\ValueObject;
+namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
 
-use Hadder\NfseNacional\Domain\Exception\InvalidCnpjException;
+use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidCnpjException;
 
 final readonly class Cnpj
 {
@@ -697,7 +697,7 @@ final readonly class Cnpj
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Domain\Enum;
+namespace emissorNfseNacional\NfseNacional\Domain\Enum;
 
 enum TipoAmbiente: int
 {
@@ -772,16 +772,16 @@ enum MotivoEvento: string
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Application\Service;
+namespace emissorNfseNacional\NfseNacional\Application\Service;
 
-use Hadder\NfseNacional\Application\DTO\Request\DpsRequest;
-use Hadder\NfseNacional\Application\DTO\Response\NfseResponse;
-use Hadder\NfseNacional\Application\Validator\DpsValidator;
-use Hadder\NfseNacional\Domain\Entity\Dps;
-use Hadder\NfseNacional\Infrastructure\Http\ApiConnector;
-use Hadder\NfseNacional\Infrastructure\Security\XmlSigner;
-use Hadder\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
-use Hadder\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
+use emissorNfseNacional\NfseNacional\Application\DTO\Request\DpsRequest;
+use emissorNfseNacional\NfseNacional\Application\DTO\Response\NfseResponse;
+use emissorNfseNacional\NfseNacional\Application\Validator\DpsValidator;
+use emissorNfseNacional\NfseNacional\Domain\Entity\Dps;
+use emissorNfseNacional\NfseNacional\Infrastructure\Http\ApiConnector;
+use emissorNfseNacional\NfseNacional\Infrastructure\Security\XmlSigner;
+use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
+use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 
 class EmitirDpsService
 {
@@ -850,7 +850,7 @@ class EmitirDpsService
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Application\DTO\Request;
+namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
 
 final readonly class DpsRequest
 {
@@ -892,11 +892,11 @@ final readonly class DpsRequest
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Http\Client;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Http\Client;
 
-use Hadder\NfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
-use Hadder\NfseNacional\Infrastructure\Http\Exception\ConnectionException;
-use Hadder\NfseNacional\Infrastructure\Http\Exception\TimeoutException;
+use emissorNfseNacional\NfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
+use emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception\ConnectionException;
+use emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception\TimeoutException;
 
 class CurlHttpClient implements HttpClientInterface
 {
@@ -984,9 +984,9 @@ class CurlHttpClient implements HttpClientInterface
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Xml\Builder;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder;
 
-use Hadder\NfseNacional\Domain\Entity\Dps;
+use emissorNfseNacional\NfseNacional\Domain\Entity\Dps;
 use NFePHP\Common\DOMImproved as Dom;
 
 class DpsXmlBuilder implements Contract\XmlBuilderInterface
@@ -1090,11 +1090,11 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Http;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Http;
 
-use Hadder\NfseNacional\Infrastructure\Config\Configuration;
-use Hadder\NfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
-use Hadder\NfseNacional\Infrastructure\Security\CertificateManager;
+use emissorNfseNacional\NfseNacional\Infrastructure\Config\Configuration;
+use emissorNfseNacional\NfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
+use emissorNfseNacional\NfseNacional\Infrastructure\Security\CertificateManager;
 
 class ApiConnector
 {
@@ -1214,15 +1214,15 @@ class ApiConnector
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Presentation\Facade;
+namespace emissorNfseNacional\NfseNacional\Presentation\Facade;
 
-use Hadder\NfseNacional\Application\DTO\Request\DpsRequest;
-use Hadder\NfseNacional\Application\DTO\Request\EventoRequest;
-use Hadder\NfseNacional\Application\DTO\Response\NfseResponse;
-use Hadder\NfseNacional\Application\Service\EmitirDpsService;
-use Hadder\NfseNacional\Application\Service\ConsultarNfseService;
-use Hadder\NfseNacional\Application\Service\CancelarNfseService;
-use Hadder\NfseNacional\Presentation\Factory\ServiceFactory;
+use emissorNfseNacional\NfseNacional\Application\DTO\Request\DpsRequest;
+use emissorNfseNacional\NfseNacional\Application\DTO\Request\EventoRequest;
+use emissorNfseNacional\NfseNacional\Application\DTO\Response\NfseResponse;
+use emissorNfseNacional\NfseNacional\Application\Service\EmitirDpsService;
+use emissorNfseNacional\NfseNacional\Application\Service\ConsultarNfseService;
+use emissorNfseNacional\NfseNacional\Application\Service\CancelarNfseService;
+use emissorNfseNacional\NfseNacional\Presentation\Factory\ServiceFactory;
 use NFePHP\Common\Certificate;
 
 class NfseNacionalFacade
@@ -1248,8 +1248,8 @@ class NfseNacionalFacade
      *
      * @param DpsRequest $request Dados da DPS
      * @return NfseResponse Resposta com dados da NFSe emitida
-     * @throws \Hadder\NfseNacional\Application\Exception\ValidationException
-     * @throws \Hadder\NfseNacional\Infrastructure\Http\Exception\HttpException
+     * @throws \emissorNfseNacional\NfseNacional\Application\Exception\ValidationException
+     * @throws \emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception\HttpException
      */
     public function emitirDps(DpsRequest $request): NfseResponse
     {
@@ -1340,10 +1340,10 @@ class NfseNacionalFacade
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Security;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Security;
 
 use NFePHP\Common\Certificate;
-use Hadder\NfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
+use emissorNfseNacional\NfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
 
 class CertificateManager
 {
@@ -1433,9 +1433,9 @@ class CertificateManager
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Xml\Validator;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator;
 
-use Hadder\NfseNacional\Infrastructure\Xml\Exception\XmlValidationException;
+use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Exception\XmlValidationException;
 
 class XsdValidator
 {
@@ -1507,9 +1507,9 @@ class XsdValidator
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Http;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Http;
 
-use Hadder\NfseNacional\Application\DTO\Response\ErrorResponse;
+use emissorNfseNacional\NfseNacional\Application\DTO\Response\ErrorResponse;
 
 class ResponseParser
 {
@@ -1728,8 +1728,8 @@ tests/
 namespace Tests\Unit\Domain\ValueObject;
 
 use PHPUnit\Framework\TestCase;
-use Hadder\NfseNacional\Domain\ValueObject\Cnpj;
-use Hadder\NfseNacional\Domain\Exception\InvalidCnpjException;
+use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cnpj;
+use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidCnpjException;
 
 class CnpjTest extends TestCase
 {
@@ -1781,9 +1781,9 @@ class CnpjTest extends TestCase
 namespace Tests\Integration\Xml;
 
 use PHPUnit\Framework\TestCase;
-use Hadder\NfseNacional\Domain\Entity\Dps;
-use Hadder\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
-use Hadder\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
+use emissorNfseNacional\NfseNacional\Domain\Entity\Dps;
+use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
+use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 
 class DpsXmlBuilderTest extends TestCase
 {

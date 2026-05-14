@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional;
+namespace emissorNfseNacional\NfseNacional;
 
-use Hadder\NfseNacional\Validators\ChaveAcessoValidator;
-use Hadder\NfseNacional\Validators\XsdValidator;
+use emissorNfseNacional\NfseNacional\Validators\ChaveAcessoValidator;
+use emissorNfseNacional\NfseNacional\Validators\XsdValidator;
 use NFePHP\Common\Certificate;
 use RuntimeException;
 use stdClass;

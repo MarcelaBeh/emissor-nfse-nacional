@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional\Validators;
+namespace emissorNfseNacional\NfseNacional\Validators;
 
 use InvalidArgumentException;
 

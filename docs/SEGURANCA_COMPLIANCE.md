@@ -26,7 +26,7 @@ O certificado digital **NUNCA** deve ser armazenado permanentemente. Apenas arqu
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Security;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Security;
 
 use NFePHP\Common\Certificate;
 
@@ -158,10 +158,10 @@ class SecureCertificateStorage
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Security;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Security;
 
 use NFePHP\Common\Certificate;
-use Hadder\NfseNacional\Infrastructure\Security\Exception\CertificateException;
+use emissorNfseNacional\NfseNacional\Infrastructure\Security\Exception\CertificateException;
 
 class CertificateValidator
 {
@@ -279,7 +279,7 @@ class CertificateValidator
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Domain\ValueObject;
+namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
 
 final readonly class DocumentoValidator
 {
@@ -378,9 +378,9 @@ final readonly class DocumentoValidator
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Domain\ValueObject;
+namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
 
-use Hadder\NfseNacional\Domain\Exception\InvalidCodigoMunicipioException;
+use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidCodigoMunicipioException;
 
 final readonly class CodigoMunicipio
 {
@@ -467,7 +467,7 @@ final readonly class CodigoMunicipio
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Domain\Enum;
+namespace emissorNfseNacional\NfseNacional\Domain\Enum;
 
 /**
  * Códigos de Justificativa de Substituição
@@ -523,9 +523,9 @@ enum MotivoSubstituicao: string
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Xml\Validator;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator;
 
-use Hadder\NfseNacional\Infrastructure\Xml\Exception\XmlValidationException;
+use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Exception\XmlValidationException;
 
 class StrictXsdValidator
 {
@@ -636,9 +636,9 @@ class StrictXsdValidator
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Xml\Validator;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator;
 
-use Hadder\NfseNacional\Domain\Enum\VersaoSchema;
+use emissorNfseNacional\NfseNacional\Domain\Enum\VersaoSchema;
 
 class SchemaVersionManager
 {
@@ -698,7 +698,7 @@ class SchemaVersionManager
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Logger;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Logger;
 
 class SensitiveDataSanitizer
 {
@@ -804,7 +804,7 @@ class SensitiveDataSanitizer
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Logger;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Logger;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
@@ -910,7 +910,7 @@ class SecureLogger implements LoggerInterface
 ```php
 <?php
 
-namespace Hadder\NfseNacional\Infrastructure\Audit;
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Audit;
 
 class AuditLog
 {
@@ -981,7 +981,7 @@ class AuditLog
 namespace Tests\Security;
 
 use PHPUnit\Framework\TestCase;
-use Hadder\NfseNacional\Infrastructure\Security\CertificateValidator;
+use emissorNfseNacional\NfseNacional\Infrastructure\Security\CertificateValidator;
 use NFePHP\Common\Certificate;
 
 class CertificateValidatorTest extends TestCase
@@ -1037,7 +1037,7 @@ class CertificateValidatorTest extends TestCase
 namespace Tests\Security;
 
 use PHPUnit\Framework\TestCase;
-use Hadder\NfseNacional\Infrastructure\Logger\SensitiveDataSanitizer;
+use emissorNfseNacional\NfseNacional\Infrastructure\Logger\SensitiveDataSanitizer;
 
 class SensitiveDataSanitizerTest extends TestCase
 {

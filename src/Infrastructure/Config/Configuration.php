@@ -1,0 +1,125 @@
+<?php
+
+declare(strict_types=1);
+
+namespace emissorNfseNacional\NfseNacional\Infrastructure\Config;
+
+use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
+use emissorNfseNacional\NfseNacional\Infrastructure\Config\Exception\ConfigException;
+
+class Configuration implements Contract\ConfigInterface
+{
+    private array $config;
+    private array $urls;
+    private array $operations;
+    private string $tipoApi;
+
+    public function __construct(array $config)
+    {
+        $this->config = $this->validateConfig($config);
+        $this->tipoApi = $config['tipoApi'] ?? 'sefin';
+        $this->loadUrls();
+        $this->loadOperations();
+    }
+
+    private function validateConfig(array $config): array
+    {
+        $required = ['tpAmb', 'prefeitura'];
+
+        foreach ($required as $field) {
+            if (!isset($config[$field])) {
+                throw new ConfigException("Campo obrigatório não informado: {$field}");
+            }
+        }
+
+        if (!in_array($config['tpAmb'], [1, 2])) {
+            throw new ConfigException('tpAmb deve ser 1 (Produção) ou 2 (Homologação)');
+        }
+
+        return $config;
+    }
+
+    private function loadUrls(): void
+    {
+        $this->urls = [
+            'sefin_homologacao' => 'https://sefin.producaorestrita.nfse.gov.br/SefinNacional',
+            'sefin_producao' => 'https://sefin.nfse.gov.br/sefinnacional',
+            'adn_homologacao' => 'https://adn.producaorestrita.nfse.gov.br',
+            'adn_producao' => 'https://adn.nfse.gov.br',
+            'nfse_homologacao' => 'https://www.producaorestrita.nfse.gov.br/EmissorNacional',
+            'nfse_producao' => 'https://www.nfse.gov.br/EmissorNacional',
+        ];
+
+        $configFile = __DIR__ . '/../../../storage/prefeituras.json';
+        if (file_exists($configFile)) {
+            $json = json_decode(file_get_contents($configFile), true);
+            $prefeitura = $this->config['prefeitura'];
+
+            if (isset($json[$prefeitura]['urls'])) {
+                $this->urls = array_merge($this->urls, $json[$prefeitura]['urls']);
+            }
+        }
+    }
+
+    private function loadOperations(): void
+    {
+        $this->operations = [
+            'consultar_nfse' => 'nfse/{chave}',
+            'consultar_dps' => 'dps/{chave}',
+            'consultar_eventos' => 'nfse/{chave}/eventos/{tipoEvento}/{nSequencial}',
+            'consultar_danfse' => 'danfse/{chave}',
+            'consultar_danfse_nfse_certificado' => 'Certificado',
+            'consultar_danfse_nfse_download' => 'Notas/Download/DANFSe/{chave}',
+            'emitir_nfse' => 'nfse',
+            'cancelar_nfse' => 'nfse/{chave}/eventos',
+        ];
+
+        $configFile = __DIR__ . '/../../../storage/prefeituras.json';
+        if (file_exists($configFile)) {
+            $json = json_decode(file_get_contents($configFile), true);
+            $prefeitura = $this->config['prefeitura'];
+
+            if (isset($json[$prefeitura]['operations'])) {
+                $this->operations = array_merge($this->operations, $json[$prefeitura]['operations']);
+            }
+        }
+    }
+
+    public function getTipoAmbiente(): TipoAmbiente
+    {
+        return TipoAmbiente::from($this->config['tpAmb']);
+    }
+
+    public function getTipoApi(): string
+    {
+        return $this->tipoApi;
+    }
+
+    public function getUrl(string $key): string
+    {
+        if (!isset($this->urls[$key])) {
+            throw new ConfigException("URL não configurada: {$key}");
+        }
+
+        return $this->urls[$key];
+    }
+
+    public function getOperation(string $key): string
+    {
+        if (!isset($this->operations[$key])) {
+            throw new ConfigException("Operação não configurada: {$key}");
+        }
+
+        return $this->operations[$key];
+    }
+
+    public function get(string $key, mixed $default = null): mixed
+    {
+        return $this->config[$key] ?? $default;
+    }
+
+    public function getVersion(): string
+    {
+        return '2.0.0';
+    }
+}

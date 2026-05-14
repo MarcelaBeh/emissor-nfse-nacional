@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Hadder\NfseNacional;
+namespace emissorNfseNacional\NfseNacional;
 
 use Exception;
-use Hadder\NfseNacional\Common\RestBase;
+use emissorNfseNacional\NfseNacional\Common\RestBase;
 use NFePHP\Common\Certificate;
 use NFePHP\Common\Exception\SoapException;
 use NFePHP\Common\Signer;

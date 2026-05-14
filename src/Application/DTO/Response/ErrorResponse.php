@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+namespace emissorNfseNacional\NfseNacional\Application\DTO\Response;
+
+final readonly class ErrorResponse
+{
+    public function __construct(
+        public string $codigo,
+        public string $mensagem,
+        public array $detalhes = [],
+        public bool $recuperavel = false,
+    ) {}
+}
