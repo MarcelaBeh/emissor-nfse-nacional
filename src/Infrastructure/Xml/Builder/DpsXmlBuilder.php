@@ -226,19 +226,120 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $locPrest = $this->dom->createElement('locPrest');
         $servNode->appendChild($locPrest);
-        $this->addChild($locPrest, 'cLocPrestacao', $servico->getLocalPrestacao()->getCodigo(), true);
+        if ($servico->getCodigoPaisPrestacao() !== null) {
+            $this->addChild($locPrest, 'cPaisPrestacao', $servico->getCodigoPaisPrestacao(), true);
+        } else {
+            $this->addChild($locPrest, 'cLocPrestacao', $servico->getLocalPrestacao()->getCodigo(), true);
+        }
 
         $cServ = $this->dom->createElement('cServ');
         $servNode->appendChild($cServ);
         $this->addChild($cServ, 'cTribNac', $servico->getCodigoTributacao(), true);
+        if ($servico->getCodigoTributacaoMunicipal() !== null) {
+            $this->addChild($cServ, 'cTribMun', $servico->getCodigoTributacaoMunicipal(), false);
+        }
         $this->addChild($cServ, 'xDescServ', $servico->getDiscriminacao(), true);
-
         if ($servico->getCodigoNbs()) {
             $this->addChild($cServ, 'cNBS', $servico->getCodigoNbs(), false);
+        }
+        if ($servico->getCodigoInternoContribuinte() !== null) {
+            $this->addChild($cServ, 'cIntContrib', $servico->getCodigoInternoContribuinte(), false);
+        }
+
+        if ($servico->getComExterior() !== null) {
+            $this->buildComExterior($servNode, $servico->getComExterior());
         }
 
         if ($servico->getObra() !== null) {
             $this->buildObra($servNode, $servico->getObra());
+        }
+
+        if ($servico->getAtvEvento() !== null) {
+            $this->buildAtvEvento($servNode, $servico->getAtvEvento());
+        }
+
+        if ($servico->getInfoCompl() !== null) {
+            $this->buildInfoCompl($servNode, $servico->getInfoCompl());
+        }
+    }
+
+    private function buildComExterior(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior $comExt): void
+    {
+        $node = $this->dom->createElement('comExt');
+        $parent->appendChild($node);
+        $this->addChild($node, 'mdPrestacao', (string) $comExt->getModoPrestacao(), true);
+        $this->addChild($node, 'vincPrest', (string) $comExt->getVinculoPrestador(), true);
+        $this->addChild($node, 'tpMoeda', $comExt->getCodigoMoeda(), true);
+        $this->addChild($node, 'vServMoeda', number_format($comExt->getValorServicoMoeda(), 2, '.', ''), true);
+        $this->addChild($node, 'mecAFComexP', $comExt->getMecanismoApoioPrestador(), true);
+        $this->addChild($node, 'mecAFComexT', $comExt->getMecanismoApoioTomador(), true);
+        $this->addChild($node, 'movTempBens', $comExt->getMovimentacaoTemporaria(), true);
+        if ($comExt->getNumeroDeclaracaoImportacao() !== null) {
+            $this->addChild($node, 'nDI', $comExt->getNumeroDeclaracaoImportacao(), false);
+        }
+        if ($comExt->getNumeroRegistroExportacao() !== null) {
+            $this->addChild($node, 'nRE', $comExt->getNumeroRegistroExportacao(), false);
+        }
+        $this->addChild($node, 'mdic', $comExt->getEnviarMDIC(), true);
+    }
+
+    private function buildAtvEvento(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento $atv): void
+    {
+        $node = $this->dom->createElement('atvEvento');
+        $parent->appendChild($node);
+        $this->addChild($node, 'xNome', $atv->getDescricao(), true);
+        $this->addChild($node, 'dtIni', $atv->getDataInicio()->format('Y-m-d'), true);
+        $this->addChild($node, 'dtFim', $atv->getDataFim()->format('Y-m-d'), true);
+        if ($atv->getIdentificacaoEvento() !== null) {
+            $this->addChild($node, 'idAtvEvt', $atv->getIdentificacaoEvento(), true);
+        } elseif ($atv->getEndereco() !== null) {
+            $this->buildAtvEventoEndereco($node, $atv->getEndereco());
+        }
+    }
+
+    private function buildAtvEventoEndereco(\DOMNode $parent, Endereco $end): void
+    {
+        $endNode = $this->dom->createElement('end');
+        $parent->appendChild($endNode);
+        $this->addChild($endNode, 'xLgr', $end->getLogradouro(), true);
+        $this->addChild($endNode, 'nro', $end->getNumero(), true);
+        if ($end->getComplemento()) {
+            $this->addChild($endNode, 'xCpl', $end->getComplemento(), false);
+        }
+        $this->addChild($endNode, 'xBairro', $end->getBairro(), true);
+        if ($end->getCodigoPais() !== null) {
+            $this->addChild($endNode, 'cPais', $end->getCodigoPais(), true);
+            $this->addChild($endNode, 'cEndPost', $end->getCodigoPostalExterior(), true);
+            $this->addChild($endNode, 'xCidade', $end->getNomeCidadeExterior(), true);
+            $this->addChild($endNode, 'xEstProvReg', $end->getEstadoProvinciaExterior(), true);
+        } else {
+            $this->addChild($endNode, 'cMun', $end->getCodigoMunicipio()->getCodigo(), true);
+            $this->addChild($endNode, 'CEP', $end->getCep()->getCep(), true);
+        }
+    }
+
+    private function buildInfoCompl(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl $info): void
+    {
+        $node = $this->dom->createElement('infoCompl');
+        $parent->appendChild($node);
+        if ($info->getIdDocTecnico() !== null) {
+            $this->addChild($node, 'idDocTec', $info->getIdDocTecnico(), false);
+        }
+        if ($info->getDocReferencia() !== null) {
+            $this->addChild($node, 'docRef', $info->getDocReferencia(), false);
+        }
+        if ($info->getNumeroPedido() !== null) {
+            $this->addChild($node, 'xPed', $info->getNumeroPedido(), false);
+        }
+        if ($info->getItensPedido() !== null) {
+            $gItem = $this->dom->createElement('gItemPed');
+            $node->appendChild($gItem);
+            foreach ($info->getItensPedido() as $item) {
+                $this->addChild($gItem, 'xItemPed', $item, true);
+            }
+        }
+        if ($info->getInfoComplementar() !== null) {
+            $this->addChild($node, 'xInfComp', $info->getInfoComplementar(), false);
         }
     }
 
@@ -287,6 +388,9 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $vServPrest = $this->dom->createElement('vServPrest');
         $valNode->appendChild($vServPrest);
+        if ($servico->getValorRecebido() !== null) {
+            $this->addChild($vServPrest, 'vReceb', number_format($servico->getValorRecebido(), 2, '.', ''), false);
+        }
         $this->addChild($vServPrest, 'vServ', number_format($servico->getValorTotal()->getValue(), 2, '.', ''), true);
 
         if ($servico->getDescontoIncondicionado()->isPositive() || $servico->getDescontoCondicionado()->isPositive()) {
@@ -296,23 +400,170 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->addChild($desc, 'vDescCond', number_format($servico->getDescontoCondicionado()->getValue(), 2, '.', ''), false);
         }
 
+        if ($servico->getDocumentosDeducao() !== null) {
+            $this->buildDedRed($valNode, $servico->getDocumentosDeducao());
+        }
+
         $tribNode = $this->dom->createElement('trib');
         $valNode->appendChild($tribNode);
 
         $tribMun = $this->dom->createElement('tribMun');
         $tribNode->appendChild($tribMun);
         $this->addChild($tribMun, 'tribISSQN', $servico->getTribISSQN() ?? '1', true);
+        if ($servico->getTipoImunidade() !== null) {
+            $this->addChild($tribMun, 'tpImunidade', (string) $servico->getTipoImunidade(), false);
+        }
         $this->addChild($tribMun, 'cPaisResult', null, false);
+        if ($servico->getExigSusp() !== null) {
+            $this->buildExigSusp($tribMun, $servico->getExigSusp());
+        }
+        if ($servico->getBeneficioMunicipal() !== null) {
+            $bmNode = $this->dom->createElement('BM');
+            $tribMun->appendChild($bmNode);
+            $this->addChild($bmNode, 'nBM', $servico->getBeneficioMunicipal()->getNumeroBeneficio(), true);
+        }
         $this->addChild($tribMun, 'tpRetISSQN', $servico->getTpRetISSQN() ?? '1', true);
         $this->addChild($tribMun, 'pAliq', $servico->getAliquotaIss(), true);
 
+        if ($servico->getTribFederal() !== null) {
+            $this->buildTribFederal($tribNode, $servico->getTribFederal());
+        }
+
+        $this->buildTotTrib($tribNode, $servico);
+    }
+
+    private function buildExigSusp(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp $exigSusp): void
+    {
+        $node = $this->dom->createElement('exigSusp');
+        $parent->appendChild($node);
+        $this->addChild($node, 'tpSusp', (string) ($exigSusp->getTipoSuspensao() ?? '1'), true);
+        $this->addChild($node, 'nProcesso', $exigSusp->getNumeroProcesso() ?? '', true);
+    }
+
+    private function buildTribFederal(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal $tribFed): void
+    {
+        $node = $this->dom->createElement('tribFed');
+        $parent->appendChild($node);
+
+        if ($tribFed->getPisCofinsCst() !== null || $tribFed->getPisCofinsAliquotaPis() !== null) {
+            $pisNode = $this->dom->createElement('piscofins');
+            $node->appendChild($pisNode);
+            if ($tribFed->getPisCofinsCst() !== null) {
+                $this->addChild($pisNode, 'CST', $tribFed->getPisCofinsCst(), true);
+            }
+            if ($tribFed->getPisCofinsAliquotaPis() !== null) {
+                $this->addChild($pisNode, 'pAliqPis', number_format($tribFed->getPisCofinsAliquotaPis(), 2, '.', ''), false);
+            }
+            if ($tribFed->getPisCofinsAliquotaCofins() !== null) {
+                $this->addChild($pisNode, 'pAliqCofins', number_format($tribFed->getPisCofinsAliquotaCofins(), 2, '.', ''), false);
+            }
+            if ($tribFed->getPisCofinsTipo() !== null) {
+                $this->addChild($pisNode, 'tpRetPisCofins', $tribFed->getPisCofinsTipo(), true);
+            }
+        }
+
+        if ($tribFed->getValorRetidoCP() !== null) {
+            $this->addChild($node, 'vRetCP', $tribFed->getValorRetidoCP(), false);
+        }
+        if ($tribFed->getValorRetidoIRRF() !== null) {
+            $this->addChild($node, 'vRetIRRF', $tribFed->getValorRetidoIRRF(), false);
+        }
+        if ($tribFed->getValorRetidoCSLL() !== null) {
+            $this->addChild($node, 'vRetCSLL', $tribFed->getValorRetidoCSLL(), false);
+        }
+    }
+
+    /** @param \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed[] $docs */
+    private function buildDedRed(\DOMNode $parent, array $docs): void
+    {
+        $vDedRed = $this->dom->createElement('vDedRed');
+        $parent->appendChild($vDedRed);
+
+        $docListNode = $this->dom->createElement('documentos');
+        $vDedRed->appendChild($docListNode);
+
+        foreach ($docs as $doc) {
+            $docNode = $this->dom->createElement('docDedRed');
+            $docListNode->appendChild($docNode);
+
+            match ($doc->getTipoDocumento()) {
+                'chNFSe' => $this->addChild($docNode, 'chNFSe', $doc->getChaveNFSe() ?? '', true),
+                'chNFe' => $this->addChild($docNode, 'chNFe', $doc->getChaveNFe() ?? '', true),
+                'NFSeMun' => $this->buildDocNFSeMun($docNode, $doc),
+                'NFNFS' => $this->buildDocNFNFS($docNode, $doc),
+                'nDocFisc' => $this->addChild($docNode, 'nDocFisc', $doc->getNumeroDocFiscal() ?? '', true),
+                default => $this->addChild($docNode, 'nDoc', $doc->getNumeroDoc() ?? '', true),
+            };
+
+            $this->addChild($docNode, 'tpDedRed', $doc->getTipoDeducaoReducao(), true);
+            if ($doc->getDescricaoOutrasDeducoes() !== null) {
+                $this->addChild($docNode, 'xDescOutDed', $doc->getDescricaoOutrasDeducoes(), false);
+            }
+            $this->addChild($docNode, 'dtEmiDoc', $doc->getDataEmissaoDoc()->format('Y-m-d'), true);
+            $this->addChild($docNode, 'vDedutivelRedutivel', $doc->getValorDedutivel(), true);
+            $this->addChild($docNode, 'vDeducaoReducao', $doc->getValorDeducao(), true);
+
+            if ($doc->getFornecedor() !== null) {
+                $fornec = $doc->getFornecedor();
+                $fNode = $this->dom->createElement('fornec');
+                $docNode->appendChild($fNode);
+                if ($fornec->getCnpj()) {
+                    $this->addChild($fNode, 'CNPJ', $fornec->getCnpj()->getNumero(), true);
+                } elseif ($fornec->getCpf()) {
+                    $this->addChild($fNode, 'CPF', $fornec->getCpf()->getNumero(), true);
+                } elseif ($fornec->getNif()) {
+                    $this->addChild($fNode, 'NIF', $fornec->getNif()->getNif(), true);
+                } else {
+                    $this->addChild($fNode, 'cNaoNIF', $fornec->getCodigoNaoNif(), true);
+                }
+                $this->addChild($fNode, 'xNome', $fornec->getXNome(), true);
+            }
+        }
+    }
+
+    private function buildDocNFSeMun(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed $doc): void
+    {
+        $node = $this->dom->createElement('NFSeMun');
+        $parent->appendChild($node);
+        $this->addChild($node, 'cMunNFSeMun', $doc->getCodigoMunicipioNFSe() ?? '', true);
+        $this->addChild($node, 'nNFSeMun', $doc->getNumeroNFSe() ?? '', true);
+        $this->addChild($node, 'cVerifNFSeMun', $doc->getCodigoVerificacaoNFSe() ?? '', true);
+    }
+
+    private function buildDocNFNFS(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed $doc): void
+    {
+        $node = $this->dom->createElement('NFNFS');
+        $parent->appendChild($node);
+        $this->addChild($node, 'nNFS', $doc->getNumeroNFS() ?? '', true);
+        $this->addChild($node, 'modNFS', $doc->getModeloNFS() ?? '', true);
+        $this->addChild($node, 'serieNFS', $doc->getSerieNFS() ?? '', true);
+    }
+
+    private function buildTotTrib(\DOMNode $parent, Servico $servico): void
+    {
         $tt = $this->dom->createElement('totTrib');
-        $tribNode->appendChild($tt);
-        $vt = $this->dom->createElement('vTotTrib');
-        $tt->appendChild($vt);
-        $this->addChild($vt, 'vTotTribFed', '0.00', true);
-        $this->addChild($vt, 'vTotTribEst', '0.00', true);
-        $this->addChild($vt, 'vTotTribMun', number_format($servico->getValorIss()->getValue(), 2, '.', ''), true);
+        $parent->appendChild($tt);
+
+        $tipo = $servico->getTotTribTipo();
+
+        if ($tipo === 'pTotTribSN' && $servico->getPTotTribSN() !== null) {
+            $this->addChild($tt, 'pTotTribSN', number_format($servico->getPTotTribSN(), 2, '.', ''), true);
+        } elseif ($tipo === 'indTotTrib') {
+            $this->addChild($tt, 'indTotTrib', $servico->getIndTotTrib() ?? '0', true);
+        } elseif ($tipo === 'pTotTrib') {
+            $pt = $this->dom->createElement('pTotTrib');
+            $tt->appendChild($pt);
+            $this->addChild($pt, 'pTotTribFed', $servico->getPTotTribFed() !== null ? number_format($servico->getPTotTribFed(), 2, '.', '') : '0.00', true);
+            $this->addChild($pt, 'pTotTribEst', $servico->getPTotTribEst() !== null ? number_format($servico->getPTotTribEst(), 2, '.', '') : '0.00', true);
+            $this->addChild($pt, 'pTotTribMun', $servico->getPTotTribMun() !== null ? number_format($servico->getPTotTribMun(), 2, '.', '') : '0.00', true);
+        } else {
+            // default: vTotTrib
+            $vt = $this->dom->createElement('vTotTrib');
+            $tt->appendChild($vt);
+            $this->addChild($vt, 'vTotTribFed', '0.00', true);
+            $this->addChild($vt, 'vTotTribEst', '0.00', true);
+            $this->addChild($vt, 'vTotTribMun', number_format($servico->getValorIss()->getValue(), 2, '.', ''), true);
+        }
     }
 
     private function buildIbscbs(\DOMNode $parent, IbsCbsInfo $ibscbs): void

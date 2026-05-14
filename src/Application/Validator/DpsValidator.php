@@ -90,6 +90,233 @@ class DpsValidator
             }
         }
 
+        // Validações dos novos campos do Servico (locPrest, cServ, valores)
+        if ($request->servico->codigoPaisPrestacao !== null && !preg_match('/^[A-Z]{2}$/', $request->servico->codigoPaisPrestacao)) {
+            $errors[] = 'cPaisPrestacao deve ser um código ISO de país de 2 letras maiúsculas';
+        }
+
+        if ($request->servico->codigoTributacaoMunicipal !== null && !preg_match('/^[0-9]{3}$/', $request->servico->codigoTributacaoMunicipal)) {
+            $errors[] = 'cTribMun deve ter exatamente 3 dígitos numéricos';
+        }
+
+        if ($request->servico->codigoInternoContribuinte !== null && !preg_match('/^[a-zA-Z0-9]{1,20}$/', $request->servico->codigoInternoContribuinte)) {
+            $errors[] = 'cIntContrib deve ser alfanumérico de 1 a 20 caracteres';
+        }
+
+        if ($request->servico->valorRecebido !== null && $request->servico->valorRecebido <= 0) {
+            $errors[] = 'vReceb deve ser maior que zero';
+        }
+
+        // Validações do grupo comExterior
+        if ($request->servico->comExterior !== null) {
+            $ce = $request->servico->comExterior;
+
+            if ($ce->modoPrestacao === null) {
+                $errors[] = 'mdPrestacao é obrigatório no grupo comExterior';
+            }
+
+            if ($ce->vinculoPrestador === null) {
+                $errors[] = 'vincPrest é obrigatório no grupo comExterior';
+            }
+
+            if ($ce->codigoMoeda !== null && !preg_match('/^[0-9]{3}$/', $ce->codigoMoeda)) {
+                $errors[] = 'tpMoeda deve ser um código ISO de moeda numérico de 3 dígitos';
+            }
+
+            if ($ce->valorServicoMoeda !== null && $ce->valorServicoMoeda <= 0) {
+                $errors[] = 'vServMoeda deve ser maior que zero';
+            }
+        }
+
+        // Validações do grupo atvEvento
+        if ($request->servico->atvEvento !== null) {
+            $ae = $request->servico->atvEvento;
+
+            if (empty($ae->descricao)) {
+                $errors[] = 'xNome (descricao) é obrigatório no grupo atvEvento';
+            }
+
+            if ($ae->dataInicio !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $ae->dataInicio)) {
+                $errors[] = 'dtIni deve estar no formato AAAA-MM-DD';
+            }
+
+            if ($ae->dataFim !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $ae->dataFim)) {
+                $errors[] = 'dtFim deve estar no formato AAAA-MM-DD';
+            }
+
+            if ($ae->dataInicio !== null && $ae->dataFim !== null && $ae->dataInicio > $ae->dataFim) {
+                $errors[] = 'dtIni não pode ser posterior a dtFim';
+            }
+        }
+
+        // Validações do grupo infoCompl
+        if ($request->servico->infoCompl !== null) {
+            $ic = $request->servico->infoCompl;
+
+            if ($ic->itensPedido !== null) {
+                foreach ($ic->itensPedido as $i => $item) {
+                    if (strlen($item) > 255) {
+                        $errors[] = "gItemPed #{$i} deve ter no máximo 255 caracteres";
+                    }
+                }
+            }
+        }
+
+        // Validações do grupo documentosDeducao (vDedRed)
+        if ($request->servico->documentosDeducao !== null) {
+            $validTypes = ['chNFSe', 'chNFe', 'NFSeMun', 'NFNFS', 'nDocFisc', 'nDoc'];
+
+            foreach ($request->servico->documentosDeducao as $i => $doc) {
+                $prefix = "DocDedRed #{$i}";
+
+                if ($doc->tipoDocumento === null || !in_array($doc->tipoDocumento, $validTypes, true)) {
+                    $errors[] = "{$prefix}: tipoDocumento inválido '{$doc->tipoDocumento}'";
+                }
+
+                if ($doc->tipoDocumento === 'chNFSe' && empty($doc->chaveNFSe)) {
+                    $errors[] = "{$prefix}: chNFSe é obrigatória para tipoDocumento = chNFSe";
+                }
+
+                if ($doc->tipoDocumento === 'chNFSe' && !empty($doc->chaveNFSe) && !preg_match('/^[0-9]{50}$/', $doc->chaveNFSe)) {
+                    $errors[] = "{$prefix}: chNFSe deve ter exatamente 50 dígitos numéricos";
+                }
+
+                if ($doc->tipoDocumento === 'chNFe' && empty($doc->chaveNFe)) {
+                    $errors[] = "{$prefix}: chNFe é obrigatória para tipoDocumento = chNFe";
+                }
+
+                if ($doc->tipoDocumento === 'chNFe' && !empty($doc->chaveNFe) && !preg_match('/^[0-9]{44}$/', $doc->chaveNFe)) {
+                    $errors[] = "{$prefix}: chNFe deve ter exatamente 44 dígitos numéricos";
+                }
+
+                if ($doc->tipoDocumento === 'NFSeMun') {
+                    if (empty($doc->codigoMunicipioNFSe)) {
+                        $errors[] = "{$prefix}: cMunNFSeMun é obrigatório para NFSeMun";
+                    }
+                    if (empty($doc->numeroNFSe)) {
+                        $errors[] = "{$prefix}: nNFSeMun é obrigatório para NFSeMun";
+                    }
+                    if (empty($doc->codigoVerificacaoNFSe)) {
+                        $errors[] = "{$prefix}: cVerifNFSeMun é obrigatório para NFSeMun";
+                    }
+                }
+
+                if ($doc->tipoDocumento === 'NFNFS') {
+                    if (empty($doc->numeroNFS)) {
+                        $errors[] = "{$prefix}: nNFS é obrigatório para NFNFS";
+                    }
+                    if (empty($doc->modeloNFS)) {
+                        $errors[] = "{$prefix}: modNFS é obrigatório para NFNFS";
+                    }
+                    if (empty($doc->serieNFS)) {
+                        $errors[] = "{$prefix}: serieNFS é obrigatório para NFNFS";
+                    }
+                }
+
+                if ($doc->tipoDocumento === 'nDocFisc' && empty($doc->numeroDocFiscal)) {
+                    $errors[] = "{$prefix}: nDocFisc é obrigatório para tipoDocumento = nDocFisc";
+                }
+
+                if ($doc->tipoDocumento === 'nDoc' && empty($doc->numeroDoc)) {
+                    $errors[] = "{$prefix}: nDoc é obrigatório para tipoDocumento = nDoc";
+                }
+
+                if ($doc->dataEmissaoDoc !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dataEmissaoDoc)) {
+                    $errors[] = "{$prefix}: dEmiDoc deve estar no formato AAAA-MM-DD";
+                }
+
+                if ($doc->tipoDeducaoReducao !== null && !in_array($doc->tipoDeducaoReducao, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '99'], true)) {
+                    $errors[] = "{$prefix}: tpDedRed inválido '{$doc->tipoDeducaoReducao}'";
+                }
+
+                if ($doc->tipoDeducaoReducao === '99' && empty($doc->descricaoOutrasDeducoes)) {
+                    $errors[] = "{$prefix}: xDescOutDed é obrigatório quando tpDedRed = 99";
+                }
+
+                if ($doc->valorDedutivel !== null && !is_numeric($doc->valorDedutivel)) {
+                    $errors[] = "{$prefix}: vDedutivelRedutivel deve ser um valor numérico";
+                }
+
+                if ($doc->valorDeducao !== null && !is_numeric($doc->valorDeducao)) {
+                    $errors[] = "{$prefix}: vDeducaoReducao deve ser um valor numérico";
+                }
+            }
+        }
+
+        // Validações do grupo tribMun
+        if ($request->servico->tipoImunidade !== null && !in_array($request->servico->tipoImunidade, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], true)) {
+            $errors[] = 'tpImunidade inválido — deve ser um número entre 1 e 15';
+        }
+
+        if ($request->servico->exigSusp !== null) {
+            $es = $request->servico->exigSusp;
+
+            if ($es->tipoSuspensao !== null && !in_array($es->tipoSuspensao, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], true)) {
+                $errors[] = 'tpSusp inválido — deve ser um número entre 1 e 13';
+            }
+
+            if ($es->numeroProcesso !== null && $es->numeroProcesso === '') {
+                $errors[] = 'nProcesso não pode ser vazio quando informado';
+            }
+        }
+
+        if ($request->servico->beneficioMunicipal !== null && empty($request->servico->beneficioMunicipal->numeroBeneficio)) {
+            $errors[] = 'nBM é obrigatório no grupo BM';
+        }
+
+        // Validações do grupo tribFed
+        if ($request->servico->tribFederal !== null) {
+            $tf = $request->servico->tribFederal;
+
+            if ($tf->pisCofinsCst !== null && !preg_match('/^[0-9]{2}$/', $tf->pisCofinsCst)) {
+                $errors[] = 'CST do PIS/COFINS deve ter exatamente 2 dígitos';
+            }
+
+            if ($tf->pisCofinsAliquotaPis !== null && ($tf->pisCofinsAliquotaPis < 0 || $tf->pisCofinsAliquotaPis > 100)) {
+                $errors[] = 'pAliqPis deve estar entre 0 e 100';
+            }
+
+            if ($tf->pisCofinsAliquotaCofins !== null && ($tf->pisCofinsAliquotaCofins < 0 || $tf->pisCofinsAliquotaCofins > 100)) {
+                $errors[] = 'pAliqCofins deve estar entre 0 e 100';
+            }
+
+            if ($tf->pisCofinsCst !== null && $tf->pisCofinsTipo === null) {
+                $errors[] = 'tipo do PIS/COFINS é obrigatório quando CST é informado';
+            }
+
+            if ($tf->pisCofinsTipo !== null && !in_array($tf->pisCofinsTipo, ['1', '2', '3'], true)) {
+                $errors[] = "tipo do PIS/COFINS inválido '{$tf->pisCofinsTipo}'";
+            }
+        }
+
+        // Validações do grupo totTrib
+        if ($request->servico->totTribTipo !== null) {
+            $validTotTrib = ['vTotTrib', 'pTotTrib', 'indTotTrib', 'pTotTribSN'];
+            if (!in_array($request->servico->totTribTipo, $validTotTrib, true)) {
+                $errors[] = "totTribTipo inválido '{$request->servico->totTribTipo}'";
+            }
+
+            if ($request->servico->totTribTipo === 'pTotTrib') {
+                if ($request->servico->pTotTribFed === null) {
+                    $errors[] = 'pTotTribFed é obrigatório quando totTribTipo = pTotTrib';
+                }
+                if ($request->servico->pTotTribEst === null) {
+                    $errors[] = 'pTotTribEst é obrigatório quando totTribTipo = pTotTrib';
+                }
+                if ($request->servico->pTotTribMun === null) {
+                    $errors[] = 'pTotTribMun é obrigatório quando totTribTipo = pTotTrib';
+                }
+            }
+
+            if ($request->servico->totTribTipo === 'indTotTrib' && $request->servico->indTotTrib === null) {
+                $errors[] = 'indTotTrib é obrigatório quando totTribTipo = indTotTrib';
+            }
+
+            if ($request->servico->totTribTipo === 'pTotTribSN' && $request->servico->pTotTribSN === null) {
+                $errors[] = 'pTotTribSN é obrigatório quando totTribTipo = pTotTribSN';
+            }
+        }
+
         if ($request->ibscbs !== null) {
             $req = $request->ibscbs;
 

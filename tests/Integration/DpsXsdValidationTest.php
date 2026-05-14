@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Tests\Integration;
 
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\BeneficioMunicipal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes;
@@ -14,10 +19,12 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
@@ -401,6 +408,284 @@ final class DpsXsdValidationTest extends TestCase
 
         $this->assertSame('DPS', $dpsEl->localName);
         $this->assertSame('http://www.sped.fazenda.gov.br/nfse', $dpsEl->namespaceURI);
+    }
+
+    // --- XSD validation tests for new Servico fields ---
+
+    public function test_dps_with_com_exterior_validates_against_xsd(): void
+    {
+        $comExterior = new ComExterior(
+            modoPrestacao: 1,
+            vinculoPrestador: 2,
+            codigoMoeda: '840',
+            valorServicoMoeda: 5000.00,
+            mecanismoApoioPrestador: '01',
+            mecanismoApoioTomador: '01',
+            movimentacaoTemporaria: '0',
+            enviarMDIC: '0',
+        );
+        $servico = new Servico(
+            discriminacao: 'Comércio exterior',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(25000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            comExterior: $comExterior,
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_atv_evento_validates_against_xsd(): void
+    {
+        $atvEvento = new AtvEvento(
+            descricao: 'Feira Tecnológica',
+            dataInicio: new \DateTimeImmutable('2026-06-01'),
+            dataFim: new \DateTimeImmutable('2026-06-10'),
+            identificacaoEvento: 'EVT-001',
+        );
+        $servico = new Servico(
+            discriminacao: 'Evento',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(5000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            atvEvento: $atvEvento,
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_info_compl_validates_against_xsd(): void
+    {
+        $infoCompl = new InfoCompl(
+            idDocTecnico: 'CONTR-001',
+            numeroPedido: 'PED-001',
+            itensPedido: ['Item A', 'Item B'],
+            infoComplementar: 'Obs complementares',
+        );
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            infoCompl: $infoCompl,
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_documentos_deducao_validates_against_xsd(): void
+    {
+        $doc = new DocDedRed(
+            tipoDocumento: 'chNFe',
+            dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
+            chaveNFe: '12345678901234567890123456789012345678901234',
+            tipoDeducaoReducao: '1',
+            valorDedutivel: '3000.00',
+            valorDeducao: '3000.00',
+        );
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(5000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            documentosDeducao: [$doc],
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_exig_susp_e_beneficio_municipal_validates_against_xsd(): void
+    {
+        $exigSusp = new ExigSusp(tipoSuspensao: 1, numeroProcesso: '000000000000000000000000012345');
+        $bm = new BeneficioMunicipal(numeroBeneficio: '00000000000001');
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            exigSusp: $exigSusp,
+            beneficioMunicipal: $bm,
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_trib_federal_validates_against_xsd(): void
+    {
+        $tribFed = new TribFederal(
+            pisCofinsCst: '01',
+            pisCofinsTipo: '1',
+            pisCofinsAliquotaPis: 1.65,
+            pisCofinsAliquotaCofins: 7.60,
+            valorRetidoCP: '250.00',
+            valorRetidoIRRF: '150.00',
+            valorRetidoCSLL: '100.00',
+        );
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            tribFederal: $tribFed,
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_codigo_pais_prestacao_validates_against_xsd(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'Serviço no exterior',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            codigoPaisPrestacao: 'US',
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_all_new_fields_validates_against_xsd(): void
+    {
+        $comExterior = new ComExterior(
+            modoPrestacao: 1,
+            vinculoPrestador: 2,
+            codigoMoeda: '840',
+            valorServicoMoeda: 5000.00,
+            mecanismoApoioPrestador: '01',
+            mecanismoApoioTomador: '01',
+            movimentacaoTemporaria: '0',
+            enviarMDIC: '0',
+        );
+        $atvEvento = new AtvEvento(
+            descricao: 'Feira Internacional',
+            dataInicio: new \DateTimeImmutable('2026-06-01'),
+            dataFim: new \DateTimeImmutable('2026-06-10'),
+            identificacaoEvento: 'EVT-001',
+        );
+        $infoCompl = new InfoCompl(
+            idDocTecnico: 'CONTR-001',
+            numeroPedido: 'PED-001',
+            infoComplementar: 'Observações',
+        );
+        $doc = new DocDedRed(
+            tipoDocumento: 'chNFe',
+            dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
+            chaveNFe: '12345678901234567890123456789012345678901234',
+            tipoDeducaoReducao: '1',
+            valorDedutivel: '3000.00',
+            valorDeducao: '3000.00',
+        );
+        $exigSusp = new ExigSusp(tipoSuspensao: 1, numeroProcesso: '000000000000000000000000012345');
+        $bm = new BeneficioMunicipal(numeroBeneficio: '00000000000001');
+        $tribFed = new TribFederal(
+            pisCofinsCst: '01',
+            pisCofinsTipo: '1',
+            pisCofinsAliquotaPis: 1.65,
+            pisCofinsAliquotaCofins: 7.60,
+        );
+        $servico = new Servico(
+            discriminacao: 'Todos os campos novos',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(25000.00),
+            valorDeducoes: new Money(3000.00),
+            descontoIncondicionado: new Money(500.00),
+            descontoCondicionado: new Money(200.00),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            codigoTributacaoMunicipal: '123',
+            codigoInternoContribuinte: 'INT001',
+            valorRecebido: 24300.00,
+            comExterior: $comExterior,
+            atvEvento: $atvEvento,
+            infoCompl: $infoCompl,
+            documentosDeducao: [$doc],
+            exigSusp: $exigSusp,
+            beneficioMunicipal: $bm,
+            tribFederal: $tribFed,
+            totTribTipo: 'pTotTrib',
+            pTotTribFed: 10.0,
+            pTotTribEst: 5.0,
+            pTotTribMun: 3.0,
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectNotToPerformAssertions();
     }
 
     private function createIbscbs(

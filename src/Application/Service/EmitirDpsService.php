@@ -245,6 +245,24 @@ class EmitirDpsService
             obra: $obra,
             tribISSQN: $request->servico->tribISSQN,
             tpRetISSQN: $request->servico->tpRetISSQN,
+            codigoPaisPrestacao: $request->servico->codigoPaisPrestacao,
+            codigoTributacaoMunicipal: $request->servico->codigoTributacaoMunicipal,
+            codigoInternoContribuinte: $request->servico->codigoInternoContribuinte,
+            valorRecebido: $request->servico->valorRecebido,
+            comExterior: $this->criarComExterior($request->servico->comExterior),
+            atvEvento: $this->criarAtvEvento($request->servico->atvEvento),
+            infoCompl: $this->criarInfoCompl($request->servico->infoCompl),
+            documentosDeducao: $this->criarDocumentosDeducao($request->servico->documentosDeducao),
+            tipoImunidade: $request->servico->tipoImunidade,
+            exigSusp: $this->criarExigSusp($request->servico->exigSusp),
+            beneficioMunicipal: $this->criarBeneficioMunicipal($request->servico->beneficioMunicipal),
+            tribFederal: $this->criarTribFederal($request->servico->tribFederal),
+            totTribTipo: $request->servico->totTribTipo,
+            pTotTribFed: $request->servico->pTotTribFed,
+            pTotTribEst: $request->servico->pTotTribEst,
+            pTotTribMun: $request->servico->pTotTribMun,
+            indTotTrib: $request->servico->indTotTrib,
+            pTotTribSN: $request->servico->pTotTribSN,
         );
 
         $substituicao = null;
@@ -426,6 +444,147 @@ class EmitirDpsService
             xDocFiscal: $dReq->xDocFiscal,
             nDoc: $dReq->nDoc,
             xDoc: $dReq->xDoc,
+        );
+    }
+
+    private function criarComExterior(?\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ComExteriorRequest $req): ?\MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior
+    {
+        if ($req === null) {
+            return null;
+        }
+
+        return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior(
+            modoPrestacao: $req->modoPrestacao ?? 0,
+            vinculoPrestador: $req->vinculoPrestador ?? 0,
+            codigoMoeda: $req->codigoMoeda ?? 'BRL',
+            valorServicoMoeda: $req->valorServicoMoeda ?? 0.0,
+            mecanismoApoioPrestador: $req->mecanismoApoioPrestador ?? '00',
+            mecanismoApoioTomador: $req->mecanismoApoioTomador ?? '00',
+            movimentacaoTemporaria: $req->movimentacaoTemporaria ?? '0',
+            enviarMDIC: $req->enviarMDIC ?? '0',
+            numeroDeclaracaoImportacao: $req->numeroDeclaracaoImportacao,
+            numeroRegistroExportacao: $req->numeroRegistroExportacao,
+        );
+    }
+
+    private function criarAtvEvento(?\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\AtvEventoRequest $req): ?\MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento
+    {
+        if ($req === null) {
+            return null;
+        }
+
+        return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento(
+            descricao: $req->descricao ?? '',
+            dataInicio: new \DateTimeImmutable($req->dataInicio ?? 'now'),
+            dataFim: new \DateTimeImmutable($req->dataFim ?? 'now'),
+            identificacaoEvento: $req->identificacaoEvento,
+            endereco: $req->endereco !== null ? $this->criarEndereco(
+                $req->endereco->logradouro ?? '',
+                $req->endereco->numero ?? '',
+                $req->endereco->complemento,
+                $req->endereco->bairro ?? '',
+                $req->endereco->codigoMunicipio ?? '3550308',
+                $req->endereco->uf ?? 'SP',
+                $req->endereco->cep ?? '00000000',
+                $req->endereco->codigoPais,
+                $req->endereco->codigoPostalExterior,
+                $req->endereco->nomeCidadeExterior,
+                $req->endereco->estadoProvinciaExterior,
+            ) : null,
+        );
+    }
+
+    private function criarInfoCompl(?\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\InfoComplRequest $req): ?\MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl
+    {
+        if ($req === null) {
+            return null;
+        }
+
+        return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl(
+            idDocTecnico: $req->idDocTecnico,
+            docReferencia: $req->docReferencia,
+            numeroPedido: $req->numeroPedido,
+            itensPedido: $req->itensPedido,
+            infoComplementar: $req->infoComplementar,
+        );
+    }
+
+    /** @param \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocDedRedRequest[]|null $reqs */
+    private function criarDocumentosDeducao(?array $reqs): ?array
+    {
+        if ($reqs === null) {
+            return null;
+        }
+
+        return array_map(
+            fn ($d) => new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed(
+                tipoDocumento: $d->tipoDocumento ?? 'nDoc',
+                chaveNFSe: $d->chaveNFSe,
+                chaveNFe: $d->chaveNFe,
+                codigoMunicipioNFSe: $d->codigoMunicipioNFSe,
+                numeroNFSe: $d->numeroNFSe,
+                codigoVerificacaoNFSe: $d->codigoVerificacaoNFSe,
+                numeroNFS: $d->numeroNFS,
+                modeloNFS: $d->modeloNFS,
+                serieNFS: $d->serieNFS,
+                numeroDocFiscal: $d->numeroDocFiscal,
+                numeroDoc: $d->numeroDoc,
+                tipoDeducaoReducao: $d->tipoDeducaoReducao ?? '99',
+                descricaoOutrasDeducoes: $d->descricaoOutrasDeducoes,
+                dataEmissaoDoc: new \DateTimeImmutable($d->dataEmissaoDoc ?? 'now'),
+                valorDedutivel: $d->valorDedutivel ?? '0.00',
+                valorDeducao: $d->valorDeducao ?? '0.00',
+                fornecedor: $d->fornecedor !== null
+                    ? new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsFornecedor(
+                        cnpj: $d->fornecedor->cnpj !== null ? new Cnpj($d->fornecedor->cnpj) : null,
+                        cpf: $d->fornecedor->cpf !== null ? new Cpf($d->fornecedor->cpf) : null,
+                        nif: $d->fornecedor->nif !== null ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Nif($d->fornecedor->nif) : null,
+                        codigoNaoNif: $d->fornecedor->codigoNaoNif,
+                        xNome: $d->fornecedor->xNome,
+                    )
+                    : null,
+            ),
+            $reqs,
+        );
+    }
+
+    private function criarExigSusp(?\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ExigSuspRequest $req): ?\MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp
+    {
+        if ($req === null) {
+            return null;
+        }
+
+        return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp(
+            tipoSuspensao: $req->tipoSuspensao,
+            numeroProcesso: $req->numeroProcesso,
+        );
+    }
+
+    private function criarBeneficioMunicipal(?\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\BeneficioMunicipalRequest $req): ?\MarcelaBeh\EmissorNfseNacional\Domain\Entity\BeneficioMunicipal
+    {
+        if ($req === null) {
+            return null;
+        }
+
+        return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\BeneficioMunicipal(
+            numeroBeneficio: $req->numeroBeneficio,
+        );
+    }
+
+    private function criarTribFederal(?\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TribFederalRequest $req): ?\MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal
+    {
+        if ($req === null) {
+            return null;
+        }
+
+        return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal(
+            pisCofinsCst: $req->pisCofinsCst,
+            pisCofinsTipo: $req->pisCofinsTipo,
+            pisCofinsAliquotaPis: $req->pisCofinsAliquotaPis,
+            pisCofinsAliquotaCofins: $req->pisCofinsAliquotaCofins,
+            valorRetidoCP: $req->valorRetidoCP,
+            valorRetidoIRRF: $req->valorRetidoIRRF,
+            valorRetidoCSLL: $req->valorRetidoCSLL,
         );
     }
 

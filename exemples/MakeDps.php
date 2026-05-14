@@ -20,8 +20,15 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsTribRegularRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ObraRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\AtvEventoRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\BeneficioMunicipalRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ComExteriorRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocDedRedRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ExigSuspRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\InfoComplRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TomadorRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TribFederalRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
@@ -325,6 +332,140 @@ $requestComObra = new DpsRequest(
         ),
     ),
     ibscbs: $ibscbs,
+);
+
+// 3h. Com todos os novos campos do Servico (comExterior, atvEvento, infoCompl, deducao, tributos)
+$ibscbsAvancado = new IbsCbsRequest(
+    finNFSe: '0',
+    cIndOp: '100001',
+    indDest: '0',
+    cst: '100',
+    cClassTrib: '100123',
+);
+
+$requestCompleto = new DpsRequest(
+    tipoAmbiente: 1,
+    dataEmissao: (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+    versaoAplicacao: 'SistemaERP_v3.0',
+    serie: 3,
+    numero: 1,
+    dataCompetencia: (new DateTimeImmutable())->format('Y-m-d'),
+    tipoEmissao: 1,
+    codigoMunicipioEmissor: '3550308',
+    prestador: new PrestadorRequest(
+        documento: '11444777000161',
+        isCnpj: true,
+        inscricaoMunicipal: '123456',
+        razaoSocial: 'Prestador Comércio Exterior Ltda',
+        telefone: null,
+        email: null,
+        logradouro: 'Rua A',
+        numero: '100',
+        complemento: null,
+        bairro: 'Centro',
+        codigoMunicipio: '3550308',
+        uf: 'SP',
+        cep: '01001001',
+        regimeTributario: 1,
+    ),
+    tomador: new TomadorRequest(
+        documento: null,
+        isCnpj: null,
+        razaoSocial: 'Tomador Exterior Corp',
+        nomeFantasia: null,
+        telefone: null,
+        email: null,
+        logradouro: 'Main Street',
+        numero: '500',
+        complemento: null,
+        bairro: 'Downtown',
+        codigoMunicipio: '3550308',
+        uf: 'SP',
+        cep: '00000000',
+        codigoPais: '049',
+        codigoPostalExterior: '10001-123',
+        nomeCidadeExterior: 'New York',
+        estadoProvinciaExterior: 'NY',
+    ),
+    servico: new ServicoRequest(
+        discriminacao: 'Consultoria internacional e suporte técnico especializado',
+        codigoTributacao: '010101',
+        codigoMunicipioPrestacao: '3550308',
+        valorServicos: 25000.00,
+        valorDeducoes: 3000.00,
+        descontoIncondicionado: 500.00,
+        descontoCondicionado: 200.00,
+        aliquotaIss: 5.0,
+        codigoNbs: '12345678',
+        codigoTributacaoMunicipal: '123',
+        codigoInternoContribuinte: 'INT001',
+        valorRecebido: 24300.00,
+        comExterior: new ComExteriorRequest(
+            modoPrestacao: 1,
+            vinculoPrestador: 2,
+            codigoMoeda: '840',
+            valorServicoMoeda: 5000.00,
+            mecanismoApoioPrestador: '01',
+            mecanismoApoioTomador: '01',
+            movimentacaoTemporaria: '0',
+            enviarMDIC: '0',
+            numeroDeclaracaoImportacao: '25DI1234567',
+        ),
+        atvEvento: new AtvEventoRequest(
+            descricao: 'Feira Tecnológica Internacional',
+            dataInicio: '2026-06-01',
+            dataFim: '2026-06-10',
+            identificacaoEvento: 'EVT-2026-001',
+        ),
+        infoCompl: new InfoComplRequest(
+            idDocTecnico: 'CONTR-2026-001',
+            docReferencia: 'PROP-2026-001',
+            numeroPedido: 'PED-2026-001',
+            itensPedido: ['Item 1 - Consultoria', 'Item 2 - Suporte'],
+            infoComplementar: 'Serviço prestado parcialmente no exterior',
+        ),
+        documentosDeducao: [
+            new DocDedRedRequest(
+                tipoDocumento: 'chNFe',
+                chaveNFe: '12345678901234567890123456789012345678901234',
+                tipoDeducaoReducao: '1',
+                dataEmissaoDoc: '2026-05-15',
+                valorDedutivel: '3000.00',
+                valorDeducao: '3000.00',
+            ),
+            new DocDedRedRequest(
+                tipoDocumento: 'nDoc',
+                numeroDoc: 'REC-2026-001',
+                tipoDeducaoReducao: '99',
+                descricaoOutrasDeducoes: 'Materiais de consumo',
+                dataEmissaoDoc: '2026-05-20',
+                valorDedutivel: '500.00',
+                valorDeducao: '500.00',
+            ),
+        ],
+        tipoImunidade: null,
+        exigSusp: new ExigSuspRequest(
+            tipoSuspensao: 1,
+            numeroProcesso: 'PROC-2026-12345',
+        ),
+        beneficioMunicipal: new BeneficioMunicipalRequest(
+            numeroBeneficio: 'BM-2026-001',
+        ),
+        tribFederal: new TribFederalRequest(
+            pisCofinsCst: '01',
+            pisCofinsTipo: '1',
+            pisCofinsAliquotaPis: 1.65,
+            pisCofinsAliquotaCofins: 7.60,
+            valorRetidoCP: '250.00',
+            valorRetidoIRRF: '150.00',
+            valorRetidoCSLL: '100.00',
+        ),
+        totTribTipo: 'pTotTrib',
+        pTotTribFed: 10.50,
+        pTotTribEst: 5.25,
+        pTotTribMun: 3.00,
+    ),
+    ibscbs: $ibscbsAvancado,
 );
 
 // ─── 6. Executar ─────────────────────────────────────────────────────────────

@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Infrastructure\Xml\Builder;
 
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\BeneficioMunicipal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes;
@@ -14,10 +19,12 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
@@ -567,6 +574,437 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         $this->assertXmlContains($xml, 'Industrial');
     }
 
+    // --- Novos campos Servico/valores builder tests ---
+
+    public function test_build_xml_with_codigo_pais_prestacao(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'Serviço no exterior',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            codigoPaisPrestacao: 'US',
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'cPaisPrestacao');
+        $this->assertXmlContains($xml, 'US');
+    }
+
+    public function test_build_xml_with_codigo_tributacao_municipal(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            codigoTributacaoMunicipal: '123',
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'cTribMun');
+        $this->assertXmlContains($xml, '123');
+    }
+
+    public function test_build_xml_with_codigo_interno_contribuinte(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            codigoInternoContribuinte: 'INT001',
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'cIntContrib');
+        $this->assertXmlContains($xml, 'INT001');
+    }
+
+    public function test_build_xml_with_valor_recebido(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            valorRecebido: 800.00,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'vReceb');
+        $this->assertXmlContains($xml, '800.00');
+    }
+
+    public function test_build_xml_with_com_exterior(): void
+    {
+        $comExterior = new ComExterior(
+            modoPrestacao: 1,
+            vinculoPrestador: 2,
+            codigoMoeda: '840',
+            valorServicoMoeda: 5000.00,
+            mecanismoApoioPrestador: '01',
+            mecanismoApoioTomador: '01',
+            movimentacaoTemporaria: '0',
+            enviarMDIC: '0',
+            numeroDeclaracaoImportacao: '25DI1234567',
+        );
+        $servico = new Servico(
+            discriminacao: 'Comércio exterior',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(25000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            comExterior: $comExterior,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'comExt');
+        $this->assertXmlContains($xml, 'mdPrestacao');
+        $this->assertXmlContains($xml, 'vincPrest');
+        $this->assertXmlContains($xml, 'tpMoeda');
+        $this->assertXmlContains($xml, '840');
+        $this->assertXmlContains($xml, 'vServMoeda');
+        $this->assertXmlContains($xml, 'nDI');
+        $this->assertXmlContains($xml, '25DI1234567');
+    }
+
+    public function test_build_xml_with_atv_evento(): void
+    {
+        $atvEvento = new AtvEvento(
+            descricao: 'Feira Tecnológica',
+            dataInicio: new \DateTimeImmutable('2026-06-01'),
+            dataFim: new \DateTimeImmutable('2026-06-10'),
+            identificacaoEvento: 'EVT-001',
+        );
+        $servico = new Servico(
+            discriminacao: 'Evento',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(5000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            atvEvento: $atvEvento,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'atvEvento');
+        $this->assertXmlContains($xml, 'Feira Tecnológica');
+        $this->assertXmlContains($xml, '2026-06-01');
+        $this->assertXmlContains($xml, '2026-06-10');
+        $this->assertXmlContains($xml, 'EVT-001');
+    }
+
+    public function test_build_xml_with_info_compl(): void
+    {
+        $infoCompl = new InfoCompl(
+            idDocTecnico: 'CONTR-001',
+            docReferencia: 'PROP-001',
+            numeroPedido: 'PED-001',
+            itensPedido: ['Item 1', 'Item 2'],
+            infoComplementar: 'Observações complementares',
+        );
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            infoCompl: $infoCompl,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'infoCompl');
+        $this->assertXmlContains($xml, 'idDocTec');
+        $this->assertXmlContains($xml, 'CONTR-001');
+        $this->assertXmlContains($xml, 'docRef');
+        $this->assertXmlContains($xml, 'xPed');
+        $this->assertXmlContains($xml, 'PED-001');
+        $this->assertXmlContains($xml, 'gItemPed');
+        $this->assertXmlContains($xml, 'xInfComp');
+        $this->assertXmlContains($xml, 'Observações complementares');
+    }
+
+    public function test_build_xml_with_documentos_deducao(): void
+    {
+        $doc = new DocDedRed(
+            tipoDocumento: 'chNFe',
+            dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
+            chaveNFe: '12345678901234567890123456789012345678901234',
+            tipoDeducaoReducao: '1',
+            valorDedutivel: '3000.00',
+            valorDeducao: '3000.00',
+        );
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(5000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            documentosDeducao: [$doc],
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'vDedRed');
+        $this->assertXmlContains($xml, 'docDedRed');
+        $this->assertXmlContains($xml, 'chNFe');
+        $this->assertXmlContains($xml, 'tpDedRed');
+        $this->assertXmlContains($xml, 'dtEmiDoc');
+        $this->assertXmlContains($xml, 'vDedutivelRedutivel');
+        $this->assertXmlContains($xml, 'vDeducaoReducao');
+    }
+
+    public function test_build_xml_with_exig_susp(): void
+    {
+        $exigSusp = new ExigSusp(
+            tipoSuspensao: 1,
+            numeroProcesso: 'PROC-12345',
+        );
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            exigSusp: $exigSusp,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'exigSusp');
+        $this->assertXmlContains($xml, 'tpSusp');
+        $this->assertXmlContains($xml, 'nProcesso');
+        $this->assertXmlContains($xml, 'PROC-12345');
+    }
+
+    public function test_build_xml_with_beneficio_municipal(): void
+    {
+        $bm = new BeneficioMunicipal(numeroBeneficio: 'BM-001');
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            beneficioMunicipal: $bm,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'BM');
+        $this->assertXmlContains($xml, 'nBM');
+        $this->assertXmlContains($xml, 'BM-001');
+    }
+
+    public function test_build_xml_with_trib_federal(): void
+    {
+        $tribFed = new TribFederal(
+            pisCofinsCst: '01',
+            pisCofinsTipo: '1',
+            pisCofinsAliquotaPis: 1.65,
+            pisCofinsAliquotaCofins: 7.60,
+            valorRetidoCP: '250.00',
+            valorRetidoIRRF: '150.00',
+            valorRetidoCSLL: '100.00',
+        );
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            tribFederal: $tribFed,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'tribFed');
+        $this->assertXmlContains($xml, 'piscofins');
+        $this->assertXmlContains($xml, 'CST');
+        $this->assertXmlContains($xml, 'pAliqPis');
+        $this->assertXmlContains($xml, 'pAliqCofins');
+        $this->assertXmlContains($xml, 'vRetCP');
+        $this->assertXmlContains($xml, 'vRetIRRF');
+        $this->assertXmlContains($xml, 'vRetCSLL');
+    }
+
+    public function test_build_xml_with_tot_trib_v_tot_trib(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            totTribTipo: 'vTotTrib',
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'totTrib');
+        $this->assertXmlContains($xml, 'vTotTrib');
+    }
+
+    public function test_build_xml_with_tot_trib_p_tot_trib(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            totTribTipo: 'pTotTrib',
+            pTotTribFed: 10.0,
+            pTotTribEst: 5.0,
+            pTotTribMun: 3.0,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'totTrib');
+        $this->assertXmlContains($xml, 'pTotTrib');
+        $this->assertXmlContains($xml, 'pTotTribFed');
+        $this->assertXmlContains($xml, 'pTotTribEst');
+        $this->assertXmlContains($xml, 'pTotTribMun');
+    }
+
+    public function test_build_xml_with_tot_trib_ind_tot_trib(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'totTrib');
+        $this->assertXmlContains($xml, 'indTotTrib');
+    }
+
+    public function test_build_xml_with_tot_trib_p_tot_trib_sn(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+            totTribTipo: 'pTotTribSN',
+            pTotTribSN: 15.0,
+        );
+        $dps = $this->createDpsWithIbscbs(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'totTrib');
+        $this->assertXmlContains($xml, 'pTotTribSN');
+    }
+
     /** @param ChaveAcesso[]|null $refNFSeList */
     private function createIbscbs(
         ?IndicadorFinal $indFinal = null,
@@ -600,7 +1038,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         );
     }
 
-    private function createDpsWithIbscbs(?IbsCbsInfo $ibscbs = null): Dps
+    private function createDpsWithIbscbs(?IbsCbsInfo $ibscbs = null, ?Servico $servico = null): Dps
     {
         $cnpj = new Cnpj('11444777000161');
         $endereco = new Endereco(
@@ -639,7 +1077,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
                 email: null,
                 endereco: $endereco,
             ),
-            servico: new Servico(
+            servico: $servico ?? new Servico(
                 discriminacao: 'Serviço de teste',
                 codigoTributacao: '010101',
                 localPrestacao: new CodigoMunicipio('3550308'),

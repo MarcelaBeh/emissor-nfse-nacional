@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Application\Validator;
 
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\AtvEventoRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\BeneficioMunicipalRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ComExteriorRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocDedRedRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ExigSuspRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDestRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDiferimentoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDocumentoReeRepResRequest;
@@ -17,6 +22,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ObraRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TomadorRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TribFederalRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\InMemoryCstClassTribRepository;
@@ -730,6 +736,839 @@ final class DpsValidatorTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    // --- Novos campos Servico validation tests ---
+
+    private function createBaseServicoRequest(): ServicoRequest
+    {
+        return new ServicoRequest(
+            discriminacao: 'Serviço de teste',
+            codigoTributacao: '010101',
+            codigoMunicipioPrestacao: '3550308',
+            valorServicos: 1000.0,
+            valorDeducoes: 0,
+            descontoIncondicionado: 0,
+            descontoCondicionado: 0,
+            aliquotaIss: 5.0,
+            codigoNbs: '12345678',
+        );
+    }
+
+    public function test_codigo_pais_prestacao_invalid_format_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                codigoPaisPrestacao: '12',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('cPaisPrestacao');
+        $this->validator->validate($request);
+    }
+
+    public function test_codigo_pais_prestacao_valid_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                codigoPaisPrestacao: 'US',
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_codigo_tributacao_municipal_invalid_format_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                codigoTributacaoMunicipal: '12',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('cTribMun');
+        $this->validator->validate($request);
+    }
+
+    public function test_codigo_tributacao_municipal_valid_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                codigoTributacaoMunicipal: '123',
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_codigo_interno_contribuinte_too_long_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                codigoInternoContribuinte: 'ABC-123',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('cIntContrib');
+        $this->validator->validate($request);
+    }
+
+    public function test_valor_recebido_zero_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                valorRecebido: 0,
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('vReceb');
+        $this->validator->validate($request);
+    }
+
+    public function test_valor_recebido_positive_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                valorRecebido: 500.0,
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_com_exterior_valid_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                comExterior: new ComExteriorRequest(
+                    modoPrestacao: 1,
+                    vinculoPrestador: 2,
+                    codigoMoeda: '840',
+                    valorServicoMoeda: 1000.00,
+                    mecanismoApoioPrestador: '1',
+                    mecanismoApoioTomador: '1',
+                    movimentacaoTemporaria: 'N',
+                    enviarMDIC: 'N',
+                ),
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_com_exterior_without_modo_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                comExterior: new ComExteriorRequest(
+                    vinculoPrestador: 2,
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('mdPrestacao');
+        $this->validator->validate($request);
+    }
+
+    public function test_com_exterior_invalid_moeda_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                comExterior: new ComExteriorRequest(
+                    modoPrestacao: 1,
+                    vinculoPrestador: 2,
+                    codigoMoeda: 'US',
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('tpMoeda');
+        $this->validator->validate($request);
+    }
+
+    public function test_atv_evento_valid_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                atvEvento: new AtvEventoRequest(
+                    descricao: 'Feira Tecnológica',
+                    dataInicio: '2026-06-01',
+                    dataFim: '2026-06-10',
+                ),
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_atv_evento_without_descricao_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                atvEvento: new AtvEventoRequest(
+                    dataInicio: '2026-06-01',
+                    dataFim: '2026-06-10',
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('xNome');
+        $this->validator->validate($request);
+    }
+
+    public function test_atv_evento_data_fim_before_inicio_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                atvEvento: new AtvEventoRequest(
+                    descricao: 'Teste',
+                    dataInicio: '2026-06-10',
+                    dataFim: '2026-06-01',
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('dtIni não pode ser posterior');
+        $this->validator->validate($request);
+    }
+
+    public function test_info_compl_with_itens_pedido_too_long_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                infoCompl: new \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\InfoComplRequest(
+                    itensPedido: [str_repeat('x', 256)],
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('gItemPed');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_valid_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                documentosDeducao: [
+                    new DocDedRedRequest(
+                        tipoDocumento: 'chNFe',
+                        chaveNFe: '12345678901234567890123456789012345678901234',
+                        tipoDeducaoReducao: '1',
+                        dataEmissaoDoc: '2026-05-15',
+                        valorDedutivel: '1000.00',
+                        valorDeducao: '1000.00',
+                    ),
+                ],
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_documentos_deducao_invalid_tipo_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                documentosDeducao: [
+                    new DocDedRedRequest(tipoDocumento: 'invalid'),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('tipoDocumento inválido');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_ch_nfse_missing_chave_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                documentosDeducao: [
+                    new DocDedRedRequest(tipoDocumento: 'chNFSe'),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('chNFSe');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_ch_nfse_invalid_pattern_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                documentosDeducao: [
+                    new DocDedRedRequest(
+                        tipoDocumento: 'chNFSe',
+                        chaveNFSe: '12345', // too short, needs 50 digits
+                    ),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('chNFSe deve ter exatamente 50 dígitos numéricos');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_ch_nfe_invalid_pattern_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                documentosDeducao: [
+                    new DocDedRedRequest(
+                        tipoDocumento: 'chNFe',
+                        chaveNFe: '12345', // too short, needs 44 digits
+                    ),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('chNFe deve ter exatamente 44 dígitos numéricos');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_n_doc_fisc_missing_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                documentosDeducao: [
+                    new DocDedRedRequest(tipoDocumento: 'nDocFisc'),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('nDocFisc');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_tp_ded_red_invalid_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                documentosDeducao: [
+                    new DocDedRedRequest(
+                        tipoDocumento: 'nDoc',
+                        numeroDoc: 'REC-001',
+                        tipoDeducaoReducao: 'invalid',
+                    ),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('tpDedRed');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_tp99_missing_desc_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                documentosDeducao: [
+                    new DocDedRedRequest(
+                        tipoDocumento: 'nDoc',
+                        numeroDoc: 'REC-001',
+                        tipoDeducaoReducao: '99',
+                    ),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('xDescOutDed');
+        $this->validator->validate($request);
+    }
+
+    public function test_exig_susp_valid_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                exigSusp: new ExigSuspRequest(
+                    tipoSuspensao: 1,
+                    numeroProcesso: 'PROC-12345',
+                ),
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_exig_susp_invalid_tipo_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                exigSusp: new ExigSuspRequest(tipoSuspensao: 99),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('tpSusp');
+        $this->validator->validate($request);
+    }
+
+    public function test_beneficio_municipal_valid_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                beneficioMunicipal: new BeneficioMunicipalRequest(
+                    numeroBeneficio: 'BM-001',
+                ),
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_beneficio_municipal_empty_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                beneficioMunicipal: new BeneficioMunicipalRequest(),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('nBM');
+        $this->validator->validate($request);
+    }
+
+    public function test_trib_federal_valid_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                tribFederal: new TribFederalRequest(
+                    pisCofinsCst: '01',
+                    pisCofinsTipo: '1',
+                    pisCofinsAliquotaPis: 1.65,
+                    pisCofinsAliquotaCofins: 7.60,
+                ),
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_trib_federal_invalid_cst_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                tribFederal: new TribFederalRequest(pisCofinsCst: 'X'),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('CST do PIS/COFINS');
+        $this->validator->validate($request);
+    }
+
+    public function test_trib_federal_missing_tipo_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                tribFederal: new TribFederalRequest(pisCofinsCst: '01'),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('tipo do PIS/COFINS é obrigatório');
+        $this->validator->validate($request);
+    }
+
+    public function test_tot_trib_invalid_tipo_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                totTribTipo: 'invalid',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('totTribTipo inválido');
+        $this->validator->validate($request);
+    }
+
+    public function test_tot_trib_p_tot_trib_missing_fields_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                totTribTipo: 'pTotTrib',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('pTotTribFed');
+        $this->validator->validate($request);
+    }
+
+    public function test_tot_trib_p_tot_trib_all_fields_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                totTribTipo: 'pTotTrib',
+                pTotTribFed: 10.0,
+                pTotTribEst: 5.0,
+                pTotTribMun: 3.0,
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_tot_trib_ind_tot_trib_without_value_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                totTribTipo: 'indTotTrib',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('indTotTrib é obrigatório');
+        $this->validator->validate($request);
+    }
+
+    public function test_tot_trib_p_tot_trib_sn_without_value_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '12345678',
+                totTribTipo: 'pTotTribSN',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('pTotTribSN é obrigatório');
+        $this->validator->validate($request);
+    }
+
     private function createValidDpsRequest(
         int $tipoAmbiente = 1,
         string $dataEmissao = '2026-06-15T10:00:00',
@@ -747,6 +1586,7 @@ final class DpsValidatorTest extends TestCase
         ?string $codigoNbs = '12345678',
         ?IbsCbsRequest $ibscbs = null,
         ?ObraRequest $obra = null,
+        ?ServicoRequest $servico = null,
     ): DpsRequest {
         return new DpsRequest(
             tipoAmbiente: $tipoAmbiente,
@@ -788,7 +1628,7 @@ final class DpsValidatorTest extends TestCase
                 uf: 'SP',
                 cep: '02002002',
             ),
-            servico: new ServicoRequest(
+            servico: $servico ?? new ServicoRequest(
                 discriminacao: $discriminacao,
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',

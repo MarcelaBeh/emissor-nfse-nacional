@@ -27,6 +27,24 @@ class Servico
         private ?Obra $obra = null,
         private ?string $tribISSQN = null,
         private ?string $tpRetISSQN = null,
+        private ?string $codigoPaisPrestacao = null,
+        private ?string $codigoTributacaoMunicipal = null,
+        private ?string $codigoInternoContribuinte = null,
+        private ?float $valorRecebido = null,
+        private ?ComExterior $comExterior = null,
+        private ?AtvEvento $atvEvento = null,
+        private ?InfoCompl $infoCompl = null,
+        private ?array $documentosDeducao = null,
+        private ?int $tipoImunidade = null,
+        private ?ExigSusp $exigSusp = null,
+        private ?BeneficioMunicipal $beneficioMunicipal = null,
+        private ?TribFederal $tribFederal = null,
+        private ?string $totTribTipo = null,
+        private ?float $pTotTribFed = null,
+        private ?float $pTotTribEst = null,
+        private ?float $pTotTribMun = null,
+        private ?string $indTotTrib = null,
+        private ?float $pTotTribSN = null,
     ) {
         $this->calcularValores($valorServicos);
         $this->validate();
@@ -133,5 +151,96 @@ class Servico
     public function getTpRetISSQN(): ?string
     {
         return $this->tpRetISSQN;
+    }
+
+    public function getCodigoPaisPrestacao(): ?string
+    {
+        return $this->codigoPaisPrestacao;
+    }
+
+    public function getCodigoTributacaoMunicipal(): ?string
+    {
+        return $this->codigoTributacaoMunicipal;
+    }
+
+    public function getCodigoInternoContribuinte(): ?string
+    {
+        return $this->codigoInternoContribuinte;
+    }
+
+    public function getValorRecebido(): ?float
+    {
+        return $this->valorRecebido;
+    }
+
+    public function getComExterior(): ?ComExterior
+    {
+        return $this->comExterior;
+    }
+
+    public function getAtvEvento(): ?AtvEvento
+    {
+        return $this->atvEvento;
+    }
+
+    public function getInfoCompl(): ?InfoCompl
+    {
+        return $this->infoCompl;
+    }
+
+    /** @return DocDedRed[]|null */
+    public function getDocumentosDeducao(): ?array
+    {
+        return $this->documentosDeducao;
+    }
+
+    public function getTipoImunidade(): ?int
+    {
+        return $this->tipoImunidade;
+    }
+
+    public function getExigSusp(): ?ExigSusp
+    {
+        return $this->exigSusp;
+    }
+
+    public function getBeneficioMunicipal(): ?BeneficioMunicipal
+    {
+        return $this->beneficioMunicipal;
+    }
+
+    public function getTribFederal(): ?TribFederal
+    {
+        return $this->tribFederal;
+    }
+
+    public function getTotTribTipo(): ?string
+    {
+        return $this->totTribTipo;
+    }
+
+    public function getPTotTribFed(): ?float
+    {
+        return $this->pTotTribFed;
+    }
+
+    public function getPTotTribEst(): ?float
+    {
+        return $this->pTotTribEst;
+    }
+
+    public function getPTotTribMun(): ?float
+    {
+        return $this->pTotTribMun;
+    }
+
+    public function getIndTotTrib(): ?string
+    {
+        return $this->indTotTrib;
+    }
+
+    public function getPTotTribSN(): ?float
+    {
+        return $this->pTotTribSN;
     }
 }

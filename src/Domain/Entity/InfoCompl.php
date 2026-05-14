@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
+
+class InfoCompl
+{
+    public function __construct(
+        private ?string $idDocTecnico = null,
+        private ?string $docReferencia = null,
+        private ?string $numeroPedido = null,
+        private ?array $itensPedido = null,
+        private ?string $infoComplementar = null,
+    ) {
+    }
+
+    public function getIdDocTecnico(): ?string
+    {
+        return $this->idDocTecnico;
+    }
+
+    public function getDocReferencia(): ?string
+    {
+        return $this->docReferencia;
+    }
+
+    public function getNumeroPedido(): ?string
+    {
+        return $this->numeroPedido;
+    }
+
+    public function getItensPedido(): ?array
+    {
+        return $this->itensPedido;
+    }
+
+    public function getInfoComplementar(): ?string
+    {
+        return $this->infoComplementar;
+    }
+}
