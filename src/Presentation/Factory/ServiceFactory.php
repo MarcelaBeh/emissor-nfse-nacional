@@ -10,6 +10,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\EventoValidator;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
@@ -71,6 +72,8 @@ class ServiceFactory
             xsdValidator: $this->xsdValidator,
             validator: new DpsValidator(),
             requestBuilder: $this->requestBuilder,
+            nfseXmlParser: new NfseXmlParser(),
+            ibscbsResponseValidator: new IbscbsResponseValidator(),
         );
     }
 

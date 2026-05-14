@@ -9,11 +9,18 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\NfseResponse;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoExterior;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsFornecedor;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
@@ -30,6 +37,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoCIB;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoClassificacaoTributaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoCreditoPresumido;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoIndicadorOperacao;
@@ -42,6 +50,7 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 
 class EmitirDpsService
@@ -53,6 +62,8 @@ class EmitirDpsService
         private XsdValidator $xsdValidator,
         private DpsValidator $validator,
         private RequestBuilder $requestBuilder,
+        private NfseXmlParser $nfseXmlParser,
+        private IbscbsResponseValidator $ibscbsResponseValidator,
     ) {
     }
 
@@ -223,6 +234,53 @@ class EmitirDpsService
                 );
             }
 
+            $refNFSeList = null;
+            if ($req->refNFSeList !== null) {
+                $refNFSeList = array_map(
+                    fn (string $chave) => new ChaveAcesso($chave),
+                    $req->refNFSeList,
+                );
+            }
+
+            $imovel = null;
+            if ($req->imovel !== null) {
+                $im = $req->imovel;
+                $endObra = null;
+                if ($im->endereco !== null) {
+                    $e = $im->endereco;
+                    $endExt = null;
+                    if ($e->endExt !== null) {
+                        $endExt = new IbsCbsEnderecoExterior(
+                            cEndPost: $e->endExt->cEndPost,
+                            xCidade: $e->endExt->xCidade,
+                            xEstProvReg: $e->endExt->xEstProvReg,
+                        );
+                    }
+                    $endObra = new IbsCbsEnderecoObra(
+                        cep: $e->cep,
+                        endExt: $endExt,
+                        xLgr: $e->xLgr,
+                        nro: $e->nro,
+                        xCpl: $e->xCpl,
+                        xBairro: $e->xBairro,
+                    );
+                }
+                $imovel = new IbsCbsImovel(
+                    inscImobFisc: $im->inscImobFisc,
+                    cCIB: $im->cCIB !== null ? new CodigoCIB($im->cCIB) : null,
+                    endereco: $endObra,
+                );
+            }
+
+            $reeRepRes = null;
+            if ($req->reeRepRes !== null) {
+                $docs = array_map(
+                    fn ($dReq) => $this->criarDocumentoReeRepRes($dReq),
+                    $req->reeRepRes->documentos,
+                );
+                $reeRepRes = new IbsCbsReeRepRes($docs);
+            }
+
             $ibscbs = new IbsCbsInfo(
                 finNFSe: FinalidadeNfse::from($req->finNFSe),
                 cIndOp: new CodigoIndicadorOperacao($req->cIndOp),
@@ -236,6 +294,9 @@ class EmitirDpsService
                 dest: $dest,
                 tribRegular: $tribRegular,
                 diferimento: $diferimento,
+                refNFSeList: $refNFSeList,
+                imovel: $imovel,
+                reeRepRes: $reeRepRes,
             );
         }
 
@@ -253,6 +314,39 @@ class EmitirDpsService
             servico: $servico,
             substituicao: $substituicao,
             ibscbs: $ibscbs,
+        );
+    }
+
+    private function criarDocumentoReeRepRes(\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDocumentoReeRepResRequest $dReq): IbsCbsDocumentoReeRepRes
+    {
+        $fornec = null;
+        if ($dReq->fornec !== null) {
+            $f = $dReq->fornec;
+            $fornec = new IbsCbsFornecedor(
+                cnpj: $f->cnpj !== null ? new Cnpj($f->cnpj) : null,
+                cpf: $f->cpf !== null ? new Cpf($f->cpf) : null,
+                nif: $f->nif !== null ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Nif($f->nif) : null,
+                codigoNaoNif: $f->codigoNaoNif,
+                xNome: $f->xNome,
+            );
+        }
+
+        return new IbsCbsDocumentoReeRepRes(
+            tipo: $dReq->tipoDocumento,
+            dtEmiDoc: new \DateTimeImmutable($dReq->dtEmiDoc),
+            dtCompDoc: new \DateTimeImmutable($dReq->dtCompDoc),
+            tpReeRepRes: \MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento::fromValue($dReq->tpReeRepRes),
+            vlrReeRepRes: (string) $dReq->vlrReeRepRes,
+            fornec: $fornec,
+            xTpReeRepRes: $dReq->xTpReeRepRes,
+            tipoChaveDFe: $dReq->tipoChaveDFe,
+            xTipoChaveDFe: $dReq->xTipoChaveDFe,
+            chaveDFe: $dReq->chaveDFe,
+            cMunDocFiscal: $dReq->cMunDocFiscal,
+            nDocFiscal: $dReq->nDocFiscal,
+            xDocFiscal: $dReq->xDocFiscal,
+            nDoc: $dReq->nDoc,
+            xDoc: $dReq->xDoc,
         );
     }
 
@@ -281,17 +375,69 @@ class EmitirDpsService
         if (!$response['success']) {
             return new NfseResponse(
                 success: false,
-                mensagem: $response['data']['mensagem'] ?? 'Erro ao emitir DPS',
-                dados: $response['data'] ?? null,
+                mensagem: is_array($response['data']) ? ($response['data']['mensagem'] ?? 'Erro ao emitir DPS') : 'Erro ao emitir DPS',
+                dados: is_array($response['data']) ? $response['data'] : null,
             );
         }
 
         $data = $response['data'];
+        $xmlParsed = null;
+
+        if (is_string($data) && !empty($data)) {
+            try {
+                $parsedList = $this->nfseXmlParser->parse($data);
+                if (!empty($parsedList)) {
+                    $xmlParsed = $parsedList[0];
+
+                    if ($dps->getIbscbs() !== null && isset($xmlParsed['ibscbs'])) {
+                        $this->ibscbsResponseValidator->validate(
+                            $this->buildIbsDataFromDps($dps),
+                            $xmlParsed['ibscbs'],
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                throw new ServiceException("Erro ao processar resposta: {$e->getMessage()}", 0, $e);
+            }
+        }
 
         return new NfseResponse(
             success: true,
             chaveAcesso: $dps->getChaveAcesso()?->getChave(),
-            dados: $data,
+            dados: is_array($data) ? $data : null,
+            xml: is_string($data) ? $data : null,
         );
+    }
+
+    private function buildIbsDataFromDps(Dps $dps): array
+    {
+        $ibscbs = $dps->getIbscbs();
+        if ($ibscbs === null) {
+            return [];
+        }
+
+        $data = [
+            'tpEnteGov' => $ibscbs->getTpEnteGov()?->value,
+            'cClassTrib' => $ibscbs->getCClassTrib()->getCodigo(),
+            'cCredPres' => $ibscbs->getCCredPres()?->getCodigo(),
+            'vServ' => (string) $dps->getServico()->getValorTotal()->getValue(),
+        ];
+
+        if ($ibscbs->getDiferimento() !== null) {
+            $data['diferimento'] = [
+                'pDifUF' => $ibscbs->getDiferimento()->getPDifUF(),
+                'pDifMun' => $ibscbs->getDiferimento()->getPDifMun(),
+                'pDifCBS' => $ibscbs->getDiferimento()->getPDifCBS(),
+            ];
+        }
+
+        if ($ibscbs->hasRefNFSe()) {
+            $data['refNFSeList'] = array_map(
+                fn ($chave) => $chave->getChave(),
+                $ibscbs->getRefNFSeList(),
+            );
+        }
+
+        return $data;
     }
 }

@@ -102,18 +102,68 @@ class NfseXmlParser
         $totCibs = null;
         $totNode = $ibscbs->getElementsByTagName('totCIBS')->item(0);
         if ($totNode) {
-            $gIbs = $totNode->getElementsByTagName('gIBS')->item(0);
-            $gCbs = $totNode->getElementsByTagName('gCBS')->item(0);
+            $gIbsNode = $totNode->getElementsByTagName('gIBS')->item(0);
+            $gCbsNode = $totNode->getElementsByTagName('gCBS')->item(0);
+
+            $gIbs = null;
+            if ($gIbsNode) {
+                $gIbsCredPresNode = $gIbsNode->getElementsByTagName('gIBSCredPres')->item(0);
+                $gIbsUfTotNode = $gIbsNode->getElementsByTagName('gIBSUFTot')->item(0);
+                $gIbsMunTotNode = $gIbsNode->getElementsByTagName('gIBSMunTot')->item(0);
+
+                $gIbs = [
+                    'vIBSTot' => $this->getNodeValue($gIbsNode, 'vIBSTot'),
+                    'gIBSCredPres' => $gIbsCredPresNode ? [
+                        'pCredPresIBS' => $this->getNodeValue($gIbsCredPresNode, 'pCredPresIBS'),
+                        'vCredPresIBS' => $this->getNodeValue($gIbsCredPresNode, 'vCredPresIBS'),
+                    ] : null,
+                    'gIBSUFTot' => $gIbsUfTotNode ? [
+                        'vDifUF' => $this->getNodeValue($gIbsUfTotNode, 'vDifUF'),
+                        'vIBSUF' => $this->getNodeValue($gIbsUfTotNode, 'vIBSUF'),
+                    ] : null,
+                    'gIBSMunTot' => $gIbsMunTotNode ? [
+                        'vDifMun' => $this->getNodeValue($gIbsMunTotNode, 'vDifMun'),
+                        'vIBSMun' => $this->getNodeValue($gIbsMunTotNode, 'vIBSMun'),
+                    ] : null,
+                ];
+            }
+
+            $gCbs = null;
+            if ($gCbsNode) {
+                $gCbsCredPresNode = $gCbsNode->getElementsByTagName('gCBSCredPres')->item(0);
+
+                $gCbs = [
+                    'gCBSCredPres' => $gCbsCredPresNode ? [
+                        'pCredPresCBS' => $this->getNodeValue($gCbsCredPresNode, 'pCredPresCBS'),
+                        'vCredPresCBS' => $this->getNodeValue($gCbsCredPresNode, 'vCredPresCBS'),
+                    ] : null,
+                    'vDifCBS' => $this->getNodeValue($gCbsNode, 'vDifCBS'),
+                    'vCBS' => $this->getNodeValue($gCbsNode, 'vCBS'),
+                ];
+            }
+
+            $gTribRegularNode = $totNode->getElementsByTagName('gTribRegular')->item(0);
+            $gTribCompraGovNode = $totNode->getElementsByTagName('gTribCompraGov')->item(0);
 
             $totCibs = [
                 'vTotNF' => $this->getNodeValue($totNode, 'vTotNF'),
-                'gIBS' => $gIbs ? [
-                    'vIBSTot' => $this->getNodeValue($gIbs, 'vIBSTot'),
-                    'vIBSUF' => $this->getNodeValue($gIbs, 'vIBSUF'),
-                    'vIBSMun' => $this->getNodeValue($gIbs, 'vIBSMun'),
+                'gIBS' => $gIbs,
+                'gCBS' => $gCbs,
+                'gTribRegular' => $gTribRegularNode ? [
+                    'pAliqEfeRegIBSUF' => $this->getNodeValue($gTribRegularNode, 'pAliqEfeRegIBSUF'),
+                    'vTribRegIBSUF' => $this->getNodeValue($gTribRegularNode, 'vTribRegIBSUF'),
+                    'pAliqEfeRegIBSMun' => $this->getNodeValue($gTribRegularNode, 'pAliqEfeRegIBSMun'),
+                    'vTribRegIBSMun' => $this->getNodeValue($gTribRegularNode, 'vTribRegIBSMun'),
+                    'pAliqEfeRegCBS' => $this->getNodeValue($gTribRegularNode, 'pAliqEfeRegCBS'),
+                    'vTribRegCBS' => $this->getNodeValue($gTribRegularNode, 'vTribRegCBS'),
                 ] : null,
-                'gCBS' => $gCbs ? [
-                    'vCBS' => $this->getNodeValue($gCbs, 'vCBS'),
+                'gTribCompraGov' => $gTribCompraGovNode ? [
+                    'pIBSUF' => $this->getNodeValue($gTribCompraGovNode, 'pIBSUF'),
+                    'vIBSUF' => $this->getNodeValue($gTribCompraGovNode, 'vIBSUF'),
+                    'pIBSMun' => $this->getNodeValue($gTribCompraGovNode, 'pIBSMun'),
+                    'vIBSMun' => $this->getNodeValue($gTribCompraGovNode, 'vIBSMun'),
+                    'pCBS' => $this->getNodeValue($gTribCompraGovNode, 'pCBS'),
+                    'vCBS' => $this->getNodeValue($gTribCompraGovNode, 'vCBS'),
                 ] : null,
             ];
         }
@@ -124,6 +174,7 @@ class NfseXmlParser
             'pRedutor' => $this->getNodeValue($ibscbs, 'pRedutor'),
             'valores' => [
                 'vBC' => $valores ? $this->getNodeValue($valores, 'vBC') : null,
+                'vCalcReeRepRes' => $valores ? $this->getNodeValue($valores, 'vCalcReeRepRes') : null,
                 'uf' => $uf,
                 'mun' => $mun,
                 'fed' => $fed,

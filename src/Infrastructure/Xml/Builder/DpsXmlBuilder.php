@@ -7,14 +7,13 @@ namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use NFePHP\Common\DOMImproved as Dom;
 
 class DpsXmlBuilder implements Contract\XmlBuilderInterface
@@ -230,6 +229,11 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $this->addChild($node, 'indFinal', $ibscbs->getIndFinal()?->value, false);
         $this->addChild($node, 'cIndOp', $ibscbs->getCIndOp()->getCodigo(), true);
         $this->addChild($node, 'tpOper', $ibscbs->getTpOper()?->value, false);
+
+        if ($ibscbs->hasRefNFSe()) {
+            $this->buildGRefNFSe($node, $ibscbs->getRefNFSeList());
+        }
+
         $this->addChild($node, 'tpEnteGov', $ibscbs->getTpEnteGov()?->value, false);
         $this->addChild($node, 'indDest', $ibscbs->getIndDest()->value, true);
 
@@ -237,7 +241,22 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->buildIbscbsDest($node, $ibscbs->getDest());
         }
 
+        if ($ibscbs->getImovel() !== null) {
+            $this->buildIbscbsImovel($node, $ibscbs->getImovel());
+        }
+
         $this->buildIbscbsValores($node, $ibscbs);
+    }
+
+    /** @param ChaveAcesso[] $refList */
+    private function buildGRefNFSe(\DOMNode $parent, array $refList): void
+    {
+        $gRefNode = $this->dom->createElement('gRefNFSe');
+        $parent->appendChild($gRefNode);
+
+        foreach ($refList as $ref) {
+            $this->addChild($gRefNode, 'refNFSe', $ref->getChave(), true);
+        }
     }
 
     private function buildIbscbsDest(\DOMNode $parent, IbsCbsDest $dest): void
@@ -263,10 +282,54 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         }
     }
 
+    private function buildIbscbsImovel(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel $imovel): void
+    {
+        $node = $this->dom->createElement('imovel');
+        $parent->appendChild($node);
+
+        $this->addChild($node, 'inscImobFisc', $imovel->getInscImobFisc(), false);
+
+        if ($imovel->getCCIB() !== null) {
+            $this->addChild($node, 'cCIB', $imovel->getCCIB()->getCodigo(), true);
+        } elseif ($imovel->getEndereco() !== null) {
+            $this->buildIbscbsEnderecoObra($node, $imovel->getEndereco());
+        }
+
+        if ($imovel->getCCIB() !== null && $imovel->getEndereco() !== null) {
+            trigger_error('Ambos cCIB e endereco informados em imovel — apenas um deve ser usado (XSD choice)', E_USER_WARNING);
+        }
+    }
+
+    private function buildIbscbsEnderecoObra(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra $end): void
+    {
+        $endNode = $this->dom->createElement('end');
+        $parent->appendChild($endNode);
+
+        if ($end->getCEp() !== null) {
+            $this->addChild($endNode, 'CEP', $end->getCEp(), true);
+        } elseif ($end->getEndExt() !== null) {
+            $ext = $end->getEndExt();
+            $extNode = $this->dom->createElement('endExt');
+            $endNode->appendChild($extNode);
+            $this->addChild($extNode, 'cEndPost', $ext->getCEndPost(), true);
+            $this->addChild($extNode, 'xCidade', $ext->getXCidade(), true);
+            $this->addChild($extNode, 'xEstProvReg', $ext->getXEstProvReg(), true);
+        }
+
+        $this->addChild($endNode, 'xLgr', $end->getXLgr(), true);
+        $this->addChild($endNode, 'nro', $end->getNro(), true);
+        $this->addChild($endNode, 'xCpl', $end->getXCpl(), false);
+        $this->addChild($endNode, 'xBairro', $end->getXBairro(), true);
+    }
+
     private function buildIbscbsValores(\DOMNode $parent, IbsCbsInfo $ibscbs): void
     {
         $valNode = $this->dom->createElement('valores');
         $parent->appendChild($valNode);
+
+        if ($ibscbs->getReeRepRes() !== null) {
+            $this->buildGReeRepRes($valNode, $ibscbs->getReeRepRes());
+        }
 
         $tribNode = $this->dom->createElement('trib');
         $valNode->appendChild($tribNode);
@@ -291,5 +354,77 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->addChild($gDif, 'pDifMun', $ibscbs->getDiferimento()->getPDifMun(), true);
             $this->addChild($gDif, 'pDifCBS', $ibscbs->getDiferimento()->getPDifCBS(), true);
         }
+    }
+
+    private function buildGReeRepRes(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes $reeRepRes): void
+    {
+        $gNode = $this->dom->createElement('gReeRepRes');
+        $parent->appendChild($gNode);
+
+        foreach ($reeRepRes->getDocumentos() as $doc) {
+            $docNode = $this->dom->createElement('documentos');
+            $gNode->appendChild($docNode);
+
+            match ($doc->getTipo()) {
+                'dFeNacional' => $this->buildDocDFeNacional($docNode, $doc),
+                'docFiscalOutro' => $this->buildDocFiscalOutro($docNode, $doc),
+                'docOutro' => $this->buildDocOutro($docNode, $doc),
+                default => throw new \InvalidArgumentException('Tipo de documento inválido: ' . $doc->getTipo()),
+            };
+
+            if ($doc->getFornec() !== null) {
+                $this->buildDocFornec($docNode, $doc->getFornec());
+            }
+
+            $this->addChild($docNode, 'dtEmiDoc', $doc->getDtEmiDoc()->format('Y-m-d'), true);
+            $this->addChild($docNode, 'dtCompDoc', $doc->getDtCompDoc()->format('Y-m-d'), true);
+            $this->addChild($docNode, 'tpReeRepRes', $doc->getTpReeRepRes()->value, true);
+            $this->addChild($docNode, 'xTpReeRepRes', $doc->getXTpReeRepRes(), false);
+            $this->addChild($docNode, 'vlrReeRepRes', $doc->getVlrReeRepRes(), true);
+        }
+    }
+
+    private function buildDocDFeNacional(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes $doc): void
+    {
+        $node = $this->dom->createElement('dFeNacional');
+        $parent->appendChild($node);
+        $this->addChild($node, 'tipoChaveDFe', $doc->getTipoChaveDFe(), true);
+        $this->addChild($node, 'xTipoChaveDFe', $doc->getXTipoChaveDFe(), false);
+        $this->addChild($node, 'chaveDFe', $doc->getChaveDFe(), true);
+    }
+
+    private function buildDocFiscalOutro(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes $doc): void
+    {
+        $node = $this->dom->createElement('docFiscalOutro');
+        $parent->appendChild($node);
+        $this->addChild($node, 'cMunDocFiscal', $doc->getCMunDocFiscal(), true);
+        $this->addChild($node, 'nDocFiscal', $doc->getNDocFiscal(), true);
+        $this->addChild($node, 'xDocFiscal', $doc->getXDocFiscal(), true);
+    }
+
+    private function buildDocOutro(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes $doc): void
+    {
+        $node = $this->dom->createElement('docOutro');
+        $parent->appendChild($node);
+        $this->addChild($node, 'nDoc', $doc->getNDoc(), true);
+        $this->addChild($node, 'xDoc', $doc->getXDoc(), true);
+    }
+
+    private function buildDocFornec(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsFornecedor $fornec): void
+    {
+        $node = $this->dom->createElement('fornec');
+        $parent->appendChild($node);
+
+        if ($fornec->getCnpj()) {
+            $this->addChild($node, 'CNPJ', $fornec->getCnpj()->getNumero(), true);
+        } elseif ($fornec->getCpf()) {
+            $this->addChild($node, 'CPF', $fornec->getCpf()->getNumero(), true);
+        } elseif ($fornec->getNif()) {
+            $this->addChild($node, 'NIF', $fornec->getNif()->getNif(), true);
+        } else {
+            $this->addChild($node, 'cNaoNIF', $fornec->getCodigoNaoNif(), true);
+        }
+
+        $this->addChild($node, 'xNome', $fornec->getXNome(), true);
     }
 }

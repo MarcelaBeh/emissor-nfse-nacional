@@ -9,6 +9,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoClassificacaoTributaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoCreditoPresumido;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoIndicadorOperacao;
@@ -16,6 +17,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoSituacaoTributaria;
 
 class IbsCbsInfo
 {
+    /** @param ChaveAcesso[] $refNFSeList */
     public function __construct(
         private FinalidadeNfse $finNFSe,
         private CodigoIndicadorOperacao $cIndOp,
@@ -29,6 +31,9 @@ class IbsCbsInfo
         private ?IbsCbsDest $dest = null,
         private ?IbsCbsTribRegular $tribRegular = null,
         private ?IbsCbsDiferimento $diferimento = null,
+        private ?array $refNFSeList = null,
+        private ?IbsCbsImovel $imovel = null,
+        private ?IbsCbsReeRepRes $reeRepRes = null,
     ) {
     }
 
@@ -90,5 +95,26 @@ class IbsCbsInfo
     public function getDiferimento(): ?IbsCbsDiferimento
     {
         return $this->diferimento;
+    }
+
+    /** @return ChaveAcesso[]|null */
+    public function getRefNFSeList(): ?array
+    {
+        return $this->refNFSeList;
+    }
+
+    public function hasRefNFSe(): bool
+    {
+        return $this->refNFSeList !== null && $this->refNFSeList !== [];
+    }
+
+    public function getImovel(): ?IbsCbsImovel
+    {
+        return $this->imovel;
+    }
+
+    public function getReeRepRes(): ?IbsCbsReeRepRes
+    {
+        return $this->reeRepRes;
     }
 }

@@ -8,7 +8,11 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
@@ -21,14 +25,16 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoCIB;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoClassificacaoTributaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoCreditoPresumido;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoIndicadorOperacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoSituacaoTributaria;
-use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
 use PHPUnit\Framework\TestCase;
@@ -184,6 +190,27 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         $this->assertXmlContains($xml, 'tpEnteGov');
     }
 
+    public function test_build_ibscbs_xml_with_g_ref_nfse(): void
+    {
+        $refs = [
+            new ChaveAcesso('12345678901234567890123456789012345678901234567890'),
+            new ChaveAcesso('22345678901234567890123456789012345678901234567890'),
+        ];
+        $ibscbs = $this->createIbscbs(
+            tpOper: TipoOperacao::RECEBIMENTO_FORNECIMENTO_REALIZADO,
+            refNFSeList: $refs,
+        );
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'gRefNFSe');
+        $this->assertXmlContains($xml, 'refNFSe');
+        $this->assertXmlContains($xml, '12345678901234567890123456789012345678901234567890');
+        $this->assertXmlContains($xml, '22345678901234567890123456789012345678901234567890');
+    }
+
     public function test_build_ibscbs_xml_with_ccredpres(): void
     {
         $ibscbs = $this->createIbscbs(
@@ -290,6 +317,119 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         $this->assertSame($expectedOrder, $children);
     }
 
+    public function test_build_ibscbs_xml_with_imovel_cib(): void
+    {
+        $imovel = new IbsCbsImovel(
+            inscImobFisc: '12345',
+            cCIB: new CodigoCIB('12345678'),
+        );
+        $ibscbs = $this->createIbscbs(imovel: $imovel);
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'imovel');
+        $this->assertXmlContains($xml, 'inscImobFisc');
+        $this->assertXmlContains($xml, '12345');
+        $this->assertXmlContains($xml, 'cCIB');
+        $this->assertXmlContains($xml, '12345678');
+    }
+
+    public function test_build_ibscbs_xml_with_imovel_endereco(): void
+    {
+        $endereco = new IbsCbsEnderecoObra(
+            cep: '01001001',
+            xLgr: 'Rua do Imóvel',
+            nro: '100',
+            xCpl: 'Bloco B',
+            xBairro: 'Centro',
+        );
+        $imovel = new IbsCbsImovel(endereco: $endereco);
+        $ibscbs = $this->createIbscbs(imovel: $imovel);
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'imovel');
+        $this->assertXmlContains($xml, 'Rua do Imóvel');
+        $this->assertXmlContains($xml, '100');
+        $this->assertXmlContains($xml, 'Bloco B');
+        $this->assertXmlContains($xml, 'Centro');
+    }
+
+    public function test_build_ibscbs_xml_with_g_ree_rep_res(): void
+    {
+        $doc = new IbsCbsDocumentoReeRepRes(
+            tipo: 'dFeNacional',
+            dtEmiDoc: new \DateTimeImmutable('2026-01-15'),
+            dtCompDoc: new \DateTimeImmutable('2026-01-15'),
+            tpReeRepRes: TipoReembolsoRepasseRessarcimento::REPASSE_IMOVEIS_CORRETORES,
+            vlrReeRepRes: '1500.00',
+            tipoChaveDFe: '1',
+            chaveDFe: '12345678901234567890123456789012345678901234567890',
+        );
+        $reeRepRes = new IbsCbsReeRepRes([$doc]);
+        $ibscbs = $this->createIbscbs(reeRepRes: $reeRepRes);
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, 'gReeRepRes');
+        $this->assertXmlContains($xml, 'documentos');
+        $this->assertXmlContains($xml, 'dFeNacional');
+        $this->assertXmlContains($xml, 'tipoChaveDFe');
+        $this->assertXmlContains($xml, 'chaveDFe');
+        $this->assertXmlContains($xml, 'dtEmiDoc');
+        $this->assertXmlContains($xml, 'dtCompDoc');
+        $this->assertXmlContains($xml, 'tpReeRepRes');
+        $this->assertXmlContains($xml, 'vlrReeRepRes');
+        $this->assertXmlContains($xml, '1500.00');
+        $this->assertXmlContains($xml, '2026-01-15');
+        $this->assertXmlContains($xml, '01');
+    }
+
+    public function test_build_ibscbs_xml_with_imovel_in_correct_position(): void
+    {
+        $imovel = new IbsCbsImovel(
+            cCIB: new CodigoCIB('12345678'),
+        );
+        $dest = new IbsCbsDest(xNome: 'Dest');
+        $ibscbs = $this->createIbscbs(
+            indDest: IndicadorDestinacao::TERCEIRO,
+            dest: $dest,
+            imovel: $imovel,
+        );
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $dom = new \DOMDocument();
+        $dom->loadXML($xml);
+        $ibscbsEl = $dom->getElementsByTagName('IBSCBS')->item(0);
+
+        $children = [];
+        foreach ($ibscbsEl->childNodes as $child) {
+            if ($child instanceof \DOMElement) {
+                $children[] = $child->localName;
+            }
+        }
+
+        $destIdx = array_search('dest', $children, true);
+        $imovelIdx = array_search('imovel', $children, true);
+        $valoresIdx = array_search('valores', $children, true);
+
+        $this->assertNotFalse($destIdx, 'dest deve estar presente');
+        $this->assertNotFalse($imovelIdx, 'imovel deve estar presente');
+        $this->assertNotFalse($valoresIdx, 'valores deve estar presente');
+        $this->assertLessThan($valoresIdx, $imovelIdx, 'imovel deve vir antes de valores');
+        $this->assertGreaterThan($destIdx, $imovelIdx, 'imovel deve vir depois de dest');
+    }
+
+    /** @param ChaveAcesso[]|null $refNFSeList */
     private function createIbscbs(
         ?IndicadorFinal $indFinal = null,
         ?TipoOperacao $tpOper = null,
@@ -299,6 +439,9 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         ?IbsCbsDest $dest = null,
         ?IbsCbsTribRegular $tribRegular = null,
         ?IbsCbsDiferimento $diferimento = null,
+        ?array $refNFSeList = null,
+        ?IbsCbsImovel $imovel = null,
+        ?IbsCbsReeRepRes $reeRepRes = null,
     ): IbsCbsInfo {
         return new IbsCbsInfo(
             finNFSe: FinalidadeNfse::REGULAR,
@@ -313,6 +456,9 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             dest: $dest,
             tribRegular: $tribRegular,
             diferimento: $diferimento,
+            refNFSeList: $refNFSeList,
+            imovel: $imovel,
+            reeRepRes: $reeRepRes,
         );
     }
 
