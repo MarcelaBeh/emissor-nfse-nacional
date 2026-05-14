@@ -21,7 +21,11 @@ class CertificateValidator
 
     public function getDaysToExpire(Certificate $certificate): int
     {
-        return $certificate->getValidTo()->diff(new \DateTime())->days;
+        $days = $certificate->getValidTo()->diff(new \DateTime())->days;
+        if ($days === false) {
+            throw new \RuntimeException('Failed to calculate days to expire');
+        }
+        return $days;
     }
 
     public function isAboutToExpire(Certificate $certificate, int $days = 30): bool

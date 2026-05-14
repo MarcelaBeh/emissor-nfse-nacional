@@ -21,12 +21,16 @@ class NfseNacionalFacade
     private CancelarNfseService $cancelarNfseService;
 
     private function __construct(
+        /** @var array<string, mixed> */
         private array $config,
         private Certificate $certificado,
     ) {
         $this->inicializarServicos();
     }
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public static function create(array $config, Certificate $certificado): self
     {
         return new self($config, $certificado);
@@ -42,6 +46,9 @@ class NfseNacionalFacade
         return $this->consultarNfseService->consultarPorChave($chave, $encoding);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function consultarDpsPorChave(string $chave): array
     {
         return $this->consultarNfseService->consultarDpsPorChave($chave);
@@ -52,23 +59,32 @@ class NfseNacionalFacade
         return $this->cancelarNfseService->executar($request);
     }
 
+    /**
+     * @return array<int, mixed>
+     */
     public function consultarEventos(
         string $chave,
         ?string $tipoEvento = null,
         ?int $sequencial = null
     ): array {
-        return $this->consultarNfseService->consultarEventos(
+        return array_values($this->consultarNfseService->consultarEventos(
             $chave,
             $tipoEvento,
             $sequencial
-        );
+        ));
     }
 
+    /**
+     * @return string|array<string, mixed>
+     */
     public function consultarDanfse(string $chave): string|array
     {
         return $this->consultarNfseService->consultarDanfse($chave);
     }
 
+    /**
+     * @return string|array<string, mixed>
+     */
     public function consultarDanfseNfse(string $chave): string|array
     {
         return $this->consultarNfseService->consultarDanfseNfse($chave);

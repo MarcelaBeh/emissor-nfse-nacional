@@ -17,7 +17,7 @@ final readonly class Cnpj
 
     private function validate(string $cnpj): string
     {
-        $cnpj = preg_replace('/[^0-9]/', '', $cnpj);
+        $cnpj = preg_replace('/[^0-9]/', '', $cnpj) ?? '';
 
         if (strlen($cnpj) !== 14) {
             throw new InvalidCnpjException('CNPJ deve ter 14 dígitos. Fornecido: ' . strlen($cnpj));

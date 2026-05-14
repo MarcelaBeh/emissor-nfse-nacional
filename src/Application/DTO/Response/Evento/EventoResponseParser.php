@@ -11,7 +11,7 @@ class EventoResponseParser
     private const EVENTO_MANIFESTACAO = ['202201', '203202', '204203', '205204', '202205', '203206', '204207', '205208'];
 
     /**
-     * @param array $dados Array cru da API
+     * @param array<string, mixed> $dados Array cru da API
      * @return EventoResponseInterface
      */
     public function parse(array $dados): EventoResponseInterface
@@ -27,7 +27,7 @@ class EventoResponseParser
     }
 
     /**
-     * @param array $dados
+     * @param array<string, mixed> $dados
      * @param string $chaveNfse
      * @return CancelamentoResponse
      */
@@ -46,7 +46,7 @@ class EventoResponseParser
     }
 
     /**
-     * @param array $dados
+     * @param array<string, mixed> $dados
      * @param string $chaveNfse
      * @return SubstituicaoResponse
      */
@@ -66,7 +66,7 @@ class EventoResponseParser
     }
 
     /**
-     * @param array $dados
+     * @param array<string, mixed> $dados
      * @param string $chaveNfse
      * @param string $tipoEvento
      * @return EventoResponseInterface
@@ -99,7 +99,7 @@ class EventoResponseParser
     }
 
     /**
-     * @param array $response Resposta completa da API
+     * @param array<string, mixed> $response Resposta completa da API
      * @return EventoResponseInterface[]
      */
     public function parseLista(array $response): array

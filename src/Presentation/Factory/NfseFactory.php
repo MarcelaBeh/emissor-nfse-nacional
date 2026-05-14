@@ -6,6 +6,9 @@ namespace MarcelaBeh\EmissorNfseNacional\Presentation\Factory;
 
 class NfseFactory
 {
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function createFromArray(array $data): \MarcelaBeh\EmissorNfseNacional\Domain\Entity\Nfse
     {
         return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\Nfse(

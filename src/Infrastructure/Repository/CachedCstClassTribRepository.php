@@ -9,6 +9,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties;
 
 final class CachedCstClassTribRepository implements CstClassTribRepository
 {
+    /** @var array<string, CstClassTribProperties|array<int, CstClassTribProperties>|null> */
     private array $cache = [];
 
     public function __construct(
@@ -22,7 +23,12 @@ final class CachedCstClassTribRepository implements CstClassTribRepository
             $this->cache[$cClassTrib] = $this->inner->findByCode($cClassTrib);
         }
 
-        return $this->cache[$cClassTrib];
+        $result = $this->cache[$cClassTrib];
+        if ($result instanceof CstClassTribProperties || $result === null) {
+            return $result;
+        }
+
+        return null;
     }
 
     public function findByCst(string $cst): array
@@ -32,6 +38,11 @@ final class CachedCstClassTribRepository implements CstClassTribRepository
             $this->cache[$key] = $this->inner->findByCst($cst);
         }
 
-        return $this->cache[$key];
+        $result = $this->cache[$key];
+        if (is_array($result)) {
+            return $result;
+        }
+
+        return [];
     }
 }

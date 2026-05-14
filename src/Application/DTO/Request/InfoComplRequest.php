@@ -6,6 +6,9 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class InfoComplRequest
 {
+    /**
+     * @param array<int, string>|null $itensPedido
+     */
     public function __construct(
         public ?string $idDocTecnico = null,
         public ?string $docReferencia = null,
@@ -14,4 +17,13 @@ final readonly class InfoComplRequest
         public ?string $infoComplementar = null,
     ) {
     }
+
+    /**
+     * @return array<int, string>|null
+     */
+    public function getItensPedido(): ?array
+    {
+        return $this->itensPedido;
+    }
+
 }

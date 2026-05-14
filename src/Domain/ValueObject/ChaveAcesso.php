@@ -17,7 +17,7 @@ final readonly class ChaveAcesso
 
     private function validate(string $chave): string
     {
-        $chave = preg_replace('/[^0-9]/', '', $chave);
+        $chave = preg_replace('/[^0-9]/', '', $chave) ?? '';
 
         if (strlen($chave) !== 50) {
             throw new InvalidChaveAcessoException(

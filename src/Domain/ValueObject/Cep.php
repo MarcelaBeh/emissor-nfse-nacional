@@ -17,7 +17,7 @@ final readonly class Cep
 
     private function validate(string $cep): string
     {
-        $cep = preg_replace('/[^0-9]/', '', $cep);
+        $cep = preg_replace('/[^0-9]/', '', $cep) ?? '';
 
         if (strlen($cep) !== 8) {
             throw new ValidationException(

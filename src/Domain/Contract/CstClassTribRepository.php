@@ -10,5 +10,8 @@ interface CstClassTribRepository
 {
     public function findByCode(string $cClassTrib): ?CstClassTribProperties;
 
+    /**
+     * @return array<int, CstClassTribProperties>
+     */
     public function findByCst(string $cst): array;
 }

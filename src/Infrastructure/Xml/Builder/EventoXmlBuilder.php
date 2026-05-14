@@ -52,7 +52,12 @@ class EventoXmlBuilder implements Contract\XmlBuilderInterface
         $pedRegEvento->appendChild($infPedReg);
         $this->dom->appendChild($pedRegEvento);
 
-        return $this->dom->saveXML();
+        $xml = $this->dom->saveXML();
+        if ($xml === false) {
+            throw new \RuntimeException('Failed to generate XML');
+        }
+
+        return $xml;
     }
 
     private function buildEventoEspecifico(\DOMNode $parent, Evento $evento): void

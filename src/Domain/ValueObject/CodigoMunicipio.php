@@ -17,7 +17,7 @@ final readonly class CodigoMunicipio
 
     private function validate(string $codigo): string
     {
-        $codigo = preg_replace('/[^0-9]/', '', $codigo);
+        $codigo = preg_replace('/[^0-9]/', '', $codigo) ?? '';
 
         if (strlen($codigo) !== 7) {
             throw new ValidationException(

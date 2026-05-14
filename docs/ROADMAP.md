@@ -35,7 +35,7 @@ Progresso Total: 72% ███████████████████�
 - [x] Criar branch `refactor/clean-architecture`
 - [x] Documentação inicial (ARQUITETURA_REFATORACAO.md, GUIA_IMPLEMENTACAO.md, SEGURANCA_COMPLIANCE.md, LIBRARY_DESIGN.md)
 - [x] Criar estrutura de diretórios completa
-- [x] PHPStan 2.1 configurado (nível 5, 0 erros)
+- [x] PHPStan 2.1 configurado (nível 8, 0 erros)
 - [x] PHP-CS-Fixer 3.95 configurado (PSR-12 + PHP 8.3 migration)
 - [x] PHPUnit 10.5 configurado (25 testes iniciais)
 - [ ] GitHub Actions (CI/CD)
@@ -68,7 +68,7 @@ Progresso Total: 72% ███████████████████�
 ### Fase 6: Testes e Documentação 🧪
 
 - [x] 25 testes unitários (Cnpj, Cpf, CodigoMunicipio, DpsIdService)
-- [x] PHPStan nível 5 — 0 erros (src completo, exceto Common/Support)
+- [x] PHPStan nível 8 — 0 erros (src completo, exceto Common/Support)
 - [x] PHP-CS-Fixer aplicado (PSR-12, sem erros)
 - [ ] Cobertura > 80%
 - [ ] Testes de integração
@@ -83,7 +83,7 @@ Progresso Total: 72% ███████████████████�
 | Métrica | Meta | Atual |
 |---------|------|-------|
 | Testes | 25 passando | ✅ |
-| PHPStan Level | 5 | ✅ 0 erros |
+| PHPStan Level | 8 | ✅ 0 erros |
 | PHP-CS-Fixer | PSR-12 | ✅ Limpo |
 | Linhas por Classe | ≤ 300 | ✅ Aderente |
 | Complexidade Ciclomática | ≤ 10 | ✅ Aderente |
@@ -103,4 +103,4 @@ composer check        # Tudo acima
 
 ---
 
-**Última atualização:** 13/05/2026
+**Última atualização:** 14/05/2026

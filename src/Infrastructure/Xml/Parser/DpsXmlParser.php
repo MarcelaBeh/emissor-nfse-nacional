@@ -6,6 +6,9 @@ namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser;
 
 class DpsXmlParser
 {
+    /**
+     * @return array<string, string|null>
+     */
     public function parse(string $xml): array
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');
@@ -32,7 +35,11 @@ class DpsXmlParser
     {
         $nodes = $parent->getElementsByTagName($tagName);
         if ($nodes->length > 0) {
-            return trim($nodes->item(0)->textContent);
+            $node = $nodes->item(0);
+            if ($node === null) {
+                return null;
+            }
+            return trim($node->textContent);
         }
 
         return null;

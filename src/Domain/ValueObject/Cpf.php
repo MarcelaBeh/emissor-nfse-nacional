@@ -17,7 +17,7 @@ final readonly class Cpf
 
     private function validate(string $cpf): string
     {
-        $cpf = preg_replace('/[^0-9]/', '', $cpf);
+        $cpf = preg_replace('/[^0-9]/', '', $cpf) ?? '';
 
         if (strlen($cpf) !== 11) {
             throw new InvalidCpfException('CPF deve ter 11 dígitos. Fornecido: ' . strlen($cpf));

@@ -6,6 +6,9 @@ namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
 class InfoCompl
 {
+    /**
+     * @param array<int, string>|null $itensPedido
+     */
     public function __construct(
         private ?string $idDocTecnico = null,
         private ?string $docReferencia = null,
@@ -30,6 +33,9 @@ class InfoCompl
         return $this->numeroPedido;
     }
 
+    /**
+     * @return array<int, string>|null
+     */
     public function getItensPedido(): ?array
     {
         return $this->itensPedido;

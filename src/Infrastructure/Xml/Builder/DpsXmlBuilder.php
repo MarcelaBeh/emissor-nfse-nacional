@@ -41,7 +41,11 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $dpsNode->setAttribute('xmlns', 'http://www.sped.fazenda.gov.br/nfse');
 
         $infDpsNode = $this->dom->createElement('infDPS');
-        $infDpsNode->setAttribute('Id', 'DPS' . substr($entity->getChaveAcesso()->getChave(), 0, 42));
+        $chaveAcesso = $entity->getChaveAcesso();
+        if ($chaveAcesso === null) {
+            throw new \InvalidArgumentException('DPS must have a chave de acesso');
+        }
+        $infDpsNode->setAttribute('Id', 'DPS' . substr($chaveAcesso->getChave(), 0, 42));
 
         $this->addChild($infDpsNode, 'tpAmb', $entity->getTipoAmbiente()->value);
         $this->addChild($infDpsNode, 'dhEmi', $entity->getDataEmissao()->format('Y-m-d\TH:i:sP'));
@@ -74,7 +78,12 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $dpsNode->appendChild($infDpsNode);
         $this->dom->appendChild($dpsNode);
 
-        return $this->dom->saveXML();
+        $xml = $this->dom->saveXML();
+        if ($xml === false) {
+            throw new \RuntimeException('Failed to generate XML');
+        }
+
+        return $xml;
     }
 
     private function reset(): void
@@ -594,9 +603,15 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $this->buildIbscbsValores($node, $ibscbs);
     }
 
-    /** @param ChaveAcesso[] $refList */
-    private function buildGRefNFSe(\DOMNode $parent, array $refList): void
+    /**
+     * @param ChaveAcesso[]|null $refList
+     */
+    private function buildGRefNFSe(\DOMNode $parent, ?array $refList): void
     {
+        if ($refList === null) {
+            return;
+        }
+
         $gRefNode = $this->dom->createElement('gRefNFSe');
         $parent->appendChild($gRefNode);
 

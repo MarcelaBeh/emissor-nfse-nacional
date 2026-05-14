@@ -6,6 +6,9 @@ namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser;
 
 class ErrorXmlParser
 {
+    /**
+     * @return array<int, array{codigo: ?string, mensagem: ?string, detalhes: ?string}>
+     */
     public function parse(string $xml): array
     {
         $dom = new \DOMDocument('1.0', 'UTF-8');
@@ -29,7 +32,11 @@ class ErrorXmlParser
     {
         $nodes = $parent->getElementsByTagName($tagName);
         if ($nodes->length > 0) {
-            return trim($nodes->item(0)->textContent);
+            $node = $nodes->item(0);
+            if ($node === null) {
+                return null;
+            }
+            return trim($node->textContent);
         }
 
         return null;

@@ -9,6 +9,9 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 
 class ConfigFactory
 {
+    /**
+     * @param array<string, mixed> $config
+     */
     public static function create(array $config): Configuration
     {
         return new Configuration($config);

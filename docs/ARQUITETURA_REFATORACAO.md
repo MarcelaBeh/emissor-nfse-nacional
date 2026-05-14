@@ -1569,7 +1569,7 @@ class ResponseParser
 
 #### 1.1 Setup do Ambiente
 - [ ] Criar branch `refactor/clean-architecture`
-- [ ] Configurar PHPStan (nível 8)
+- [x] Configurar PHPStan (nível 8)
 - [ ] Configurar PHP-CS-Fixer
 - [ ] Setup PHPUnit
 - [ ] Configurar CI/CD (GitHub Actions)

@@ -23,19 +23,35 @@ class CurlHttpClient implements HttpClientInterface
     }
 
     #[\Override]
+    /**
+     * @param array<string, string> $headers
+     * @return array{status: int, body: string}
+     */
     public function get(string $url, array $headers = []): array
     {
         return $this->request('GET', $url, null, $headers);
     }
 
     #[\Override]
+    /**
+     * @param array<string, string> $headers
+     * @return array{status: int, body: string}
+     */
     public function post(string $url, mixed $data, array $headers = []): array
     {
         return $this->request('POST', $url, $data, $headers);
     }
 
+    /**
+     * @param array<string, string> $headers
+     * @return array{status: int, body: string}
+     */
     private function request(string $method, string $url, mixed $data = null, array $headers = []): array
     {
+        if ($url === '' || $method === '') {
+            throw new ConnectionException('URL and method cannot be empty');
+        }
+
         $ch = curl_init();
 
         $options = [
@@ -53,18 +69,21 @@ class CurlHttpClient implements HttpClientInterface
         ];
 
         if ($data !== null) {
-            $options[CURLOPT_POSTFIELDS] = is_array($data) ? json_encode($data) : $data;
+            $postData = is_array($data) ? json_encode($data) : $data;
+            if ($postData !== '' && $postData !== false) {
+                $options[CURLOPT_POSTFIELDS] = $postData;
+            }
         }
 
-        if ($this->certPath !== null) {
+        if ($this->certPath !== null && $this->certPath !== '') {
             $options[CURLOPT_SSLCERT] = $this->certPath;
         }
 
-        if ($this->privateKeyPath !== null) {
+        if ($this->privateKeyPath !== null && $this->privateKeyPath !== '') {
             $options[CURLOPT_SSLKEY] = $this->privateKeyPath;
         }
 
-        if ($this->keyPassword !== null) {
+        if ($this->keyPassword !== null && $this->keyPassword !== '') {
             $options[CURLOPT_KEYPASSWD] = $this->keyPassword;
         }
 
@@ -85,12 +104,20 @@ class CurlHttpClient implements HttpClientInterface
             throw new ConnectionException("CURL Error [{$errno}]: {$error}");
         }
 
+        if ($response === false || $response === true) {
+            throw new ConnectionException('Request failed with invalid response');
+        }
+
         return [
             'status' => $httpCode,
             'body' => $response,
         ];
     }
 
+    /**
+     * @param array<string, string> $headers
+     * @return array<int, string>
+     */
     private function prepareHeaders(array $headers): array
     {
         $prepared = ['Content-Type: application/json'];

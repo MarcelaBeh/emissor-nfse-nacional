@@ -6,6 +6,7 @@ namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Config;
 
 class MunicipioConfigLoader
 {
+    /** @var array<string, mixed> */
     private array $configs;
 
     public function __construct(?string $jsonPath = null)
@@ -22,18 +23,24 @@ class MunicipioConfigLoader
 
         $content = file_get_contents($jsonPath);
 
-        if (!json_validate($content)) {
+        if ($content === false || !json_validate($content)) {
             throw new \RuntimeException("JSON inválido em {$jsonPath}");
         }
 
         $this->configs = json_decode($content, true);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getUrls(string $codigoPrefeitura): array
     {
         return $this->configs[$codigoPrefeitura]['urls'] ?? [];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getOperations(string $codigoPrefeitura): array
     {
         return $this->configs[$codigoPrefeitura]['operations'] ?? [];
@@ -44,6 +51,9 @@ class MunicipioConfigLoader
         return isset($this->configs[$codigoPrefeitura]);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getAll(): array
     {
         return $this->configs;

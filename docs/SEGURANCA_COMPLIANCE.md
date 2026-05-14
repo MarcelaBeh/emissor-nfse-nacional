@@ -1115,7 +1115,7 @@ class SensitiveDataSanitizerTest extends TestCase
 ---
 
 **Documento mantido por:** Equipe de Segurança  
-**Última atualização:** 13/05/2026  
+**Última atualização:** 14/05/2026  
 **Versão:** 1.0
 
 ---

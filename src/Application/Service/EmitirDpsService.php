@@ -509,7 +509,10 @@ class EmitirDpsService
         );
     }
 
-    /** @param \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocDedRedRequest[]|null $reqs */
+    /**
+     * @param \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocDedRedRequest[]|null $reqs
+     * @return array<int, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed>|null
+     */
     private function criarDocumentosDeducao(?array $reqs): ?array
     {
         if ($reqs === null) {
@@ -616,6 +619,9 @@ class EmitirDpsService
         );
     }
 
+    /**
+     * @param array<string, mixed> $response
+     */
     private function processarResposta(array $response, Dps $dps): NfseResponse
     {
         if (!$response['success']) {
@@ -655,6 +661,9 @@ class EmitirDpsService
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function buildIbsDataFromDps(Dps $dps): array
     {
         $ibscbs = $dps->getIbscbs();
@@ -678,10 +687,13 @@ class EmitirDpsService
         }
 
         if ($ibscbs->hasRefNFSe()) {
-            $data['refNFSeList'] = array_map(
-                fn ($chave) => $chave->getChave(),
-                $ibscbs->getRefNFSeList(),
-            );
+            $refList = $ibscbs->getRefNFSeList();
+            if ($refList !== null) {
+                $data['refNFSeList'] = array_map(
+                    fn ($chave) => $chave->getChave(),
+                    $refList,
+                );
+            }
         }
 
         return $data;

@@ -9,6 +9,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository;
 
 final class IbscbsResponseValidator
 {
+    /** @var array<int, string> */
     private array $errors = [];
 
     public function __construct(
@@ -16,6 +17,10 @@ final class IbscbsResponseValidator
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $ibsData
+     * @param array<string, mixed> $nfseIbscbs
+     */
     public function validate(array $ibsData, array $nfseIbscbs): void
     {
         $this->errors = [];
@@ -40,6 +45,9 @@ final class IbscbsResponseValidator
     /**
      * E1522: pRedutor não deve ser informado se tpEnteGov não foi informado
      * E1523: pRedutor deve ser informado se tpEnteGov foi informado
+     *
+     * @param array<string, mixed> $ibsData
+     * @param array<string, mixed> $nfseIbscbs
      */
     private function validatePRedutor(array $ibsData, array $nfseIbscbs): void
     {
@@ -62,6 +70,9 @@ final class IbscbsResponseValidator
      * E1546: pRedAliqMun deve ser informado se cClassTrib possui redução
      * E1550: pRedAliqCBS não deve ser informado se cClassTrib não possui redução
      * E1551: pRedAliqCBS deve ser informado se cClassTrib possui redução
+     *
+     * @param array<string, mixed> $ibsData
+     * @param array<string, mixed> $nfseIbscbs
      */
     private function validatePRedAliq(array $ibsData, array $nfseIbscbs): void
     {
@@ -115,6 +126,9 @@ final class IbscbsResponseValidator
     /**
      * E1560/E1561: gIBSCredPres não/deve ser informado conforme cCredPres
      * E1575/E1576: gCBSCredPres não/deve ser informado conforme cCredPres
+     *
+     * @param array<string, mixed> $ibsData
+     * @param array<string, mixed> $nfseIbscbs
      */
     private function validateVCredPres(array $ibsData, array $nfseIbscbs): void
     {
@@ -146,6 +160,9 @@ final class IbscbsResponseValidator
      * E1565/E1566: vDifUF não/deve ser informado conforme pDifUF
      * E1569/E1570: vDifMun não/deve ser informado conforme pDifMun
      * E1579/E1580: vDifCBS não/deve ser informado conforme pDifCBS
+     *
+     * @param array<string, mixed> $ibsData
+     * @param array<string, mixed> $nfseIbscbs
      */
     private function validateVDiferimento(array $ibsData, array $nfseIbscbs): void
     {
@@ -190,6 +207,9 @@ final class IbscbsResponseValidator
     /**
      * E1600: gTribCompraGov não deve ser informado quando tpEnteGov não foi informado na DPS
      * E1601: gTribCompraGov deve ser informado quando tpEnteGov foi informado na DPS
+     *
+     * @param array<string, mixed> $ibsData
+     * @param array<string, mixed> $nfseIbscbs
      */
     private function validateGTribCompraGov(array $ibsData, array $nfseIbscbs): void
     {
@@ -211,6 +231,9 @@ final class IbscbsResponseValidator
      * E1531: vCalcReeRepRes não deve ser informado se gRefNFSe não foi informado na DPS
      * E1533: vCalcReeRepRes deve ser informado se gRefNFSe foi informado na DPS
      * E1534: vCalcReeRepRes < vServ (quando informado)
+     *
+     * @param array<string, mixed> $ibsData
+     * @param array<string, mixed> $nfseIbscbs
      */
     private function validateVCalcReeRepRes(array $ibsData, array $nfseIbscbs): void
     {

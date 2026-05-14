@@ -17,7 +17,7 @@ final readonly class Telefone
 
     private function validate(string $numero): string
     {
-        $numero = preg_replace('/[^0-9]/', '', $numero);
+        $numero = preg_replace('/[^0-9]/', '', $numero) ?? '';
 
         if (strlen($numero) < 10 || strlen($numero) > 11) {
             throw new ValidationException(

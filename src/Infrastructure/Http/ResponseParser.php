@@ -10,10 +10,14 @@ class ResponseParser
     private const ERRO_CERTIFICADO_INVALIDO = 'E001';
     private const ERRO_CERTIFICADO_EXPIRADO = 'E002';
 
+    /**
+     * @param array{codigo?: string, mensagem?: string, detalhes?: array<string, mixed>} $response
+     * @return array{codigo: string, mensagem: string, detalhes: array<string, mixed>, recuperavel: bool}
+     */
     public function parseError(array $response): array
     {
         $codigo = $response['codigo'] ?? self::ERRO_NAO_CATALOGADO;
-        $mensagem = $response['mensagem'] ?? 'Erro não identificado';
+        $mensagem = $response['mensagem'] ?? 'Erro não catalogado';
         $detalhes = $response['detalhes'] ?? [];
 
         return [

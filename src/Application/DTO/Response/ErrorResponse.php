@@ -6,6 +6,9 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Response;
 
 final readonly class ErrorResponse
 {
+    /**
+     * @param array<int, string> $detalhes
+     */
     public function __construct(
         public string $codigo,
         public string $mensagem,

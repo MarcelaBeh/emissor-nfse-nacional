@@ -20,6 +20,9 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 
 class DpsFactory
 {
+    /**
+     * @param array<string, mixed> $data
+     */
     public static function create(
         array $data,
     ): Dps {
@@ -78,6 +81,9 @@ class DpsFactory
         );
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private static function createEndereco(array $data): Endereco
     {
         return new Endereco(

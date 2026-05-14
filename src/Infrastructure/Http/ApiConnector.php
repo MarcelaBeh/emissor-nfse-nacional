@@ -18,6 +18,10 @@ class ApiConnector
         $this->baseUrl = $this->resolveBaseUrl();
     }
 
+    /**
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
     public function get(string $endpoint, array $params = []): array
     {
         $url = $this->buildUrl($endpoint, $params);
@@ -26,6 +30,10 @@ class ApiConnector
         return $this->parseResponse($response);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     public function post(string $endpoint, array $data): array
     {
         $url = $this->buildUrl($endpoint);
@@ -44,6 +52,9 @@ class ApiConnector
         return $this->config->getUrl($key);
     }
 
+    /**
+     * @param array<string, mixed> $params
+     */
     private function buildUrl(string $endpoint, array $params = []): string
     {
         $url = rtrim($this->baseUrl, '/') . '/' . ltrim($endpoint, '/');
@@ -55,6 +66,9 @@ class ApiConnector
         return $url;
     }
 
+    /**
+     * @return array<string, string>
+     */
     private function buildHeaders(): array
     {
         return [
@@ -64,6 +78,10 @@ class ApiConnector
         ];
     }
 
+    /**
+     * @param array<string, mixed> $response
+     * @return array<string, mixed>
+     */
     private function parseResponse(array $response): array
     {
         $body = $response['body'];

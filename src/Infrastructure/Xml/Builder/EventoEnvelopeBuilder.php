@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder;
 
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Evento;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
 use NFePHP\Common\DOMImproved as Dom;
 
 class EventoEnvelopeBuilder implements Contract\XmlBuilderInterface
@@ -46,7 +45,15 @@ class EventoEnvelopeBuilder implements Contract\XmlBuilderInterface
         $pedRegXml = $this->pedRegBuilder->build($entity);
         $pedRegDom = new Dom('1.0', 'UTF-8');
         $pedRegDom->loadXML($pedRegXml);
-        $pedRegNode = $this->dom->importNode($pedRegDom->documentElement, true);
+        $documentElement = $pedRegDom->documentElement;
+        if ($documentElement === null) {
+            throw new \RuntimeException('Failed to load XML document');
+        }
+        $pedRegNode = $this->dom->importNode($documentElement, true);
+        // @phpstan-ignore-next-line identical.alwaysFalse (PHPDoc da biblioteca externa não documenta false)
+        if ($pedRegNode === null || $pedRegNode === false) {
+            throw new \RuntimeException('Failed to import node');
+        }
         $infEvento->appendChild($pedRegNode);
 
         $eventoNode->appendChild($infEvento);
@@ -57,7 +64,12 @@ class EventoEnvelopeBuilder implements Contract\XmlBuilderInterface
 
         $this->dom->appendChild($eventoNode);
 
-        return $this->dom->saveXML();
+        $xml = $this->dom->saveXML();
+        if ($xml === false) {
+            throw new \RuntimeException('Failed to generate XML');
+        }
+
+        return $xml;
     }
 
     private function gerarIdEvento(Evento $evento): string
@@ -71,10 +83,10 @@ class EventoEnvelopeBuilder implements Contract\XmlBuilderInterface
     private function extrairNumeroDfse(string $chaveNfse): string
     {
         $chaveLimpa = preg_replace('/[^0-9]/', '', $chaveNfse);
-        if (strlen($chaveLimpa) === 50) {
-            return substr($chaveLimpa, 25, 9);
+        if ($chaveLimpa === null || strlen($chaveLimpa) !== 50) {
+            return '0';
         }
-        return '0';
+        return substr($chaveLimpa, 25, 9);
     }
 
     private function reset(): void

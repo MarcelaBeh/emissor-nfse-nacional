@@ -259,7 +259,7 @@ Ao contribuir com código:
 1. ✅ Leia todos os documentos
 2. ✅ Siga os padrões estabelecidos
 3. ✅ Escreva testes (cobertura >= 80%)
-4. ✅ Valide com PHPStan nível 5 (mínimo)
+4. ✅ Valide com PHPStan nível 8 (mínimo)
 5. ✅ Revise o checklist de segurança
 6. ✅ Documente mudanças
 

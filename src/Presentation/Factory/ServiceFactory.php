@@ -34,6 +34,9 @@ class ServiceFactory
     private XsdValidator $xsdValidator;
     private XmlSigner $xmlSigner;
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(array $config, Certificate $certificate)
     {
         $this->configuration = new Configuration($config);

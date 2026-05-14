@@ -56,6 +56,9 @@ class CertificateManager implements Contract\CertificateManagerInterface
     }
 
     #[\Override]
+    /**
+     * @return array{private: string, public: string, cert: string}
+     */
     public function saveTemporaryFiles(): array
     {
         $alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -77,6 +80,9 @@ class CertificateManager implements Contract\CertificateManagerInterface
     }
 
     #[\Override]
+    /**
+     * @param array<string, string> $files
+     */
     public function cleanTemporaryFiles(array $files): void
     {
         foreach ($files as $file) {

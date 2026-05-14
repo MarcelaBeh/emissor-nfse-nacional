@@ -9,8 +9,10 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties;
 
 final class InMemoryCstClassTribRepository implements CstClassTribRepository
 {
+    /** @var array<string, CstClassTribProperties> */
     private array $properties;
 
+    /** @param array<string, CstClassTribProperties>|null $properties */
     public function __construct(?array $properties = null)
     {
         $this->properties = $properties ?? self::defaultData();
@@ -31,6 +33,9 @@ final class InMemoryCstClassTribRepository implements CstClassTribRepository
         );
     }
 
+    /**
+     * @return array<string, CstClassTribProperties>
+     */
     public static function defaultData(): array
     {
         $data = [];

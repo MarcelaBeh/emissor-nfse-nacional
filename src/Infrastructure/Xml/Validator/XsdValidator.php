@@ -61,6 +61,9 @@ class XsdValidator
         libxml_use_internal_errors(false);
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function getLibxmlErrors(): array
     {
         $errors = [];

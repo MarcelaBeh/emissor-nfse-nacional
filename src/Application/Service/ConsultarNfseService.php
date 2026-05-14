@@ -45,7 +45,7 @@ class ConsultarNfseService
                 $parsed = $this->nfseXmlParser->parse($xml);
                 return new NfseResponse(
                     success: true,
-                    dados: $parsed,
+                    dados: $parsed[0] ?? null,
                     xml: $xml,
                 );
             }
@@ -64,6 +64,9 @@ class ConsultarNfseService
         }
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function consultarDpsPorChave(string $chave): array
     {
         try {
@@ -93,6 +96,9 @@ class ConsultarNfseService
         }
     }
 
+    /**
+     * @return array<int, array<string, mixed>>|array<string, mixed>
+     */
     public function consultarEventos(string $chave, ?string $tipoEvento = null, ?int $sequencial = null): array
     {
         try {
@@ -117,6 +123,9 @@ class ConsultarNfseService
         }
     }
 
+    /**
+     * @return string|array<string, mixed>
+     */
     public function consultarDanfse(string $chave): string|array
     {
         try {
@@ -150,6 +159,9 @@ class ConsultarNfseService
         }
     }
 
+    /**
+     * @return string|array<string, mixed>
+     */
     public function consultarDanfseNfse(string $chave): string|array
     {
         $endpointCert = $this->apiEndpoints->consultarDanfseNfseCertificado();

@@ -73,7 +73,7 @@ Este projeto utiliza ferramentas automatizadas de qualidade:
 | Ferramenta | Comando | Descrição |
 |-----------|---------|-----------|
 | PHP-CS-Fixer | `composer cs` / `composer cs:fix` | Padrão PSR-12 |
-| PHPStan (nível 5) | `composer stan` | Análise estática |
+| PHPStan (nível 8) | `composer stan` | Análise estática |
 | PHPUnit | `composer test` | Testes unitários e integração |
 
 **Check completo:** `composer check` (executa CS → PHPStan → PHPUnit em sequência).
@@ -114,7 +114,7 @@ Como a Receita só atualiza suas APIs quando está inspirada, listamos abaixo as
 
 ![CI](https://github.com/marcelabeh/emissor-nfse-nacional/actions/workflows/ci.yml/badge.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php)
-![PHPStan](https://img.shields.io/badge/PHPStan-level%205-brightgreen)
+![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-25%20passing-brightgreen)
 ![PHP CS Fixer](https://img.shields.io/badge/code%20style-PSR--12-blue)
 

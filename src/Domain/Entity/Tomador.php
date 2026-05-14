@@ -49,12 +49,18 @@ class Tomador
 
     public function getCnpj(): ?Cnpj
     {
-        return $this->isCnpj() ? $this->documento : null;
+        if (!$this->documento instanceof Cnpj) {
+            return null;
+        }
+        return $this->documento;
     }
 
     public function getCpf(): ?Cpf
     {
-        return !$this->isCnpj() ? $this->documento : null;
+        if (!$this->documento instanceof Cpf) {
+            return null;
+        }
+        return $this->documento;
     }
 
     public function getRazaoSocial(): string

@@ -7,12 +7,12 @@ namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Application\Service;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ConsultaRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\NfseResponse;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
-use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
 use PHPUnit\Framework\TestCase;
 
 final class ConsultarNfseServiceTest extends TestCase
@@ -48,7 +48,7 @@ final class ConsultarNfseServiceTest extends TestCase
         $this->validator->expects($this->once())->method('validate')->with($this->isInstanceOf(ConsultaRequest::class));
         $this->apiEndpoints->expects($this->once())->method('consultarNfse')->with($chave)->willReturn('https://api.example.com/nfse/' . $chave);
         $this->apiConnector->expects($this->once())->method('get')->willReturn(['success' => true, 'data' => $xml]);
-        $this->xmlParser->expects($this->once())->method('parse')->with($xml)->willReturn($parsed);
+        $this->xmlParser->expects($this->once())->method('parse')->with($xml)->willReturn([$parsed]);
 
         $response = $this->service->consultarPorChave($chave);
 

@@ -13,6 +13,9 @@ class Servico
     private Money $baseCalculo;
     private Money $valorIss;
 
+    /**
+     * @param DocDedRed[]|null $documentosDeducao
+     */
     public function __construct(
         private string $discriminacao,
         private string $codigoTributacao,

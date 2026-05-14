@@ -5,4 +5,6 @@ exemples/local/
 .php-cs-fixer.cache
 .phpunit.cache/
 .phpstan-cache/
+.phpstan-errors.json
+.phpstan-level*.txt
 coverage/

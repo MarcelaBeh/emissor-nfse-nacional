@@ -6,6 +6,9 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\Evento;
 
 final readonly class GenericEventoResponse implements EventoResponseInterface
 {
+    /**
+     * @param array<string, mixed>|null $dadosAdicionais
+     */
     public function __construct(
         private string $chaveNfse,
         private string $tipoEvento,
@@ -47,6 +50,9 @@ final readonly class GenericEventoResponse implements EventoResponseInterface
         return $this->mensagem;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getDadosAdicionais(): ?array
     {
         return $this->dadosAdicionais;

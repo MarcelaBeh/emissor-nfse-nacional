@@ -10,6 +10,7 @@ use NFePHP\Common\Signer;
 class XmlSigner implements Contract\XmlSignerInterface
 {
     private Certificate $certificate;
+    /** @var array{0: bool, 1: bool, 2: null, 3: null} */
     private array $canonical = [true, false, null, null];
 
     public function __construct(Certificate $certificate)

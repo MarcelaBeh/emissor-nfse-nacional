@@ -9,11 +9,17 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Exception\ConfigExcepti
 
 class Configuration implements Contract\ConfigInterface
 {
+    /** @var array<string, mixed> */
     private array $config;
+    /** @var array<string, string> */
     private array $urls;
+    /** @var array<string, string> */
     private array $operations;
     private string $tipoApi;
 
+    /**
+     * @param array<string, mixed> $config
+     */
     public function __construct(array $config)
     {
         $this->config = $this->validateConfig($config);
@@ -22,6 +28,10 @@ class Configuration implements Contract\ConfigInterface
         $this->loadOperations();
     }
 
+    /**
+     * @param array<string, mixed> $config
+     * @return array<string, mixed>
+     */
     private function validateConfig(array $config): array
     {
         $required = ['tpAmb', 'prefeitura'];
@@ -53,7 +63,7 @@ class Configuration implements Contract\ConfigInterface
         $configFile = __DIR__ . '/../../../storage/prefeituras.json';
         if (file_exists($configFile)) {
             $content = file_get_contents($configFile);
-            if (!json_validate($content)) {
+            if ($content === false || !json_validate($content)) {
                 throw new ConfigException("Arquivo de configuração inválido: {$configFile}");
             }
             $json = json_decode($content, true);
@@ -81,7 +91,7 @@ class Configuration implements Contract\ConfigInterface
         $configFile = __DIR__ . '/../../../storage/prefeituras.json';
         if (file_exists($configFile)) {
             $content = file_get_contents($configFile);
-            if (!json_validate($content)) {
+            if ($content === false || !json_validate($content)) {
                 throw new ConfigException("Arquivo de configuração inválido: {$configFile}");
             }
             $json = json_decode($content, true);

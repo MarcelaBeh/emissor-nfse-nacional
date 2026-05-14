@@ -9,6 +9,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties;
 
 final class FileCstClassTribRepository implements CstClassTribRepository
 {
+    /** @var array<string, CstClassTribProperties>|null */
     private ?array $cache = null;
 
     public function __construct(
@@ -29,7 +30,7 @@ final class FileCstClassTribRepository implements CstClassTribRepository
 
         return array_values(
             array_filter(
-                $this->cache,
+                $this->cache ?? [],
                 fn (CstClassTribProperties $p) => $p->getCst() === $cst,
             )
         );
