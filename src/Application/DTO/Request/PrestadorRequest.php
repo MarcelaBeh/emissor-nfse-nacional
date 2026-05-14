@@ -7,11 +7,10 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 final readonly class PrestadorRequest
 {
     public function __construct(
-        public string $documento,
-        public bool $isCnpj,
+        public ?string $documento,
+        public ?bool $isCnpj,
         public ?string $inscricaoMunicipal,
         public string $razaoSocial,
-        public ?string $nomeFantasia,
         public ?string $telefone,
         public ?string $email,
         public string $logradouro,
@@ -24,6 +23,7 @@ final readonly class PrestadorRequest
         public int $regimeTributario,
         public ?string $nif = null,
         public ?string $caepf = null,
+        public ?string $codigoNaoNif = null,
     ) {
     }
 }

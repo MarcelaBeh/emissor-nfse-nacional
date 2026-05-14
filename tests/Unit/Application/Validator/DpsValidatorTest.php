@@ -762,7 +762,6 @@ final class DpsValidatorTest extends TestCase
                 isCnpj: true,
                 inscricaoMunicipal: '123456',
                 razaoSocial: $prestadorRazaoSocial,
-                nomeFantasia: 'Prestador',
                 telefone: null,
                 email: null,
                 logradouro: 'Rua A',

@@ -468,7 +468,6 @@ final class DpsXsdValidationTest extends TestCase
                 documento: $cnpj,
                 inscricaoMunicipal: '123456',
                 razaoSocial: 'Prestador Ltda',
-                nomeFantasia: 'Prestador',
                 telefone: null,
                 email: null,
                 endereco: $endereco,

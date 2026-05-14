@@ -22,6 +22,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
@@ -106,15 +107,17 @@ class EmitirDpsService
 
     private function criarDpsFromRequest(DpsRequest $request): Dps
     {
-        $documentoPrestador = $request->prestador->isCnpj
-            ? new Cnpj($request->prestador->documento)
-            : new Cpf($request->prestador->documento);
+        $documentoPrestador = null;
+        if ($request->prestador->documento !== null && $request->prestador->isCnpj !== null) {
+            $documentoPrestador = $request->prestador->isCnpj
+                ? new Cnpj($request->prestador->documento)
+                : new Cpf($request->prestador->documento);
+        }
 
         $prestador = new Prestador(
             documento: $documentoPrestador,
             inscricaoMunicipal: $request->prestador->inscricaoMunicipal,
             razaoSocial: $request->prestador->razaoSocial,
-            nomeFantasia: $request->prestador->nomeFantasia,
             telefone: $request->prestador->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($request->prestador->telefone) : null,
             email: $request->prestador->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($request->prestador->email) : null,
             endereco: $this->criarEndereco(
@@ -129,6 +132,7 @@ class EmitirDpsService
             regimeTributario: \MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario::from($request->prestador->regimeTributario),
             nif: $request->prestador->nif,
             caepf: $request->prestador->caepf,
+            codigoNaoNif: $request->prestador->codigoNaoNif,
         );
 
         $documentoTomador = null;

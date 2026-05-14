@@ -28,16 +28,16 @@ class DpsFactory
         $servicoData = $data['servico'];
 
         $prestador = new Prestador(
-            documento: isset($prestadorData['cnpj']) ? new Cnpj($prestadorData['cnpj']) : new Cpf($prestadorData['cpf']),
+            documento: isset($prestadorData['cnpj']) ? new Cnpj($prestadorData['cnpj']) : (isset($prestadorData['cpf']) ? new Cpf($prestadorData['cpf']) : null),
             inscricaoMunicipal: $prestadorData['inscricaoMunicipal'] ?? null,
             razaoSocial: $prestadorData['razaoSocial'],
-            nomeFantasia: $prestadorData['nomeFantasia'] ?? null,
             telefone: null,
             email: null,
             endereco: self::createEndereco($prestadorData['endereco']),
             regimeTributario: RegimeTributario::from($prestadorData['regimeTributario']),
             nif: $prestadorData['nif'] ?? null,
             caepf: $prestadorData['caepf'] ?? null,
+            codigoNaoNif: $prestadorData['codigoNaoNif'] ?? null,
         );
 
         $tomador = new Tomador(

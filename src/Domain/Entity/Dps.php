@@ -51,14 +51,19 @@ class Dps
             return $this->chaveAcesso;
         }
 
-        $documento = $this->prestador->getDocumento()->__toString();
-        $tpInsc = strlen($documento) === 14 ? '2' : '1';
+        $documento = $this->prestador->getDocumento();
+        if ($documento === null) {
+            throw new \RuntimeException('Prestador sem CNPJ/CPF não pode gerar chave de acesso');
+        }
+
+        $docStr = $documento->__toString();
+        $tpInsc = strlen($docStr) === 14 ? '2' : '1';
 
         $codigo = sprintf(
             '%s%s%s%05d%015d00000000',
             $this->codigoMunicipioEmissor->getCodigo(),
             $tpInsc,
-            $documento,
+            $docStr,
             $this->serie,
             $this->numero
         );

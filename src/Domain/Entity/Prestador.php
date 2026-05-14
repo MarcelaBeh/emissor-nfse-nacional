@@ -13,16 +13,16 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone;
 class Prestador
 {
     public function __construct(
-        private Cnpj|Cpf $documento,
+        private Cnpj|Cpf|null $documento,
         private ?string $inscricaoMunicipal,
         private string $razaoSocial,
-        private ?string $nomeFantasia,
         private ?Telefone $telefone,
         private ?Email $email,
         private Endereco $endereco,
         private RegimeTributario $regimeTributario,
         private ?string $nif = null,
         private ?string $caepf = null,
+        private ?string $codigoNaoNif = null,
     ) {
         $this->validate();
     }
@@ -36,9 +36,13 @@ class Prestador
         if (strlen($this->razaoSocial) > 150) {
             throw new \InvalidArgumentException('Razão social deve ter no máximo 150 caracteres');
         }
+
+        if ($this->documento === null && $this->nif === null && $this->codigoNaoNif === null) {
+            throw new \InvalidArgumentException('Prestador deve ter CNPJ, CPF, NIF ou cNaoNIF');
+        }
     }
 
-    public function getDocumento(): Cnpj|Cpf
+    public function getDocumento(): Cnpj|Cpf|null
     {
         return $this->documento;
     }
@@ -66,11 +70,6 @@ class Prestador
     public function getRazaoSocial(): string
     {
         return $this->razaoSocial;
-    }
-
-    public function getNomeFantasia(): ?string
-    {
-        return $this->nomeFantasia;
     }
 
     public function getTelefone(): ?Telefone
@@ -101,5 +100,10 @@ class Prestador
     public function getCaepf(): ?string
     {
         return $this->caepf;
+    }
+
+    public function getCodigoNaoNif(): ?string
+    {
+        return $this->codigoNaoNif;
     }
 }

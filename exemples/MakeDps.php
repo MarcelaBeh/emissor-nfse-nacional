@@ -219,7 +219,6 @@ $request = new DpsRequest(
         isCnpj: true,
         inscricaoMunicipal: '123456',
         razaoSocial: 'Prestador Ltda',
-        nomeFantasia: 'Prestador',
         telefone: null,
         email: null,
         logradouro: 'Rua A',

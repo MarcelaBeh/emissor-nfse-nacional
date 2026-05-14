@@ -118,6 +118,8 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->addChild($prestNode, 'CPF', $prestador->getCpf()->getNumero(), false);
         } elseif ($prestador->getNif()) {
             $this->addChild($prestNode, 'NIF', $prestador->getNif(), false);
+        } elseif ($prestador->getCodigoNaoNif() !== null) {
+            $this->addChild($prestNode, 'cNaoNIF', $prestador->getCodigoNaoNif(), false);
         }
 
         if ($prestador->getCaepf()) {
