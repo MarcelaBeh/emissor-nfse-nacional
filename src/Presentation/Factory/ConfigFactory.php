@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Presentation\Factory;
+namespace MarcelaBeh\EmissorNfseNacional\Presentation\Factory;
 
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\Configuration;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 
 class ConfigFactory
 {

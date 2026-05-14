@@ -2,23 +2,21 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Presentation\Factory;
+namespace MarcelaBeh\EmissorNfseNacional\Presentation\Factory;
 
-use emissorNfseNacional\NfseNacional\Domain\Entity\Dps;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Prestador;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Tomador;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Servico;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Endereco;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Evento;
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoEmissao;
-use emissorNfseNacional\NfseNacional\Domain\Enum\RegimeTributario;
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoEvento;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cnpj;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cpf;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Money;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\CodigoMunicipio;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cep;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 
 class DpsFactory
 {

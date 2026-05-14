@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Presentation\Factory;
+namespace MarcelaBeh\EmissorNfseNacional\Presentation\Factory;
 
-use emissorNfseNacional\NfseNacional\Application\Service\EmitirDpsService;
-use emissorNfseNacional\NfseNacional\Application\Service\ConsultarNfseService;
-use emissorNfseNacional\NfseNacional\Application\Service\CancelarNfseService;
-use emissorNfseNacional\NfseNacional\Application\Validator\DpsValidator;
-use emissorNfseNacional\NfseNacional\Application\Validator\EventoValidator;
-use emissorNfseNacional\NfseNacional\Application\Validator\ConsultaValidator;
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\Configuration;
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\ApiEndpoints;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\ApiConnector;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Client\CurlHttpClient;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\RequestBuilder;
-use emissorNfseNacional\NfseNacional\Infrastructure\Security\CertificateManager;
-use emissorNfseNacional\NfseNacional\Infrastructure\Security\XmlSigner;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\CancelarNfseService;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\EventoValidator;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Client\CurlHttpClient;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\CertificateManager;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 use NFePHP\Common\Certificate;
 
 class ServiceFactory

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Contract;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Contract;
 
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoEvento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
 
 interface EventoInterface
 {

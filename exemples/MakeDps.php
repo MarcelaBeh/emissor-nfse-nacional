@@ -14,7 +14,7 @@ try {
     $password = 'senha_certificado';
 
     $cert = \NFePHP\Common\Certificate::readPfx($content, $password);
-    $tools = new \emissorNfseNacional\NfseNacional\Tools($configJson, $cert);
+    $tools = new \MarcelaBeh\EmissorNfseNacional\Tools($configJson, $cert);
 
     $std = new stdClass();
 
@@ -158,7 +158,7 @@ try {
 //    $std->infDPS->ibscbs->valores->trib->gibscbs->CST = '01'; // Código da tributação IBS/CBS
 //    $std->infDPS->ibscbs->valores->trib->gibscbs->cClassTrib = '0000000000'; // Código de classificação tributária
 
-    $dps = new \emissorNfseNacional\NfseNacional\Dps($std);
+    $dps = new \MarcelaBeh\EmissorNfseNacional\Dps($std);
     $response = $tools->enviaDps($dps->render());
     //    $response = [
     //        "tipoAmbiente" => 1,

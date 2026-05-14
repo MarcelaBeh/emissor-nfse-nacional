@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cep;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\CodigoMunicipio;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 
 class Endereco
 {

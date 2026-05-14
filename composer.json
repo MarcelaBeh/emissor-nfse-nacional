@@ -16,6 +16,11 @@
       "Helpers.php"
     ]
   },
+  "autoload-dev": {
+    "psr-4": {
+      "MarcelaBeh\\EmissorNfseNacional\\Tests\\": "tests/"
+    }
+  },
   "authors": [
     {
       "name": "Marcela Beatriz",
@@ -41,6 +46,24 @@
   },
   "config": {
     "optimize-autoloader": true
+  },
+  "scripts": {
+    "test": "phpunit",
+    "test:unit": "phpunit --testsuite Unit",
+    "test:integration": "phpunit --testsuite Integration",
+    "cs": "php-cs-fixer fix --dry-run --diff",
+    "cs:fix": "php-cs-fixer fix",
+    "stan": "phpstan analyse",
+    "check": ["@cs", "@stan", "@test"]
+  },
+  "scripts-descriptions": {
+    "test": "Executa todos os testes",
+    "test:unit": "Executa testes unitários",
+    "test:integration": "Executa testes de integração",
+    "cs": "Verifica estilo do código (dry-run)",
+    "cs:fix": "Corrige estilo do código automaticamente",
+    "stan": "Análise estática com PHPStan",
+    "check": "Executa todas as verificações de qualidade"
   },
   "prefer-stable": true
 }

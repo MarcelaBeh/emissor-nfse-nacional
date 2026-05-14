@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Validators;
+namespace MarcelaBeh\EmissorNfseNacional\Validators;
 
 use DOMDocument;
 use InvalidArgumentException;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
-use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidCpfException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\InvalidCpfException;
 
 final readonly class Cpf
 {
@@ -20,15 +20,15 @@ final readonly class Cpf
         $cpf = preg_replace('/[^0-9]/', '', $cpf);
 
         if (strlen($cpf) !== 11) {
-            throw new InvalidCpfException("CPF deve ter 11 dígitos. Fornecido: " . strlen($cpf));
+            throw new InvalidCpfException('CPF deve ter 11 dígitos. Fornecido: ' . strlen($cpf));
         }
 
         if (preg_match('/^(\d)\1+$/', $cpf)) {
-            throw new InvalidCpfException("CPF inválido: sequência repetida");
+            throw new InvalidCpfException('CPF inválido: sequência repetida');
         }
 
         if (!$this->validarDigitoVerificador($cpf)) {
-            throw new InvalidCpfException("CPF com dígito verificador inválido");
+            throw new InvalidCpfException('CPF com dígito verificador inválido');
         }
 
         return $cpf;

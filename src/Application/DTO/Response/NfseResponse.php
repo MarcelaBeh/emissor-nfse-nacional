@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Response;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Response;
 
 final readonly class NfseResponse
 {
@@ -14,5 +14,6 @@ final readonly class NfseResponse
         public ?string $mensagem = null,
         public ?array $dados = null,
         public ?string $xml = null,
-    ) {}
+    ) {
+    }
 }

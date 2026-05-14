@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class ServicoRequest
 {
@@ -17,5 +17,6 @@ final readonly class ServicoRequest
         public float $aliquotaIss,
         public ?string $codigoNbs = null,
         public ?string $codigoCnae = null,
-    ) {}
+    ) {
+    }
 }

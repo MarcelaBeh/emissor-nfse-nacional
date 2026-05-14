@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
-use emissorNfseNacional\NfseNacional\Domain\Exception\ValidationException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\ValidationException;
 
 final readonly class Nif
 {
@@ -20,11 +20,11 @@ final readonly class Nif
         $nif = trim($nif);
 
         if (empty($nif)) {
-            throw new ValidationException("NIF não pode ser vazio");
+            throw new ValidationException('NIF não pode ser vazio');
         }
 
         if (strlen($nif) > 20) {
-            throw new ValidationException("NIF deve ter no máximo 20 caracteres");
+            throw new ValidationException('NIF deve ter no máximo 20 caracteres');
         }
 
         return $nif;

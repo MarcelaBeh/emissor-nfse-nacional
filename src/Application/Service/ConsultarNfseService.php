@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\Service;
+namespace MarcelaBeh\EmissorNfseNacional\Application\Service;
 
-use emissorNfseNacional\NfseNacional\Application\DTO\Response\NfseResponse;
-use emissorNfseNacional\NfseNacional\Application\DTO\Request\ConsultaRequest;
-use emissorNfseNacional\NfseNacional\Application\Validator\ConsultaValidator;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\ApiConnector;
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\ApiEndpoints;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception\HttpException;
-use emissorNfseNacional\NfseNacional\Application\Exception\ServiceException;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ConsultaRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\NfseResponse;
+use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
 
 class ConsultarNfseService
 {
@@ -20,7 +20,8 @@ class ConsultarNfseService
         private ApiEndpoints $apiEndpoints,
         private ConsultaValidator $validator,
         private NfseXmlParser $nfseXmlParser,
-    ) {}
+    ) {
+    }
 
     public function consultarPorChave(string $chave): ?NfseResponse
     {

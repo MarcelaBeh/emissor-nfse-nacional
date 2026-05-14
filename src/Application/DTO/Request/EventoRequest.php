@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class EventoRequest
 {
@@ -16,5 +16,6 @@ final readonly class EventoRequest
         public ?string $cpfAutor = null,
         public ?string $codigoMotivo = null,
         public ?string $descricaoMotivo = null,
-    ) {}
+    ) {
+    }
 }

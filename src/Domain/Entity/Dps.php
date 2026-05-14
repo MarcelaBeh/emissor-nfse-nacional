@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoEmissao;
-use emissorNfseNacional\NfseNacional\Domain\Enum\VersaoSchema;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\ChaveAcesso;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\CodigoMunicipio;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VersaoSchema;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 
 class Dps
 {

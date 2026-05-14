@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Presentation\Facade;
+namespace MarcelaBeh\EmissorNfseNacional\Presentation\Facade;
 
-use emissorNfseNacional\NfseNacional\Application\DTO\Request\DpsRequest;
-use emissorNfseNacional\NfseNacional\Application\DTO\Request\EventoRequest;
-use emissorNfseNacional\NfseNacional\Application\DTO\Response\NfseResponse;
-use emissorNfseNacional\NfseNacional\Application\DTO\Response\EventoResponse;
-use emissorNfseNacional\NfseNacional\Application\Service\EmitirDpsService;
-use emissorNfseNacional\NfseNacional\Application\Service\ConsultarNfseService;
-use emissorNfseNacional\NfseNacional\Application\Service\CancelarNfseService;
-use emissorNfseNacional\NfseNacional\Presentation\Factory\ServiceFactory;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\EventoRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\EventoResponse;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\NfseResponse;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\CancelarNfseService;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
+use MarcelaBeh\EmissorNfseNacional\Presentation\Factory\ServiceFactory;
 use NFePHP\Common\Certificate;
 
 class NfseNacionalFacade

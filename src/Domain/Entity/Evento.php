@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoEvento;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\ChaveAcesso;
-use emissorNfseNacional\NfseNacional\Domain\Contract\EventoInterface;
+use MarcelaBeh\EmissorNfseNacional\Domain\Contract\EventoInterface;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 
 class Evento implements EventoInterface
 {

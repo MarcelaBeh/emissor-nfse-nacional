@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\Contract;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract;
 
 interface XmlBuilderInterface
 {

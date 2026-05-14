@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
-use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidChaveAcessoException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\InvalidChaveAcessoException;
 
 final readonly class ChaveAcesso
 {
@@ -21,7 +21,7 @@ final readonly class ChaveAcesso
 
         if (strlen($chave) !== 50) {
             throw new InvalidChaveAcessoException(
-                "Chave de acesso deve ter 50 dígitos. Fornecido: " . strlen($chave)
+                'Chave de acesso deve ter 50 dígitos. Fornecido: ' . strlen($chave)
             );
         }
 

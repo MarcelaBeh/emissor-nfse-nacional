@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception;
 
 class HttpException extends \RuntimeException
 {

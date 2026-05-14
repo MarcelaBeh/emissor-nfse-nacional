@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional;
+namespace MarcelaBeh\EmissorNfseNacional;
 
-use emissorNfseNacional\NfseNacional\Validators\ChaveAcessoValidator;
-use emissorNfseNacional\NfseNacional\Validators\XsdValidator;
+use MarcelaBeh\EmissorNfseNacional\Validators\ChaveAcessoValidator;
+use MarcelaBeh\EmissorNfseNacional\Validators\XsdValidator;
 use NFePHP\Common\Certificate;
 use RuntimeException;
 use stdClass;
@@ -20,7 +20,7 @@ class Tools extends RestCurl
     public function consultarNfseChave(string $chave, bool $encoding = true): mixed
     {
         ChaveAcessoValidator::validate($chave);
-        
+
         $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_nfse'));
         $retorno = $this->getData($operacao);
 
@@ -44,7 +44,7 @@ class Tools extends RestCurl
     public function consultarDpsChave(string $chave): mixed
     {
         ChaveAcessoValidator::validate($chave);
-        
+
         $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_dps'));
         return $this->getData($operacao);
     }
@@ -52,7 +52,7 @@ class Tools extends RestCurl
     public function consultarNfseEventos(string $chave, ?string $tipoEvento = null, ?string $nSequencial = null): mixed
     {
         ChaveAcessoValidator::validate($chave);
-        
+
         $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_eventos'));
 
         if ($tipoEvento === null || $tipoEvento === '') {
@@ -73,7 +73,7 @@ class Tools extends RestCurl
     public function consultarDanfse(string $chave): mixed
     {
         ChaveAcessoValidator::validate($chave);
-        
+
         $operacao = str_replace('{chave}', $chave, $this->getOperation('consultar_danfse'));
         $retorno = $this->getData($operacao, null, 2);
 
@@ -89,7 +89,7 @@ class Tools extends RestCurl
     public function consultarDanfseNfse(string $chave): mixed
     {
         ChaveAcessoValidator::validate($chave);
-        
+
         $operacao = $this->getOperation('consultar_danfse_nfse_certificado');
         $retorno = $this->getData($operacao, null, 3);
 
@@ -107,7 +107,7 @@ class Tools extends RestCurl
     public function enviaDps(string $content): mixed
     {
         XsdValidator::validate($content, 'DPS');
-        
+
         $content = $this->sign($content, 'infDPS', '', 'DPS');
         $content = '<?xml version="1.0" encoding="UTF-8"?>' . $content;
         $gz = gzencode($content);
@@ -121,9 +121,9 @@ class Tools extends RestCurl
     {
         $dps = new Dps($std);
         $content = $dps->renderEvento($std);
-        
+
         XsdValidator::validate($content, 'pedRegEvento');
-        
+
         $content = $this->sign($content, 'infPedReg', '', 'pedRegEvento');
         $content = '<?xml version="1.0" encoding="UTF-8"?>' . $content;
         $gz = gzencode($content);

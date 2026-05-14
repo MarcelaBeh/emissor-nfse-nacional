@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Config;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Config;
 
 class MunicipioConfigLoader
 {
@@ -10,7 +10,7 @@ class MunicipioConfigLoader
 
     public function __construct(?string $jsonPath = null)
     {
-        $jsonPath = $jsonPath ?? __DIR__ . '/../../../storage/prefeituras.json';
+        $jsonPath ??= __DIR__ . '/../../../storage/prefeituras.json';
         $this->load($jsonPath);
     }
 

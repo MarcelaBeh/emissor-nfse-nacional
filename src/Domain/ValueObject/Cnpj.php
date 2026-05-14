@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
-use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidCnpjException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\InvalidCnpjException;
 
 final readonly class Cnpj
 {
@@ -20,15 +20,15 @@ final readonly class Cnpj
         $cnpj = preg_replace('/[^0-9]/', '', $cnpj);
 
         if (strlen($cnpj) !== 14) {
-            throw new InvalidCnpjException("CNPJ deve ter 14 dígitos. Fornecido: " . strlen($cnpj));
+            throw new InvalidCnpjException('CNPJ deve ter 14 dígitos. Fornecido: ' . strlen($cnpj));
         }
 
         if (preg_match('/^(\d)\1+$/', $cnpj)) {
-            throw new InvalidCnpjException("CNPJ inválido: sequência repetida");
+            throw new InvalidCnpjException('CNPJ inválido: sequência repetida');
         }
 
         if (!$this->validarDigitoVerificador($cnpj)) {
-            throw new InvalidCnpjException("CNPJ com dígito verificador inválido");
+            throw new InvalidCnpjException('CNPJ com dígito verificador inválido');
         }
 
         return $cnpj;

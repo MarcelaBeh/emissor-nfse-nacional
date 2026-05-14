@@ -12,7 +12,7 @@ try {
     $content = file_get_contents('certificado.pfx');
     $password = 'senha_certificado';
     $cert = \NFePHP\Common\Certificate::readPfx($content, $password);
-    $tools = new \emissorNfseNacional\NfseNacional\Tools($configJson, $cert);
+    $tools = new \MarcelaBeh\EmissorNfseNacional\Tools($configJson, $cert);
     //Informar chave NFSe
     $response = $tools->consultarDanfse('00000000000000000000000000000000000000000000000000');
     header("Content-Type: application/pdf");

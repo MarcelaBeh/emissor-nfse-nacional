@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Contract;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Contract;
 
 interface NfseInterface
 {

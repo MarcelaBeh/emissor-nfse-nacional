@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Http;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Http;
 
 class RequestBuilder
 {

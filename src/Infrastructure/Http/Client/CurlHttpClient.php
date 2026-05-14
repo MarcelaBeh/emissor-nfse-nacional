@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Http\Client;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Client;
 
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception\ConnectionException;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception\TimeoutException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\ConnectionException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\TimeoutException;
 
 class CurlHttpClient implements HttpClientInterface
 {
@@ -19,7 +19,8 @@ class CurlHttpClient implements HttpClientInterface
         private ?string $certPath = null,
         private ?string $privateKeyPath = null,
         private ?string $keyPassword = null,
-    ) {}
+    ) {
+    }
 
     #[\Override]
     public function get(string $url, array $headers = []): array
@@ -48,7 +49,7 @@ class CurlHttpClient implements HttpClientInterface
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_SSLVERSION => CURL_SSLVERSION_DEFAULT,
             CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-            CURLOPT_HEADER => 0,
+            CURLOPT_HEADER => false,
         ];
 
         if ($data !== null) {

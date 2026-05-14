@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\Exception;
+namespace MarcelaBeh\EmissorNfseNacional\Application\Exception;
 
 class ServiceException extends ApplicationException
 {

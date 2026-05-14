@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
-use emissorNfseNacional\NfseNacional\Domain\Exception\ValidationException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\ValidationException;
 
 final readonly class Email
 {

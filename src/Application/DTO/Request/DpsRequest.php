@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class DpsRequest
 {
@@ -20,5 +20,6 @@ final readonly class DpsRequest
         public ServicoRequest $servico,
         public ?SubstituicaoRequest $substituicao = null,
         public ?array $intermediario = null,
-    ) {}
+    ) {
+    }
 }

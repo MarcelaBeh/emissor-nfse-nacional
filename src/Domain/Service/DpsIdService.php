@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Service;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Service;
 
-use emissorNfseNacional\NfseNacional\Domain\Entity\Dps;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 
 /**
  * Domain Service para geração do identificador da DPS.

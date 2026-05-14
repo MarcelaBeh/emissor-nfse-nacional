@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Config;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Config;
 
 class ApiEndpoints
 {

@@ -2,25 +2,24 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\Service;
+namespace MarcelaBeh\EmissorNfseNacional\Application\Service;
 
-use emissorNfseNacional\NfseNacional\Application\DTO\Request\EventoRequest;
-use emissorNfseNacional\NfseNacional\Application\DTO\Response\EventoResponse;
-use emissorNfseNacional\NfseNacional\Application\Exception\ServiceException;
-use emissorNfseNacional\NfseNacional\Application\Exception\ValidationException;
-use emissorNfseNacional\NfseNacional\Application\Validator\EventoValidator;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Evento;
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoEvento;
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\ChaveAcesso;
-use emissorNfseNacional\NfseNacional\Domain\Exception\DomainException;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\ApiConnector;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\RequestBuilder;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception\HttpException;
-use emissorNfseNacional\NfseNacional\Infrastructure\Security\XmlSigner;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\ApiEndpoints;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\EventoRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\EventoResponse;
+use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
+use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\EventoValidator;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Evento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 
 class CancelarNfseService
 {
@@ -32,7 +31,8 @@ class CancelarNfseService
         private EventoValidator $validator,
         private RequestBuilder $requestBuilder,
         private ApiEndpoints $apiEndpoints,
-    ) {}
+    ) {
+    }
 
     public function executar(EventoRequest $request): EventoResponse
     {

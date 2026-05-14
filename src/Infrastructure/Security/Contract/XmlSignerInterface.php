@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Security\Contract;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract;
 
 interface XmlSignerInterface
 {

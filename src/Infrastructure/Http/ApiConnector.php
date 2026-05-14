@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Http;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Http;
 
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\Configuration;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
 
 class ApiConnector
 {

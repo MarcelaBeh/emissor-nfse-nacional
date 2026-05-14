@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Enum;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Enum;
 
 enum MotivoEvento: string
 {

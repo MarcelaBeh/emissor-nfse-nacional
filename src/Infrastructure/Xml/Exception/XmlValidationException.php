@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Exception;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Exception;
 
 class XmlValidationException extends XmlException
 {

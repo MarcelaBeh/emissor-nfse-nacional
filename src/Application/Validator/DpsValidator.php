@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\Validator;
+namespace MarcelaBeh\EmissorNfseNacional\Application\Validator;
 
-use emissorNfseNacional\NfseNacional\Application\DTO\Request\DpsRequest;
-use emissorNfseNacional\NfseNacional\Application\Exception\ValidationException;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 
 class DpsValidator
 {

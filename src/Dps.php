@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional;
+namespace MarcelaBeh\EmissorNfseNacional;
 
 use DOMNode;
-use emissorNfseNacional\NfseNacional\Validators\CnpjValidator;
-use emissorNfseNacional\NfseNacional\Validators\CodigoIbgeValidator;
-use emissorNfseNacional\NfseNacional\Validators\CpfValidator;
-use emissorNfseNacional\NfseNacional\Validators\MotivoSubstituicaoValidator;
+use MarcelaBeh\EmissorNfseNacional\Validators\CnpjValidator;
+use MarcelaBeh\EmissorNfseNacional\Validators\CodigoIbgeValidator;
+use MarcelaBeh\EmissorNfseNacional\Validators\CpfValidator;
+use MarcelaBeh\EmissorNfseNacional\Validators\MotivoSubstituicaoValidator;
 use NFePHP\Common\DOMImproved as Dom;
 use stdClass;
 
@@ -139,13 +139,13 @@ class Dps implements DpsInterface
         $subst = $this->dom->createElement('subst');
         $parent->appendChild($subst);
         $this->addChild($subst, 'chSubstda', $this->std->infdps->subst->chsubstda, true);
-        
+
         // Validar e formatar código de motivo (obrigatório zero à esquerda)
         $codigoMotivo = MotivoSubstituicaoValidator::validateAndFormat(
             $this->std->infdps->subst->cmotivo
         );
         $this->addChild($subst, 'cMotivo', $codigoMotivo, true);
-        
+
         $this->addChild($subst, 'xMotivo', $this->std->infdps->subst->xmotivo, true);
     }
 
@@ -160,13 +160,13 @@ class Dps implements DpsInterface
             CnpjValidator::validate($prest->cnpj);
             $this->addChild($prestNode, 'CNPJ', CnpjValidator::clean($prest->cnpj), false);
         }
-        
+
         // Validar CPF se presente
         if (isset($prest->cpf) && $prest->cpf !== null && $prest->cpf !== '') {
             CpfValidator::validate($prest->cpf);
             $this->addChild($prestNode, 'CPF', CpfValidator::clean($prest->cpf), false);
         }
-        
+
         $this->addChildOptional($prestNode, 'NIF', $prest->nif ?? null);
         $this->addChildOptional($prestNode, 'cNaoNIF', $prest->cnaonif ?? null);
         $this->addChildOptional($prestNode, 'CAEPF', $prest->caepf ?? null);
@@ -197,13 +197,13 @@ class Dps implements DpsInterface
             CnpjValidator::validate($data->cnpj);
             $this->addChild($node, 'CNPJ', CnpjValidator::clean($data->cnpj), false);
         }
-        
+
         // Validar CPF se presente
         if (isset($data->cpf) && $data->cpf !== null && $data->cpf !== '') {
             CpfValidator::validate($data->cpf);
             $this->addChild($node, 'CPF', CpfValidator::clean($data->cpf), false);
         }
-        
+
         $this->addChildOptional($node, 'NIF', $data->nif ?? null);
         $this->addChildOptional($node, 'cNaoNIF', $data->cnaonif ?? null);
         $this->addChildOptional($node, 'CAEPF', $data->caepf ?? null);
@@ -226,10 +226,10 @@ class Dps implements DpsInterface
         if (isset($end->endnac)) {
             $nac = $this->dom->createElement('endNac');
             $endNode->appendChild($nac);
-            
+
             // Validar código IBGE (7 dígitos)
             CodigoIbgeValidator::validate($end->endnac->cmun);
-            
+
             $this->addChild($nac, 'cMun', $end->endnac->cmun, true);
             $this->addChild($nac, 'CEP', $end->endnac->cep, true);
         } elseif (isset($end->endext)) {

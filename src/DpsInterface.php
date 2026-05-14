@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional;
+namespace MarcelaBeh\EmissorNfseNacional;
 
 interface DpsInterface
 {

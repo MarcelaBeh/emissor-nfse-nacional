@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Response;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Response;
 
 final readonly class ErrorResponse
 {
@@ -11,5 +11,6 @@ final readonly class ErrorResponse
         public string $mensagem,
         public array $detalhes = [],
         public bool $recuperavel = false,
-    ) {}
+    ) {
+    }
 }

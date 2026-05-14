@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Security\Exception;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception;
 
 class SignatureException extends CertificateException
 {

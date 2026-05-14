@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Presentation\Factory;
+namespace MarcelaBeh\EmissorNfseNacional\Presentation\Factory;
 
 class NfseFactory
 {
-    public static function createFromArray(array $data): \emissorNfseNacional\NfseNacional\Domain\Entity\Nfse
+    public static function createFromArray(array $data): \MarcelaBeh\EmissorNfseNacional\Domain\Entity\Nfse
     {
-        return new \emissorNfseNacional\NfseNacional\Domain\Entity\Nfse(
+        return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\Nfse(
             chaveAcesso: $data['chaveAcesso'] ?? '',
             numero: $data['numero'] ?? '',
             codigoVerificacao: $data['codigoVerificacao'] ?? '',

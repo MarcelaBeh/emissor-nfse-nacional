@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Security;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Security;
 
 use NFePHP\Common\Certificate;
 use NFePHP\Common\Signer;

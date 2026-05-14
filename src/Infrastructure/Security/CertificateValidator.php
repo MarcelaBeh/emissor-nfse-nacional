@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Security;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Security;
 
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
 use NFePHP\Common\Certificate;
-use emissorNfseNacional\NfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
 
 class CertificateValidator
 {

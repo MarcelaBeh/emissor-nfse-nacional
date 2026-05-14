@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Common;
+namespace MarcelaBeh\EmissorNfseNacional\Common;
 
-use DateTime;
 use DateInterval;
+use DateTime;
 use NFePHP\Common\Certificate;
 use NFePHP\Common\Certificate\Exception\Expired;
 use NFePHP\Common\Exception\RuntimeException;
@@ -86,17 +86,17 @@ class RestBase
         $this->pubfile = $this->randomName();
         $this->certfile = $this->randomName();
         $private = $this->certificate->privateKey;
-        
+
         // Salvar arquivos
         $this->filesystem->put($this->prifile, $private);
         $this->filesystem->put($this->pubfile, $this->certificate->publicKey);
         $this->filesystem->put($this->certfile, $private . $this->certificate);
-        
+
         // Aplicar permissões restritas (0600 - somente dono lê/escreve)
         // Crítico para segurança: impede outros usuários de lerem chaves privadas
-        chmod($this->tempdir . $this->prifile, 0600);
-        chmod($this->tempdir . $this->pubfile, 0600);
-        chmod($this->tempdir . $this->certfile, 0600);
+        chmod($this->tempdir . $this->prifile, 0o600);
+        chmod($this->tempdir . $this->pubfile, 0o600);
+        chmod($this->tempdir . $this->certfile, 0o600);
     }
 
     protected function uid(): string

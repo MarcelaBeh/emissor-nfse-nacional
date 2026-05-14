@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder;
 
-use emissorNfseNacional\NfseNacional\Domain\Entity\Dps;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Prestador;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Tomador;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Intermediario;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Endereco;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Servico;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Substituicao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use NFePHP\Common\DOMImproved as Dom;
 
 class DpsXmlBuilder implements Contract\XmlBuilderInterface

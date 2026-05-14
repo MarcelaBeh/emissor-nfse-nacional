@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class PrestadorRequest
 {
@@ -24,5 +24,6 @@ final readonly class PrestadorRequest
         public int $regimeTributario,
         public ?string $nif = null,
         public ?string $caepf = null,
-    ) {}
+    ) {
+    }
 }

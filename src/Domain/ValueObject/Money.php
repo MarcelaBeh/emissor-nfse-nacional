@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
 final readonly class Money
 {
@@ -10,18 +10,16 @@ final readonly class Money
 
     public function __construct(float|int|string $value)
     {
-        if (is_string($value)) {
-            $value = (float) str_replace(',', '.', $value);
-        }
-
-        $this->cents = (int) round($value * 100);
+        $this->cents = match (true) {
+            is_int($value) => $value * 100,
+            is_float($value) => (int) round($value * 100),
+            default => (int) round(((float) str_replace(',', '.', $value)) * 100),
+        };
     }
 
     public static function fromCents(int $cents): self
     {
-        $instance = new self(0);
-        $instance->cents = $cents;
-        return $instance;
+        return new self((float) $cents / 100);
     }
 
     public function getValue(): float

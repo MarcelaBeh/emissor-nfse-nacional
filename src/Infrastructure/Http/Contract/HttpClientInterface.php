@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Http\Contract;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract;
 
 interface HttpClientInterface
 {

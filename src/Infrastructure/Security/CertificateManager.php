@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Security;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Security;
 
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
 use NFePHP\Common\Certificate;
-use emissorNfseNacional\NfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
 
 class CertificateManager implements Contract\CertificateManagerInterface
 {
@@ -41,7 +41,7 @@ class CertificateManager implements Contract\CertificateManagerInterface
 
     private function setupTempDirectory(): void
     {
-        $cnpj = $this->certificate->getCnpj() ?? $this->certificate->getCpf();
+        $cnpj = $this->certificate->getCnpj() ?: $this->certificate->getCpf();
 
         $this->tempDir = sys_get_temp_dir()
             . '/nfse-nacional-'
@@ -51,7 +51,7 @@ class CertificateManager implements Contract\CertificateManagerInterface
             . '/certs/';
 
         if (!is_dir($this->tempDir)) {
-            mkdir($this->tempDir, 0700, true);
+            mkdir($this->tempDir, 0o700, true);
         }
     }
 
@@ -69,9 +69,9 @@ class CertificateManager implements Contract\CertificateManagerInterface
         file_put_contents($files['public'], $this->certificate->publicKey);
         file_put_contents($files['cert'], $this->certificate);
 
-        chmod($files['private'], 0600);
-        chmod($files['public'], 0600);
-        chmod($files['cert'], 0600);
+        chmod($files['private'], 0o600);
+        chmod($files['public'], 0o600);
+        chmod($files['cert'], 0o600);
 
         return $files;
     }

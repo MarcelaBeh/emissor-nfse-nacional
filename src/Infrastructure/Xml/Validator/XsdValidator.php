@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator;
 
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Exception\XmlValidationException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Exception\XmlValidationException;
 
 class XsdValidator
 {
@@ -47,7 +47,7 @@ class XsdValidator
 
         if (!$dom->loadXML($xml)) {
             $errors = $this->getLibxmlErrors();
-            throw new XmlValidationException("XML malformado: " . implode('; ', $errors));
+            throw new XmlValidationException('XML malformado: ' . implode('; ', $errors));
         }
 
         if (!$dom->schemaValidate($xsdPath)) {

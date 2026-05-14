@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class ConsultaRequest
 {
@@ -10,5 +10,6 @@ final readonly class ConsultaRequest
         public string $chave,
         public ?string $tipoEvento = null,
         public ?int $nSequencial = null,
-    ) {}
+    ) {
+    }
 }

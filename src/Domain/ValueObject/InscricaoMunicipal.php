@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
-use emissorNfseNacional\NfseNacional\Domain\Exception\ValidationException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\ValidationException;
 
 final readonly class InscricaoMunicipal
 {
@@ -20,7 +20,7 @@ final readonly class InscricaoMunicipal
         $inscricao = preg_replace('/[^0-9]/', '', $inscricao);
 
         if (empty($inscricao)) {
-            throw new ValidationException("Inscrição municipal não pode ser vazia");
+            throw new ValidationException('Inscrição municipal não pode ser vazia');
         }
 
         return $inscricao;

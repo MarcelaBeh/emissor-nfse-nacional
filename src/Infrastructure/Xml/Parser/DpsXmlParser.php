@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Parser;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser;
 
 class DpsXmlParser
 {

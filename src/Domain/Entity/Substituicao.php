@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\ChaveAcesso;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 
 class Substituicao
 {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Money;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\CodigoMunicipio;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 
 class Servico
 {

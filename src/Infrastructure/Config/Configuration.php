@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Config;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Config;
 
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\Exception\ConfigException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Exception\ConfigException;
 
 class Configuration implements Contract\ConfigInterface
 {

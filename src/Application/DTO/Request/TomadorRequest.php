@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class TomadorRequest
 {
@@ -22,5 +22,6 @@ final readonly class TomadorRequest
         public string $cep,
         public ?string $nif = null,
         public ?string $inscricaoMunicipal = null,
-    ) {}
+    ) {
+    }
 }

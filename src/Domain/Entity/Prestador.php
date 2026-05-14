@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cnpj;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cpf;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Email;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Telefone;
-use emissorNfseNacional\NfseNacional\Domain\Enum\RegimeTributario;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone;
 
 class Prestador
 {

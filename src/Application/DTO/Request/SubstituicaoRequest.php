@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\DTO\Request;
+namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class SubstituicaoRequest
 {
@@ -10,5 +10,6 @@ final readonly class SubstituicaoRequest
         public string $chaveSubstituida,
         public string $codigoMotivo,
         public string $descricaoMotivo,
-    ) {}
+    ) {
+    }
 }

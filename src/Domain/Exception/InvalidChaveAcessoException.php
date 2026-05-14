@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Exception;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Exception;
 
 class InvalidChaveAcessoException extends DomainException
 {

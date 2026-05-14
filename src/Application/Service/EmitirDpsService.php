@@ -2,34 +2,34 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Application\Service;
+namespace MarcelaBeh\EmissorNfseNacional\Application\Service;
 
-use emissorNfseNacional\NfseNacional\Application\DTO\Request\DpsRequest;
-use emissorNfseNacional\NfseNacional\Application\DTO\Response\NfseResponse;
-use emissorNfseNacional\NfseNacional\Application\Exception\ServiceException;
-use emissorNfseNacional\NfseNacional\Application\Exception\ValidationException;
-use emissorNfseNacional\NfseNacional\Application\Validator\DpsValidator;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Dps;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Prestador;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Tomador;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Servico;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Endereco;
-use emissorNfseNacional\NfseNacional\Domain\Entity\Substituicao;
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoEmissao;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cnpj;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cpf;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Money;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\CodigoMunicipio;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cep;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\ChaveAcesso;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\ApiConnector;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\RequestBuilder;
-use emissorNfseNacional\NfseNacional\Infrastructure\Security\XmlSigner;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Exception\HttpException;
-use emissorNfseNacional\NfseNacional\Domain\Exception\DomainException;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\NfseResponse;
+use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
+use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 
 class EmitirDpsService
 {
@@ -40,7 +40,8 @@ class EmitirDpsService
         private XsdValidator $xsdValidator,
         private DpsValidator $validator,
         private RequestBuilder $requestBuilder,
-    ) {}
+    ) {
+    }
 
     public function executar(DpsRequest $request): NfseResponse
     {
@@ -89,8 +90,8 @@ class EmitirDpsService
             inscricaoMunicipal: $request->prestador->inscricaoMunicipal,
             razaoSocial: $request->prestador->razaoSocial,
             nomeFantasia: $request->prestador->nomeFantasia,
-            telefone: $request->prestador->telefone ? new \emissorNfseNacional\NfseNacional\Domain\ValueObject\Telefone($request->prestador->telefone) : null,
-            email: $request->prestador->email ? new \emissorNfseNacional\NfseNacional\Domain\ValueObject\Email($request->prestador->email) : null,
+            telefone: $request->prestador->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($request->prestador->telefone) : null,
+            email: $request->prestador->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($request->prestador->email) : null,
             endereco: $this->criarEndereco(
                 $request->prestador->logradouro,
                 $request->prestador->numero,
@@ -100,7 +101,7 @@ class EmitirDpsService
                 $request->prestador->uf,
                 $request->prestador->cep
             ),
-            regimeTributario: \emissorNfseNacional\NfseNacional\Domain\Enum\RegimeTributario::from($request->prestador->regimeTributario),
+            regimeTributario: \MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario::from($request->prestador->regimeTributario),
             nif: $request->prestador->nif,
             caepf: $request->prestador->caepf,
         );
@@ -116,8 +117,8 @@ class EmitirDpsService
             documento: $documentoTomador,
             razaoSocial: $request->tomador->razaoSocial,
             nomeFantasia: $request->tomador->nomeFantasia,
-            telefone: $request->tomador->telefone ? new \emissorNfseNacional\NfseNacional\Domain\ValueObject\Telefone($request->tomador->telefone) : null,
-            email: $request->tomador->email ? new \emissorNfseNacional\NfseNacional\Domain\ValueObject\Email($request->tomador->email) : null,
+            telefone: $request->tomador->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($request->tomador->telefone) : null,
+            email: $request->tomador->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($request->tomador->email) : null,
             endereco: $this->criarEndereco(
                 $request->tomador->logradouro,
                 $request->tomador->numero,

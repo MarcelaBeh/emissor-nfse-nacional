@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder;
 
-use emissorNfseNacional\NfseNacional\Domain\Entity\Evento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Evento;
 use NFePHP\Common\DOMImproved as Dom;
 
 class EventoXmlBuilder implements Contract\XmlBuilderInterface
@@ -34,7 +34,7 @@ class EventoXmlBuilder implements Contract\XmlBuilderInterface
         $infPedReg = $this->dom->createElement('infPedReg');
         $infPedReg->setAttribute('Id', 'PRE' . $entity->getChaveNfse());
 
-        $this->addChild($infPedReg, 'tpAmb', $entity->getTipo()->value === 'CANCELAMENTO' ? '1' : '2');
+        $this->addChild($infPedReg, 'tpAmb', $entity->getTipo() === \MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento::CANCELAMENTO ? '1' : '2');
         $this->addChild($infPedReg, 'verAplic', $entity->getVersaoAplicacao());
         $this->addChild($infPedReg, 'dhEvento', $entity->getDataEvento()->format('Y-m-d\TH:i:sP'));
 
