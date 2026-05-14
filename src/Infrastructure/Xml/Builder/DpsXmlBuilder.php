@@ -103,7 +103,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $this->addChild($substNode, 'chSubstda', $substituicao->getChaveSubstituida()->getChave(), true);
         $this->addChild($substNode, 'cMotivo', $substituicao->getCodigoMotivo(), true);
-        $this->addChild($substNode, 'xMotivo', $substituicao->getDescricaoMotivo(), true);
+        $this->addChild($substNode, 'xMotivo', $substituicao->getDescricaoMotivo(), false);
     }
 
     private function buildPrestador(\DOMNode $parent, Prestador $prestador): void

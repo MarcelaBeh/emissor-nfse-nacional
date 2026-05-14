@@ -9,7 +9,7 @@ final readonly class SubstituicaoRequest
     public function __construct(
         public string $chaveSubstituida,
         public string $codigoMotivo,
-        public string $descricaoMotivo,
+        public ?string $descricaoMotivo = null,
     ) {
     }
 }

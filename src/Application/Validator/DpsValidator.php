@@ -326,6 +326,35 @@ class DpsValidator
             }
         }
 
+        // Validações do grupo substituição
+        if ($request->substituicao !== null) {
+            $s = $request->substituicao;
+
+            if (!preg_match('/^[0-9]{50}$/', $s->chaveSubstituida)) {
+                $errors[] = 'chSubstda deve ter exatamente 50 dígitos numéricos';
+            }
+
+            if (!in_array($s->codigoMotivo, ['01', '02', '03', '04', '05', '99'], true)) {
+                $errors[] = "cMotivo inválido: '{$s->codigoMotivo}'";
+            }
+
+            if ($s->codigoMotivo === '99') {
+                if ($s->descricaoMotivo === null || trim($s->descricaoMotivo) === '') {
+                    $errors[] = 'xMotivo é obrigatório quando cMotivo = 99';
+                }
+            }
+
+            if ($s->descricaoMotivo !== null) {
+                $len = mb_strlen(trim($s->descricaoMotivo));
+                if ($len > 0 && $len < 15) {
+                    $errors[] = 'xMotivo deve ter no mínimo 15 caracteres';
+                }
+                if ($len > 255) {
+                    $errors[] = 'xMotivo deve ter no máximo 255 caracteres';
+                }
+            }
+        }
+
         if (!empty($errors)) {
             throw new ValidationException(implode('; ', $errors));
         }
