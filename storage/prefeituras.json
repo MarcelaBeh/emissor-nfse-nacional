@@ -21,5 +21,19 @@
             "cancelar_nfse" : "nfse/{chave}/eventos",
             "consultar_danfse": "nfse/{chave}"
         }
+    },
+    "1302603": {
+        "urls": {
+            "sefin_homologacao": "https://sefin.producaorestrita.nfse.gov.br/SefinNacional",
+            "sefin_producao": "https://sefin.nfse.gov.br/SefinNacional",
+            "adn_homologacao": "https://adn.producaorestrita.nfse.gov.br",
+            "adn_producao": "https://adn.nfse.gov.br"
+        },
+        "operations":{
+            "emitir_nfse" : "nfse",
+            "cancelar_nfse" : "nfse/{chave}/eventos",
+            "consultar_nfse" : "nfse/{chave}",
+            "consultar_dps" : "dps/{id}"
+        }
     }
 }
