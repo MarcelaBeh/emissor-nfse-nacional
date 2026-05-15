@@ -289,7 +289,6 @@ $requestComObra = new DpsRequest(
         isCnpj: true,
         inscricaoMunicipal: '123456',
         razaoSocial: 'Construtora Ltda',
-        nomeFantasia: 'Construtora',
         telefone: null,
         email: null,
         logradouro: 'Av. das Obras',
@@ -370,7 +369,7 @@ $requestCompleto = new DpsRequest(
     ),
     tomador: new TomadorRequest(
         documento: null,
-        isCnpj: null,
+        isCnpj: false,
         razaoSocial: 'Tomador Exterior Corp',
         nomeFantasia: null,
         telefone: null,

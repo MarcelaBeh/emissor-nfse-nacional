@@ -11,7 +11,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Service\DpsIdService;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
@@ -85,7 +85,7 @@ final class DpsIdServiceTest extends TestCase
             serie: $serie,
             numero: $numero,
             dataCompetencia: new \DateTimeImmutable('2025-01-01'),
-            tipoEmissao: TipoEmissao::PRESTADOR,
+            tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: $this->createPrestadorWithCnpj($cnpj),
             tomador: $this->createTomador(),
@@ -102,7 +102,7 @@ final class DpsIdServiceTest extends TestCase
             serie: $serie,
             numero: $numero,
             dataCompetencia: new \DateTimeImmutable('2025-01-01'),
-            tipoEmissao: TipoEmissao::PRESTADOR,
+            tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: $this->createPrestadorWithCpf($cpf),
             tomador: $this->createTomador(),

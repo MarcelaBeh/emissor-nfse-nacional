@@ -11,7 +11,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
@@ -73,7 +73,7 @@ class DpsFactory
             serie: $data['serie'],
             numero: $data['numero'],
             dataCompetencia: new \DateTimeImmutable($data['dataCompetencia']),
-            tipoEmissao: TipoEmissao::from($data['tipoEmissao']),
+            tipoEmissao: TipoEmitente::from($data['tipoEmissao']),
             codigoMunicipioEmissor: new CodigoMunicipio($data['codigoMunicipioEmissor']),
             prestador: $prestador,
             tomador: $tomador,

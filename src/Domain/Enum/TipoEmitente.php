@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Enum;
 
-enum TipoEmissao: int
+enum TipoEmitente: int
 {
     case PRESTADOR = 1;
     case TOMADOR = 2;

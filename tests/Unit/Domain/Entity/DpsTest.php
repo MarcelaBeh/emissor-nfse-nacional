@@ -11,7 +11,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VersaoSchema;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
@@ -84,7 +84,7 @@ final class DpsTest extends TestCase
             serie: 1,
             numero: 123,
             dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmissao::PRESTADOR,
+            tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: $this->createPrestador(),
             tomador: $this->createTomador(),
@@ -100,7 +100,7 @@ final class DpsTest extends TestCase
         $this->assertSame(1, $dps->getSerie());
         $this->assertSame(123, $dps->getNumero());
         $this->assertSame('1.0.0', $dps->getVersaoAplicacao());
-        $this->assertSame(TipoEmissao::PRESTADOR, $dps->getTipoEmissao());
+        $this->assertSame(TipoEmitente::PRESTADOR, $dps->getTipoEmitente());
         $this->assertSame(VersaoSchema::V1_01, $dps->getVersao());
         $this->assertNull($dps->getIntermediario());
         $this->assertNull($dps->getSubstituicao());
@@ -145,7 +145,7 @@ final class DpsTest extends TestCase
             serie: 1,
             numero: 1,
             dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmissao::PRESTADOR,
+            tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: $prestador,
             tomador: $this->createTomador(),
@@ -176,7 +176,7 @@ final class DpsTest extends TestCase
             serie: 1,
             numero: 1,
             dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmissao::PRESTADOR,
+            tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: $prestador,
             tomador: $this->createTomador(),
@@ -200,7 +200,7 @@ final class DpsTest extends TestCase
             serie: 0,
             numero: 1,
             dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmissao::PRESTADOR,
+            tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: $this->createPrestador(),
             tomador: $this->createTomador(),
@@ -220,7 +220,7 @@ final class DpsTest extends TestCase
             serie: 1,
             numero: -1,
             dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmissao::PRESTADOR,
+            tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: $this->createPrestador(),
             tomador: $this->createTomador(),

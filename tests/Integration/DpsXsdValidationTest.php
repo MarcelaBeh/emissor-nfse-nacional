@@ -32,7 +32,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento;
@@ -798,7 +798,7 @@ final class DpsXsdValidationTest extends TestCase
             serie: 1,
             numero: 123,
             dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmissao::PRESTADOR,
+            tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: new Prestador(
                 documento: $cnpj,

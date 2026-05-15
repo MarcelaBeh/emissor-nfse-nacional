@@ -32,7 +32,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
@@ -403,7 +403,7 @@ class EmitirDpsService
             serie: $request->serie,
             numero: $request->numero,
             dataCompetencia: new \DateTimeImmutable($request->dataCompetencia),
-            tipoEmissao: TipoEmissao::from($request->tipoEmissao),
+            tipoEmissao: TipoEmitente::from($request->tipoEmissao),
             codigoMunicipioEmissor: new CodigoMunicipio($request->codigoMunicipioEmissor),
             prestador: $prestador,
             tomador: $tomador,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmissao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VersaoSchema;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
@@ -21,7 +21,7 @@ class Dps
         private int $serie,
         private int $numero,
         private \DateTimeImmutable $dataCompetencia,
-        private TipoEmissao $tipoEmissao,
+        private TipoEmitente $tipoEmissao,
         private CodigoMunicipio $codigoMunicipioEmissor,
         private Prestador $prestador,
         private Tomador $tomador,
@@ -107,7 +107,7 @@ class Dps
         return $this->dataCompetencia;
     }
 
-    public function getTipoEmissao(): TipoEmissao
+    public function getTipoEmitente(): TipoEmitente
     {
         return $this->tipoEmissao;
     }
