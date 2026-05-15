@@ -1,0 +1,44 @@
+GNU LESSER GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Copyright (C) 2026 Marcela Beatriz <marcelamartins00@gmail.com>
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation,
+Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+---
+
+Full license text: https://www.gnu.org/licenses/lgpl-3.0.html
+
+SUMMARY:
+
+This library can be used freely in commercial and non-commercial projects.
+You can modify and distribute this library under the following conditions:
+
+1. If you modify THIS LIBRARY and distribute it, you must:
+   - Share the source code of your modifications
+   - License your modifications under LGPL v3
+   - Maintain copyright notices
+
+2. If you USE this library in your project (without modifying it), you can:
+   - Keep your project closed-source
+   - Use any license for your project
+   - Sell your project commercially
+
+3. You must always:
+   - Keep this copyright notice
+   - Credit the original author (Marcela Beatriz)
+   - Link to the LGPL v3 license
+
+This protects the library while allowing commercial use.
