@@ -92,10 +92,11 @@ final class DpsXsdValidationTest extends TestCase
     {
         $enderecoImovel = new IbsCbsEnderecoObra(
             cep: '01001001',
+            endExt: null,
             xLgr: 'Rua do Imóvel',
             nro: '100',
-            xCpl: 'Bloco B',
             xBairro: 'Centro',
+            xCpl: 'Bloco B',
         );
         $imovel = new IbsCbsImovel(endereco: $enderecoImovel);
         $ibscbs = $this->createIbscbs(imovel: $imovel);
@@ -143,10 +144,11 @@ final class DpsXsdValidationTest extends TestCase
     {
         $endObra = new IbsCbsEnderecoObra(
             cep: '01001001',
+            endExt: null,
             xLgr: 'Rua da Obra',
             nro: '500',
-            xCpl: 'Galpão 2',
             xBairro: 'Industrial',
+            xCpl: 'Galpão 2',
         );
         $obra = new Obra(endereco: $endObra);
         $servico = new Servico(

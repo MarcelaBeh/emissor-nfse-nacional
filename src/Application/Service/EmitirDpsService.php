@@ -473,24 +473,36 @@ class EmitirDpsService
             return null;
         }
 
+        $endereco = null;
+        if ($req->endereco !== null) {
+            $endExt = null;
+            if ($req->endereco->codigoPais !== null) {
+                $endExt = new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoExterior(
+                    cEndPost: $req->endereco->codigoPostalExterior ?? '',
+                    xCidade: $req->endereco->nomeCidadeExterior ?? '',
+                    xEstProvReg: $req->endereco->estadoProvinciaExterior ?? '',
+                );
+            }
+            $endereco = new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra(
+                cep: $req->endereco->codigoPais === null ? ($req->endereco->cep ?? null) : null,
+                endExt: $endExt,
+                xLgr: $req->endereco->logradouro ?? '',
+                nro: $req->endereco->numero ?? '',
+                xBairro: $req->endereco->bairro ?? '',
+                xCpl: $req->endereco->complemento,
+            );
+        }
+
+        if ($req->identificacaoEvento === null && $endereco === null) {
+            throw new \InvalidArgumentException('Atividade/Evento deve informar identificacaoEvento ou endereco');
+        }
+
         return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento(
             descricao: $req->descricao ?? '',
             dataInicio: new \DateTimeImmutable($req->dataInicio ?? 'now'),
             dataFim: new \DateTimeImmutable($req->dataFim ?? 'now'),
             identificacaoEvento: $req->identificacaoEvento,
-            endereco: $req->endereco !== null ? $this->criarEndereco(
-                $req->endereco->logradouro ?? '',
-                $req->endereco->numero ?? '',
-                $req->endereco->complemento,
-                $req->endereco->bairro ?? '',
-                $req->endereco->codigoMunicipio ?? '3550308',
-                $req->endereco->uf ?? 'SP',
-                $req->endereco->cep ?? '00000000',
-                $req->endereco->codigoPais,
-                $req->endereco->codigoPostalExterior,
-                $req->endereco->nomeCidadeExterior,
-                $req->endereco->estadoProvinciaExterior,
-            ) : null,
+            endereco: $endereco,
         );
     }
 

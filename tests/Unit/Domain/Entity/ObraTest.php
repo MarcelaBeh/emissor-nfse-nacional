@@ -22,6 +22,7 @@ final class ObraTest extends TestCase
         $this->assertSame('CNO123456789', $obra->getCObra());
         $this->assertNull($obra->getCCIB());
         $this->assertNull($obra->getEndereco());
+        $this->assertTrue($obra->isPorCodigoObra());
     }
 
     public function test_create_with_cib(): void
@@ -32,12 +33,14 @@ final class ObraTest extends TestCase
 
         $this->assertSame('12345678', $obra->getCCIB()->getCodigo());
         $this->assertNull($obra->getCObra());
+        $this->assertTrue($obra->isPorCIB());
     }
 
     public function test_create_with_endereco(): void
     {
         $end = new IbsCbsEnderecoObra(
             cep: '01001001',
+            endExt: null,
             xLgr: 'Rua da Obra',
             nro: '500',
             xBairro: 'Industrial',
@@ -48,14 +51,22 @@ final class ObraTest extends TestCase
         $this->assertSame('500', $obra->getEndereco()->getNro());
         $this->assertNull($obra->getCObra());
         $this->assertNull($obra->getCCIB());
+        $this->assertTrue($obra->isPorEndereco());
     }
 
-    public function test_create_with_all_null(): void
+    public function test_create_with_all_null_throws_exception(): void
     {
-        $obra = new Obra();
-        $this->assertNull($obra->getInscImobFisc());
-        $this->assertNull($obra->getCObra());
-        $this->assertNull($obra->getCCIB());
-        $this->assertNull($obra->getEndereco());
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Obra deve informar exatamente um dos campos: cObra (CNO/CEI), cCIB ou endereco');
+        new Obra();
+    }
+
+    public function test_create_with_multiple_fields_throws_exception(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new Obra(
+            cObra: 'CNO123',
+            cCIB: new CodigoCIB('12345678'),
+        );
     }
 }

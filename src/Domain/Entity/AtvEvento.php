@@ -6,13 +6,32 @@ namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
 class AtvEvento
 {
+    private ?string $identificacaoEvento;
+    private ?IbsCbsEnderecoObra $endereco;
+
     public function __construct(
         private string $descricao,
         private \DateTimeImmutable $dataInicio,
         private \DateTimeImmutable $dataFim,
-        private ?string $identificacaoEvento = null,
-        private ?Endereco $endereco = null,
+        ?string $identificacaoEvento = null,
+        ?IbsCbsEnderecoObra $endereco = null,
     ) {
+        $preenchidos = 0;
+        if ($identificacaoEvento !== null) {
+            $preenchidos++;
+        }
+        if ($endereco !== null) {
+            $preenchidos++;
+        }
+
+        if ($preenchidos !== 1) {
+            throw new \InvalidArgumentException(
+                'Atividade/Evento deve informar exatamente um dos campos: identificacaoEvento ou endereco'
+            );
+        }
+
+        $this->identificacaoEvento = $identificacaoEvento;
+        $this->endereco = $endereco;
     }
 
     public function getDescricao(): string
@@ -35,8 +54,18 @@ class AtvEvento
         return $this->identificacaoEvento;
     }
 
-    public function getEndereco(): ?Endereco
+    public function getEndereco(): ?IbsCbsEnderecoObra
     {
         return $this->endereco;
+    }
+
+    public function isPorIdentificacao(): bool
+    {
+        return $this->identificacaoEvento !== null;
+    }
+
+    public function isPorEndereco(): bool
+    {
+        return $this->endereco !== null;
     }
 }

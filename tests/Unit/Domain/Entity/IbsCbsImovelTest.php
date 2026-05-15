@@ -22,16 +22,18 @@ final class IbsCbsImovelTest extends TestCase
         $this->assertSame('12345', $imovel->getInscImobFisc());
         $this->assertSame('12345678', $imovel->getCCIB()?->getCodigo());
         $this->assertNull($imovel->getEndereco());
+        $this->assertTrue($imovel->isPorCIB());
     }
 
     public function test_create_with_endereco(): void
     {
         $endereco = new IbsCbsEnderecoObra(
             cep: '01001001',
+            endExt: null,
             xLgr: 'Rua do Imóvel',
             nro: '100',
-            xCpl: 'Apto 42',
             xBairro: 'Centro',
+            xCpl: 'Apto 42',
         );
         $imovel = new IbsCbsImovel(
             endereco: $endereco,
@@ -44,6 +46,7 @@ final class IbsCbsImovelTest extends TestCase
         $this->assertSame('Apto 42', $imovel->getEndereco()->getXCpl());
         $this->assertSame('Centro', $imovel->getEndereco()->getXBairro());
         $this->assertNull($imovel->getCCIB());
+        $this->assertTrue($imovel->isPorEndereco());
     }
 
     public function test_create_with_endereco_exterior(): void
@@ -54,6 +57,7 @@ final class IbsCbsImovelTest extends TestCase
             xEstProvReg: 'CA',
         );
         $endereco = new IbsCbsEnderecoObra(
+            cep: null,
             endExt: $endExt,
             xLgr: 'Sunset Blvd',
             nro: '200',
@@ -65,5 +69,27 @@ final class IbsCbsImovelTest extends TestCase
         $this->assertSame('90210', $imovel->getEndereco()->getEndExt()->getCEndPost());
         $this->assertSame('Beverly Hills', $imovel->getEndereco()->getEndExt()->getXCidade());
         $this->assertSame('CA', $imovel->getEndereco()->getEndExt()->getXEstProvReg());
+    }
+
+    public function test_create_with_all_null_throws_exception(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Imóvel deve informar exatamente um dos campos: cCIB ou endereco');
+        new IbsCbsImovel();
+    }
+
+    public function test_create_with_multiple_fields_throws_exception(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new IbsCbsImovel(
+            cCIB: new CodigoCIB('12345678'),
+            endereco: new IbsCbsEnderecoObra(
+                cep: '01001001',
+                endExt: null,
+                xLgr: 'Rua',
+                nro: '1',
+                xBairro: 'Centro',
+            ),
+        );
     }
 }

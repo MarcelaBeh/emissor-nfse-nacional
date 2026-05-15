@@ -306,25 +306,26 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         }
     }
 
-    private function buildAtvEventoEndereco(\DOMNode $parent, Endereco $end): void
+    private function buildAtvEventoEndereco(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra $end): void
     {
         $endNode = $this->dom->createElement('end');
         $parent->appendChild($endNode);
-        $this->addChild($endNode, 'xLgr', $end->getLogradouro(), true);
-        $this->addChild($endNode, 'nro', $end->getNumero(), true);
-        if ($end->getComplemento()) {
-            $this->addChild($endNode, 'xCpl', $end->getComplemento(), false);
+
+        if ($end->getCep() !== null) {
+            $this->addChild($endNode, 'CEP', $end->getCep(), true);
+        } elseif ($end->getEndExt() !== null) {
+            $ext = $end->getEndExt();
+            $extNode = $this->dom->createElement('endExt');
+            $endNode->appendChild($extNode);
+            $this->addChild($extNode, 'cEndPost', $ext->getCEndPost(), true);
+            $this->addChild($extNode, 'xCidade', $ext->getXCidade(), true);
+            $this->addChild($extNode, 'xEstProvReg', $ext->getXEstProvReg(), true);
         }
-        $this->addChild($endNode, 'xBairro', $end->getBairro(), true);
-        if ($end->getCodigoPais() !== null) {
-            $this->addChild($endNode, 'cPais', $end->getCodigoPais(), true);
-            $this->addChild($endNode, 'cEndPost', $end->getCodigoPostalExterior(), true);
-            $this->addChild($endNode, 'xCidade', $end->getNomeCidadeExterior(), true);
-            $this->addChild($endNode, 'xEstProvReg', $end->getEstadoProvinciaExterior(), true);
-        } else {
-            $this->addChild($endNode, 'cMun', $end->getCodigoMunicipio()->getCodigo(), true);
-            $this->addChild($endNode, 'CEP', $end->getCep()->getCep(), true);
-        }
+
+        $this->addChild($endNode, 'xLgr', $end->getXLgr(), true);
+        $this->addChild($endNode, 'nro', $end->getNro(), true);
+        $this->addChild($endNode, 'xCpl', $end->getXCpl(), false);
+        $this->addChild($endNode, 'xBairro', $end->getXBairro(), true);
     }
 
     private function buildInfoCompl(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl $info): void

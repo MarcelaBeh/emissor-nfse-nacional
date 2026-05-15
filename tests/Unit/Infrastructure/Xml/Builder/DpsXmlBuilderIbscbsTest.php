@@ -350,10 +350,11 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     {
         $endereco = new IbsCbsEnderecoObra(
             cep: '01001001',
+            endExt: null,
             xLgr: 'Rua do Imóvel',
             nro: '100',
-            xCpl: 'Bloco B',
             xBairro: 'Centro',
+            xCpl: 'Bloco B',
         );
         $imovel = new IbsCbsImovel(endereco: $endereco);
         $ibscbs = $this->createIbscbs(imovel: $imovel);
@@ -509,10 +510,11 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     {
         $endObra = new IbsCbsEnderecoObra(
             cep: '01001001',
+            endExt: null,
             xLgr: 'Rua da Obra',
             nro: '500',
-            xCpl: 'Galpão 2',
             xBairro: 'Industrial',
+            xCpl: 'Galpão 2',
         );
         $obra = new Obra(endereco: $endObra);
         $endereco = new Endereco(
