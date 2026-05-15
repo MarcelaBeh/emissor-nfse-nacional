@@ -501,8 +501,8 @@ final class DpsValidatorTest extends TestCase
     public function test_ibscbs_cclasstrib_not_valid_for_nfse_throws(): void
     {
         $request = $this->createValidDpsRequestWithIbscbs(
-            cst: '620',
-            cClassTrib: '620001',
+            cst: '820',
+            cClassTrib: '820007',
         );
 
         $this->expectException(ValidationException::class);
@@ -528,15 +528,27 @@ final class DpsValidatorTest extends TestCase
 
     public function test_ibscbs_cclasstrib_without_diferimento_when_required_throws(): void
     {
+        $customRepo = new InMemoryCstClassTribRepository([
+            '511001' => new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties(
+                cClassTrib: '511001',
+                cst: '511',
+                descricao: 'Test diferimento required',
+                validoParaNfse: true,
+                permiteDiferimento: true,
+                exigeGrupoTributacaoRegular: false,
+            ),
+        ]);
+
+        $validator = new DpsValidator($customRepo);
         $request = $this->createValidDpsRequestWithIbscbs(
-            cst: '510',
-            cClassTrib: '510001',
+            cst: '511',
+            cClassTrib: '511001',
             diferimento: null,
         );
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('deve ser informado');
-        $this->validatorWithRepo->validate($request);
+        $validator->validate($request);
     }
 
     public function test_ibscbs_cclasstrib_with_tribregular_when_not_required_throws(): void
@@ -556,23 +568,36 @@ final class DpsValidatorTest extends TestCase
 
     public function test_ibscbs_cclasstrib_without_tribregular_when_required_throws(): void
     {
+        $customRepo = new InMemoryCstClassTribRepository([
+            '511002' => new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties(
+                cClassTrib: '511002',
+                cst: '511',
+                descricao: 'Test trib regular required',
+                validoParaNfse: true,
+                permiteDiferimento: false,
+                exigeGrupoTributacaoRegular: true,
+            ),
+        ]);
+
+        $validator = new DpsValidator($customRepo);
         $request = $this->createValidDpsRequestWithIbscbs(
-            cClassTrib: '100002',
+            cst: '511',
+            cClassTrib: '511002',
             tribRegular: null,
         );
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('deve ser informado');
-        $this->validatorWithRepo->validate($request);
+        $validator->validate($request);
     }
 
     public function test_ibscbs_cclasstribreg_not_found_throws(): void
     {
         $request = $this->createValidDpsRequestWithIbscbs(
-            cClassTrib: '100001',
-            cst: '100',
+            cClassTrib: '000001',
+            cst: '000',
             tribRegular: new IbsCbsTribRegularRequest(
-                cstReg: '100',
+                cstReg: '200',
                 cClassTribReg: '999999',
             ),
         );
@@ -585,8 +610,8 @@ final class DpsValidatorTest extends TestCase
     public function test_ibscbs_with_repo_valid_data_passes(): void
     {
         $request = $this->createValidDpsRequestWithIbscbs(
-            cst: '100',
-            cClassTrib: '100001',
+            cst: '000',
+            cClassTrib: '000001',
         );
 
         $this->validatorWithRepo->validate($request);

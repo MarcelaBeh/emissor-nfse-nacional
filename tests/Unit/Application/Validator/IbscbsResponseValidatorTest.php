@@ -392,11 +392,24 @@ final class IbscbsResponseValidatorTest extends TestCase
 
     public function test_p_red_aliq_uf_ausente_com_reducao_throws(): void
     {
-        $ibsData = ['cClassTrib' => '200001'];
+        $customRepo = new InMemoryCstClassTribRepository([
+            '299001' => new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties(
+                cClassTrib: '299001',
+                cst: '299',
+                descricao: 'Test code with reduction',
+                validoParaNfse: true,
+                permiteDiferimento: false,
+                exigeGrupoTributacaoRegular: false,
+                pRedIBS: 100.0,
+                pRedCBS: 100.0,
+            ),
+        ]);
+        $validator = new IbscbsResponseValidator($customRepo);
+        $ibsData = ['cClassTrib' => '299001'];
         $nfse = $this->makeNfse(pRedAliqUF: null, pRedAliqMun: '100.00', pRedAliqCBS: '100.00');
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('E1541');
-        $this->validatorWithRepo->validate($ibsData, $nfse);
+        $validator->validate($ibsData, $nfse);
     }
 
     public function test_p_red_aliq_mun_presente_sem_reducao_throws(): void
@@ -410,11 +423,24 @@ final class IbscbsResponseValidatorTest extends TestCase
 
     public function test_p_red_aliq_mun_ausente_com_reducao_throws(): void
     {
-        $ibsData = ['cClassTrib' => '200001'];
+        $customRepo = new InMemoryCstClassTribRepository([
+            '299002' => new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties(
+                cClassTrib: '299002',
+                cst: '299',
+                descricao: 'Test code with reduction',
+                validoParaNfse: true,
+                permiteDiferimento: false,
+                exigeGrupoTributacaoRegular: false,
+                pRedIBS: 100.0,
+                pRedCBS: 100.0,
+            ),
+        ]);
+        $validator = new IbscbsResponseValidator($customRepo);
+        $ibsData = ['cClassTrib' => '299002'];
         $nfse = $this->makeNfse(pRedAliqUF: '100.00', pRedAliqMun: null, pRedAliqCBS: '100.00');
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('E1546');
-        $this->validatorWithRepo->validate($ibsData, $nfse);
+        $validator->validate($ibsData, $nfse);
     }
 
     public function test_p_red_aliq_cbs_presente_sem_reducao_throws(): void
@@ -428,11 +454,24 @@ final class IbscbsResponseValidatorTest extends TestCase
 
     public function test_p_red_aliq_cbs_ausente_com_reducao_throws(): void
     {
-        $ibsData = ['cClassTrib' => '200001'];
+        $customRepo = new InMemoryCstClassTribRepository([
+            '299003' => new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties(
+                cClassTrib: '299003',
+                cst: '299',
+                descricao: 'Test code with reduction',
+                validoParaNfse: true,
+                permiteDiferimento: false,
+                exigeGrupoTributacaoRegular: false,
+                pRedIBS: 100.0,
+                pRedCBS: 100.0,
+            ),
+        ]);
+        $validator = new IbscbsResponseValidator($customRepo);
+        $ibsData = ['cClassTrib' => '299003'];
         $nfse = $this->makeNfse(pRedAliqUF: '100.00', pRedAliqMun: '100.00', pRedAliqCBS: null);
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('E1551');
-        $this->validatorWithRepo->validate($ibsData, $nfse);
+        $validator->validate($ibsData, $nfse);
     }
 
     public function test_p_red_aliq_sem_repo_ignora_validacao(): void

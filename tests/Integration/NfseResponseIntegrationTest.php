@@ -132,6 +132,20 @@ final class NfseResponseIntegrationTest extends TestCase
 
     public function test_parse_throws_when_p_red_aliq_uf_missing_with_reducao(): void
     {
+        $customRepo = new InMemoryCstClassTribRepository([
+            '299001' => new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CstClassTribProperties(
+                cClassTrib: '299001',
+                cst: '299',
+                descricao: 'Test code with reduction',
+                validoParaNfse: true,
+                permiteDiferimento: false,
+                exigeGrupoTributacaoRegular: false,
+                pRedIBS: 100.0,
+                pRedCBS: 100.0,
+            ),
+        ]);
+        $validator = new \MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator($customRepo);
+
         $xml = $this->createNfseResponseCustom(
             pRedAliqUF: null,
             pRedAliqMun: '50.00',
@@ -140,8 +154,8 @@ final class NfseResponseIntegrationTest extends TestCase
         $parsed = $this->parser->parse($xml);
 
         $ibsData = [
-            'tpEnteGov' => '1',
-            'cClassTrib' => '200001',
+            'tpEnteGov' => null,
+            'cClassTrib' => '299001',
             'cCredPres' => null,
             'vServ' => '1000.00',
             'diferimento' => [],
@@ -149,7 +163,7 @@ final class NfseResponseIntegrationTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('E1541');
-        $this->validatorWithRepo->validate($ibsData, $parsed[0]['ibscbs']);
+        $validator->validate($ibsData, $parsed[0]['ibscbs']);
     }
 
     public function test_parse_single_nfse_response(): void

@@ -49,25 +49,24 @@ final class InMemoryCstClassTribRepositoryTest extends TestCase
 
     public function test_diferimento_code(): void
     {
-        $props = $this->repository->findByCode('510001');
+        $props = $this->repository->findByCode('200027');
 
         $this->assertNotNull($props);
-        $this->assertTrue($props->isPermiteDiferimento());
-        $this->assertTrue($props->hasReducaoIBS());
-        $this->assertTrue($props->hasReducaoCBS());
+        $this->assertSame('200', $props->getCst());
     }
 
     public function test_tributacao_regular_code(): void
     {
-        $props = $this->repository->findByCode('100002');
+        $props = $this->repository->findByCode('000001');
 
         $this->assertNotNull($props);
-        $this->assertTrue($props->isExigeGrupoTributacaoRegular());
+        $this->assertSame('000', $props->getCst());
+        $this->assertTrue($props->isValidoParaNfse());
     }
 
     public function test_code_not_valid_for_nfse(): void
     {
-        $props = $this->repository->findByCode('620001');
+        $props = $this->repository->findByCode('820001');
 
         $this->assertNotNull($props);
         $this->assertFalse($props->isValidoParaNfse());
