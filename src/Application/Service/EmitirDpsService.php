@@ -31,6 +31,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
@@ -411,6 +412,8 @@ class EmitirDpsService
             intermediario: $intermediario,
             substituicao: $substituicao,
             ibscbs: $ibscbs,
+            cMotivoEmisTI: $request->cMotivoEmisTI !== null ? MotivoEmissaoTI::from($request->cMotivoEmisTI) : null,
+            chNFSeRej: $request->chNFSeRej !== null ? new ChaveAcesso($request->chNFSeRej) : null,
         );
     }
 

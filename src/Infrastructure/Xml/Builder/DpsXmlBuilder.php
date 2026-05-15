@@ -54,6 +54,15 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $this->addChild($infDpsNode, 'nDPS', $entity->getNumero());
         $this->addChild($infDpsNode, 'dCompet', $entity->getDataCompetencia()->format('Y-m-d'));
         $this->addChild($infDpsNode, 'tpEmit', $entity->getTipoEmitente()->value);
+
+        if ($entity->getCMotivoEmisTI() !== null) {
+            $this->addChild($infDpsNode, 'cMotivoEmisTI', (string) $entity->getCMotivoEmisTI()->value);
+        }
+
+        if ($entity->getChNFSeRej() !== null) {
+            $this->addChild($infDpsNode, 'chNFSeRej', $entity->getChNFSeRej()->getChave());
+        }
+
         $this->addChild($infDpsNode, 'cLocEmi', $entity->getCodigoMunicipioEmissor()->getCodigo());
 
         if ($entity->getSubstituicao() !== null) {

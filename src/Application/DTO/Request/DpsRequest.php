@@ -21,6 +21,8 @@ final readonly class DpsRequest
         public ?SubstituicaoRequest $substituicao = null,
         public ?IntermediarioRequest $intermediario = null,
         public ?IbsCbsRequest $ibscbs = null,
+        public ?int $cMotivoEmisTI = null,
+        public ?string $chNFSeRej = null,
     ) {
     }
 }

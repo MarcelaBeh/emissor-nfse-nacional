@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VersaoSchema;
@@ -30,6 +31,8 @@ class Dps
         private ?Intermediario $intermediario = null,
         private ?Substituicao $substituicao = null,
         private ?IbsCbsInfo $ibscbs = null,
+        private ?MotivoEmissaoTI $cMotivoEmisTI = null,
+        private ?ChaveAcesso $chNFSeRej = null,
     ) {
         $this->validate();
     }
@@ -42,6 +45,18 @@ class Dps
 
         if ($this->serie <= 0) {
             throw new \InvalidArgumentException('Série da DPS deve ser maior que zero');
+        }
+
+        if ($this->cMotivoEmisTI === null && $this->tipoEmissao !== TipoEmitente::PRESTADOR) {
+            throw new \InvalidArgumentException('cMotivoEmisTI é obrigatório quando o emitente é Tomador ou Intermediário');
+        }
+
+        if ($this->chNFSeRej !== null && $this->cMotivoEmisTI !== MotivoEmissaoTI::REJEICAO_NFSE_PRESTADOR) {
+            throw new \InvalidArgumentException('chNFSeRej só é permitido quando cMotivoEmisTI = 4 (rejeição de NFS-e do prestador)');
+        }
+
+        if ($this->chNFSeRej === null && $this->cMotivoEmisTI === MotivoEmissaoTI::REJEICAO_NFSE_PRESTADOR) {
+            throw new \InvalidArgumentException('chNFSeRej é obrigatório quando cMotivoEmisTI = 4 (rejeição de NFS-e do prestador)');
         }
     }
 
@@ -150,5 +165,15 @@ class Dps
     public function getIbsCbs(): ?IbsCbsInfo
     {
         return $this->ibscbs;
+    }
+
+    public function getCMotivoEmisTI(): ?MotivoEmissaoTI
+    {
+        return $this->cMotivoEmisTI;
+    }
+
+    public function getChNFSeRej(): ?ChaveAcesso
+    {
+        return $this->chNFSeRej;
     }
 }

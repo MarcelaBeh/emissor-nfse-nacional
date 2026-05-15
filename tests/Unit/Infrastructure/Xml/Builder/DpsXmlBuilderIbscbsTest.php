@@ -30,6 +30,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
@@ -1100,7 +1101,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         $this->assertXmlNotContains($xml, '<interm>');
     }
 
-    private function createDpsWithIbscbs(?IbsCbsInfo $ibscbs = null, ?Servico $servico = null, ?Intermediario $intermediario = null, ?Substituicao $substituicao = null): Dps
+    private function createDpsWithIbscbs(?IbsCbsInfo $ibscbs = null, ?Servico $servico = null, ?Intermediario $intermediario = null, ?Substituicao $substituicao = null, ?MotivoEmissaoTI $cMotivoEmisTI = null, ?ChaveAcesso $chNFSeRej = null): Dps
     {
         $cnpj = new Cnpj('11444777000161');
         $endereco = new Endereco(
@@ -1153,6 +1154,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             ibscbs: $ibscbs,
             intermediario: $intermediario,
             substituicao: $substituicao,
+            cMotivoEmisTI: $cMotivoEmisTI,
+            chNFSeRej: $chNFSeRej,
         );
     }
 

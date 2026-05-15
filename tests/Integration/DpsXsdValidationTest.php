@@ -30,6 +30,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
@@ -787,6 +788,8 @@ final class DpsXsdValidationTest extends TestCase
         ?IbsCbsInfo $ibscbs = null,
         ?Intermediario $intermediario = null,
         ?Substituicao $substituicao = null,
+        ?MotivoEmissaoTI $cMotivoEmisTI = null,
+        ?ChaveAcesso $chNFSeRej = null,
     ): Dps {
         $endereco = $this->createEndereco();
         $cnpj = new Cnpj('11444777000161');
@@ -831,6 +834,8 @@ final class DpsXsdValidationTest extends TestCase
             ibscbs: $ibscbs,
             intermediario: $intermediario,
             substituicao: $substituicao,
+            cMotivoEmisTI: $cMotivoEmisTI,
+            chNFSeRej: $chNFSeRej,
         );
     }
 
