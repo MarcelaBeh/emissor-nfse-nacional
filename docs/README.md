@@ -8,16 +8,6 @@
 | [ARQUITETURA.md](ARQUITETURA.md) | Arquitetura do sistema, camadas e padrões |
 | [SEGURANCA_COMPLIANCE.md](SEGURANCA_COMPLIANCE.md) | Diretrizes de segurança e compliance |
 
-## 🗺️ Progresso
-
-| Fase | Status | Progresso |
-|------|--------|-----------|
-| Fase 1-5: Implementação | ✅ Completo | 100% |
-| Fase 6: Testes e Documentação | 🧪 Em progresso | 70% |
-| Fase 7: Migração e Release | ⏳ Pendente | 0% |
-
-Consulte [ROADMAP.md](ROADMAP.md) para detalhes.
-
 ## 📁 Referências
 
 | Arquivo | Descrição |

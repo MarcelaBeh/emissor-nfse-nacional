@@ -6,7 +6,7 @@
 
 **Biblioteca PHP para integração com NFSe Nacional** - Pacote Composer reutilizável para emissão, consulta e cancelamento de Notas Fiscais de Serviço Eletrônicas no padrão nacional.
 
-**Status:** Em desenvolvimento. Use por sua conta e risco.
+**Versão:** 2.0.0 | **Status:** Estável
 
 ---
 
@@ -42,7 +42,7 @@ $response = $nfse->emitirDps($dpsRequest);
 |-----------|-----------|
 | [GUIA_IMPLEMENTACAO.md](docs/GUIA_IMPLEMENTACAO.md) | Guia completo de uso com exemplos |
 | [ARQUITETURA.md](docs/ARQUITETURA.md) | Arquitetura do sistema e decisões de design |
-| [SEGURANCA.md](docs/SEGURANCA.md) | Diretrizes de segurança |
+| [SEGURANCA_COMPLIANCE.md](docs/SEGURANCA_COMPLIANCE.md) | Diretrizes de segurança |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Como contribuir |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico de alterações |
 | [examples/](examples/) | Exemplos práticos de uso |
@@ -79,6 +79,27 @@ src/
 └── Presentation/    # Facade e Factories
 ```
 
+## 🏛️ Padrões Aplicados
+
+| Padrão | Onde |
+|--------|------|
+| Clean Architecture | Separação em camadas (Domain → Application → Infrastructure → Presentation) |
+| Facade | `NfseNacionalFacade` - ponto único de entrada |
+| Factory | `ServiceFactory`, `ConfigFactory` - criação de dependências |
+| DTO | `DpsRequest`, `NfseResponse`, `EventoRequest` - transporte de dados |
+| Value Object | `Cnpj`, `Cpf`, `Money`, `ChaveAcesso` - imutáveis e auto-validáveis |
+| Validator | `DpsValidator`, `XsdValidator` - validação de entrada e XML |
+
+## 🔄 Fluxo de Uso
+
+```
+1. Carregar certificado → Certificate::loadPfx()
+2. Criar configuração → ConfigFactory::createHomologacao() ou createProducao()
+3. Instanciar facade → NfseNacionalFacade::create()
+4. Montar request → DpsRequest / EventoRequest
+5. Executar operação → facade->emitirDps() / consultarPorChave() / cancelar()
+```
+
 ## 📄 API Principal
 
 **NfseNacionalFacade** - Ponto único de entrada:
@@ -103,7 +124,7 @@ A variável `prefeitura` aceita:
 
 O XML pode vir em ISO-8859-1. Use o segundo parâmetro se necessário:
 ```php
-$nfse->consultarNfseChave('CHAVE', false);
+$nfse->consultarPorChave('CHAVE', false);
 ```
 
 ## 🐛 FAQ - Erro E999
@@ -112,16 +133,6 @@ O erro E999 indica falha não catalogada pela Receita. Causas comuns:
 - CNPJ/CPF do prestador não cadastrado/habilitado na NFSe Nacional
 - Erros de servidor (500)
 - Problemas no ambiente de homologação (comum)
-
-## 📦 API Legado (v1)
-
-| Serviço | Método |
-|---------|--------|
-| Emitir DPS | `enviaDps()` |
-| Consultar NFSe | `consultarNfseChave()` |
-| Cancelar | `cancelaNfse()` |
-
-Consulte `examples/` para detalhes.
 
 ## 🤝 Créditos
 
