@@ -18,6 +18,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsImovelRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsReeRepResRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsTribRegularRequest;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ObraRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\AtvEventoRequest;
@@ -235,7 +236,7 @@ $request = new DpsRequest(
         codigoMunicipio: '3550308',
         uf: 'SP',
         cep: '01001001',
-        regimeTributario: 1,
+        regimeTributario: RegimeTributario::SIMPLES_NACIONAL->value,
         nif: null,
         caepf: null,
     ),
@@ -298,7 +299,7 @@ $requestComObra = new DpsRequest(
         codigoMunicipio: '3550308',
         uf: 'SP',
         cep: '01001001',
-        regimeTributario: 1,
+        regimeTributario: RegimeTributario::SIMPLES_NACIONAL->value,
     ),
     tomador: new TomadorRequest(
         documento: '33444555000181',
@@ -365,7 +366,7 @@ $requestCompleto = new DpsRequest(
         codigoMunicipio: '3550308',
         uf: 'SP',
         cep: '01001001',
-        regimeTributario: 1,
+        regimeTributario: RegimeTributario::SIMPLES_NACIONAL->value,
     ),
     tomador: new TomadorRequest(
         documento: null,

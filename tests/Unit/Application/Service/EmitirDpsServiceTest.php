@@ -15,6 +15,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
 use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
@@ -77,7 +78,7 @@ final class EmitirDpsServiceTest extends TestCase
             codigoMunicipio: '3550308',
             uf: 'SP',
             cep: '01001000',
-            regimeTributario: 1,
+            regimeTributario: RegimeTributario::SIMPLES_NACIONAL->value,
         );
 
         $tomador = new TomadorRequest(

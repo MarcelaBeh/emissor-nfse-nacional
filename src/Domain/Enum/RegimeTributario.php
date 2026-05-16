@@ -6,16 +6,16 @@ namespace MarcelaBeh\EmissorNfseNacional\Domain\Enum;
 
 enum RegimeTributario: int
 {
-    case SIMPLES_NACIONAL = 1;
-    case REGIME_NORMAL = 2;
-    case MEI = 3;
+    case REGIME_NORMAL = 1;
+    case MEI = 2;
+    case SIMPLES_NACIONAL = 3;
 
     public function descricao(): string
     {
         return match ($this) {
-            self::SIMPLES_NACIONAL => 'Simples Nacional',
             self::REGIME_NORMAL => 'Regime Normal',
             self::MEI => 'Microempreendedor Individual',
+            self::SIMPLES_NACIONAL => 'Simples Nacional',
         };
     }
 }

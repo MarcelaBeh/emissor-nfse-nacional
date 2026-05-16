@@ -23,6 +23,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TomadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TribFederalRequest;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\InMemoryCstClassTribRepository;
@@ -1636,7 +1637,7 @@ final class DpsValidatorTest extends TestCase
                 codigoMunicipio: '3550308',
                 uf: 'SP',
                 cep: '01001001',
-                regimeTributario: 1,
+                regimeTributario: RegimeTributario::SIMPLES_NACIONAL->value,
             ),
             tomador: new TomadorRequest(
                 documento: '33444555000181',

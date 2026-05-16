@@ -13,6 +13,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\SubstituicaoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TomadorRequest;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Presentation\Facade\NfseNacionalFacade;
 
 $config = [
@@ -49,7 +50,7 @@ $request = new DpsRequest(
         codigoMunicipio: '3550308',
         uf: 'SP',
         cep: '01001001',
-        regimeTributario: 1,
+        regimeTributario: RegimeTributario::SIMPLES_NACIONAL->value,
     ),
     tomador: new TomadorRequest(
         documento: '33444555000181',
