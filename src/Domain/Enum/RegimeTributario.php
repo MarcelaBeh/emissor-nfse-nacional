@@ -13,9 +13,9 @@ enum RegimeTributario: int
     public function descricao(): string
     {
         return match ($this) {
-            self::REGIME_NORMAL => 'Regime Normal',
-            self::MEI => 'Microempreendedor Individual',
-            self::SIMPLES_NACIONAL => 'Simples Nacional',
+            self::REGIME_NORMAL => 'Não Optante',
+            self::MEI => 'Optante - Microempreendedor Individual (MEI)',
+            self::SIMPLES_NACIONAL => 'Optante - Microempresa ou Empresa de Pequeno Porte (ME/EPP)',
         };
     }
 }

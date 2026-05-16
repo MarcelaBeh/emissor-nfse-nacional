@@ -20,7 +20,7 @@ enum MotivoSubstituicao: string
             self::ENQUADRAMENTO_SIMPLES => 'Enquadramento de NFS-e no Simples Nacional',
             self::INCLUSAO_IMUNIDADE => 'Inclusão Retroativa de Imunidade/Isenção para NFS-e',
             self::EXCLUSAO_IMUNIDADE => 'Exclusão Retroativa de Imunidade/Isenção para NFS-e',
-            self::REJEICAO_TOMADOR => 'Rejeição de NFS-e pelo tomador ou pelo intermediário',
+            self::REJEICAO_TOMADOR => 'Rejeição de NFS-e pelo tomador ou pelo intermediário se responsável pelo recolhimento do tributo',
             self::OUTROS => 'Outros',
         };
     }

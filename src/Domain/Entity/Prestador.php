@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeEspecialTributacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
@@ -20,6 +21,7 @@ class Prestador
         private ?Email $email,
         private Endereco $endereco,
         private RegimeTributario $regimeTributario,
+        private RegimeEspecialTributacao $regimeEspecialTributacao = RegimeEspecialTributacao::NENHUM,
         private ?string $nif = null,
         private ?string $caepf = null,
         private ?string $codigoNaoNif = null,
@@ -111,5 +113,10 @@ class Prestador
     public function getCodigoNaoNif(): ?string
     {
         return $this->codigoNaoNif;
+    }
+
+    public function getRegimeEspecialTributacao(): RegimeEspecialTributacao
+    {
+        return $this->regimeEspecialTributacao;
     }
 }

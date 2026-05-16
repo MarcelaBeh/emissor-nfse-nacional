@@ -23,9 +23,9 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TomadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TribFederalRequest;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\InMemoryCstClassTribRepository;
 use PHPUnit\Framework\TestCase;
 
@@ -948,10 +948,10 @@ final class DpsValidatorTest extends TestCase
                     vinculoPrestador: 2,
                     codigoMoeda: '840',
                     valorServicoMoeda: 1000.00,
-                    mecanismoApoioPrestador: '1',
-                    mecanismoApoioTomador: '1',
-                    movimentacaoTemporaria: 'N',
-                    enviarMDIC: 'N',
+                    mecanismoApoioPrestador: '01',
+                    mecanismoApoioTomador: '01',
+                    movimentacaoTemporaria: '1',
+                    enviarMDIC: '0',
                 ),
             ),
         );

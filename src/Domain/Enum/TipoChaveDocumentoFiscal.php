@@ -11,14 +11,19 @@ enum TipoChaveDocumentoFiscal: string
     case CT_E = '3';
     case OUTRO = '9';
 
-    public static function fromValue(string $value): self
+    public function descricao(): string
     {
-        return match ($value) {
-            '1' => self::NFS_E,
-            '2' => self::NF_E,
-            '3' => self::CT_E,
-            '9' => self::OUTRO,
-            default => throw new \InvalidArgumentException("Invalid TipoChaveDocumentoFiscal: {$value}"),
+        return match ($this) {
+            self::NFS_E => 'Nota Fiscal de Serviço Eletrônica',
+            self::NF_E => 'Nota Fiscal Eletrônica',
+            self::CT_E => 'Conhecimento de Transporte Eletrônico',
+            self::OUTRO => 'Outro',
         };
+    }
+
+    /** @return list<string> */
+    public static function valores(): array
+    {
+        return array_map(fn (self $c) => $c->value, self::cases());
     }
 }

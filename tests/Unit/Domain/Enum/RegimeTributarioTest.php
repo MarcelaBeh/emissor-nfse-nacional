@@ -12,19 +12,19 @@ final class RegimeTributarioTest extends TestCase
     public function test_regime_normal(): void
     {
         $this->assertSame(1, RegimeTributario::REGIME_NORMAL->value);
-        $this->assertSame('Regime Normal', RegimeTributario::REGIME_NORMAL->descricao());
+        $this->assertSame('Não Optante', RegimeTributario::REGIME_NORMAL->descricao());
     }
 
     public function test_mei(): void
     {
         $this->assertSame(2, RegimeTributario::MEI->value);
-        $this->assertSame('Microempreendedor Individual', RegimeTributario::MEI->descricao());
+        $this->assertSame('Optante - Microempreendedor Individual (MEI)', RegimeTributario::MEI->descricao());
     }
 
     public function test_simples_nacional(): void
     {
         $this->assertSame(3, RegimeTributario::SIMPLES_NACIONAL->value);
-        $this->assertSame('Simples Nacional', RegimeTributario::SIMPLES_NACIONAL->descricao());
+        $this->assertSame('Optante - Microempresa ou Empresa de Pequeno Porte (ME/EPP)', RegimeTributario::SIMPLES_NACIONAL->descricao());
     }
 
     public function test_from(): void

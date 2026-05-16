@@ -163,7 +163,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $regTrib = $this->dom->createElement('regTrib');
         $prestNode->appendChild($regTrib);
         $this->addChild($regTrib, 'opSimpNac', (string) $prestador->getRegimeTributario()->value, true);
-        $this->addChild($regTrib, 'regEspTrib', '0', true);
+        $this->addChild($regTrib, 'regEspTrib', $prestador->getRegimeEspecialTributacao()->value, true);
     }
 
     private function buildPessoa(\DOMNode $parent, Tomador|Intermediario $pessoa, string $tagName): void

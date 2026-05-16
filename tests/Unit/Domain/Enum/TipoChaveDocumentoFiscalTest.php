@@ -19,13 +19,13 @@ final class TipoChaveDocumentoFiscalTest extends TestCase
 
     public function test_from_value(): void
     {
-        $this->assertSame(TipoChaveDocumentoFiscal::NFS_E, TipoChaveDocumentoFiscal::fromValue('1'));
-        $this->assertSame(TipoChaveDocumentoFiscal::NF_E, TipoChaveDocumentoFiscal::fromValue('2'));
+        $this->assertSame(TipoChaveDocumentoFiscal::NFS_E, TipoChaveDocumentoFiscal::from('1'));
+        $this->assertSame(TipoChaveDocumentoFiscal::NF_E, TipoChaveDocumentoFiscal::from('2'));
     }
 
     public function test_from_value_invalid(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        TipoChaveDocumentoFiscal::fromValue('99');
+        $this->expectException(\ValueError::class);
+        TipoChaveDocumentoFiscal::from('99');
     }
 }

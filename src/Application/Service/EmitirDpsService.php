@@ -131,6 +131,9 @@ class EmitirDpsService
                 $request->prestador->cep
             ),
             regimeTributario: \MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario::from($request->prestador->regimeTributario),
+            regimeEspecialTributacao: $request->prestador->regEspTrib !== null
+                ? \MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeEspecialTributacao::from((string) $request->prestador->regEspTrib)
+                : \MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeEspecialTributacao::NENHUM,
             nif: $request->prestador->nif,
             caepf: $request->prestador->caepf,
             codigoNaoNif: $request->prestador->codigoNaoNif,
@@ -435,7 +438,7 @@ class EmitirDpsService
             tipo: $dReq->tipoDocumento,
             dtEmiDoc: new \DateTimeImmutable($dReq->dtEmiDoc),
             dtCompDoc: new \DateTimeImmutable($dReq->dtCompDoc),
-            tpReeRepRes: \MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento::fromValue($dReq->tpReeRepRes),
+            tpReeRepRes: \MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento::from($dReq->tpReeRepRes),
             vlrReeRepRes: (string) $dReq->vlrReeRepRes,
             fornec: $fornec,
             xTpReeRepRes: $dReq->xTpReeRepRes,

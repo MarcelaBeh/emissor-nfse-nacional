@@ -7,6 +7,19 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\Validator;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\CausaNaoNif;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\EnviarMdic;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MecanismoApoioPrestador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MecanismoApoioTomador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\ModoPrestacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoSubstituicao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MovimentacaoTemporaria;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeEspecialTributacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoChaveDocumentoFiscal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VinculoPrestador;
 
 class DpsValidator
 {
@@ -37,6 +50,14 @@ class DpsValidator
 
         if (empty($request->prestador->razaoSocial)) {
             $errors[] = 'Razão social do prestador é obrigatória';
+        }
+
+        if ($request->prestador->codigoNaoNif !== null && !in_array($request->prestador->codigoNaoNif, CausaNaoNif::valores(), true)) {
+            $errors[] = 'cNaoNIF inválido — deve ser 0 (Não informado), 1 (Dispensado) ou 2 (Não exigência)';
+        }
+
+        if ($request->prestador->regEspTrib !== null && !in_array((string) $request->prestador->regEspTrib, RegimeEspecialTributacao::valores(), true)) {
+            $errors[] = 'regEspTrib inválido — deve ser 0 (Nenhum), 1 (Ato Cooperado), 2 (Estimativa), 3 (Microempresa Municipal), 4 (Notário/Registrador), 5 (Profissional Autônomo), 6 (Sociedade de Profissionais) ou 9 (Outros)';
         }
 
         if (empty($request->tomador->razaoSocial)) {
@@ -113,10 +134,14 @@ class DpsValidator
 
             if ($ce->modoPrestacao === null) {
                 $errors[] = 'mdPrestacao é obrigatório no grupo comExterior';
+            } elseif (!in_array((string) $ce->modoPrestacao, ModoPrestacao::valores(), true)) {
+                $errors[] = 'mdPrestacao inválido — deve ser 0 (Desconhecido), 1 (Transfronteiriço), 2 (Consumo no Brasil), 3 (Presença Comercial no Exterior) ou 4 (Movimento Temporário PF)';
             }
 
             if ($ce->vinculoPrestador === null) {
                 $errors[] = 'vincPrest é obrigatório no grupo comExterior';
+            } elseif (!in_array((string) $ce->vinculoPrestador, VinculoPrestador::valores(), true)) {
+                $errors[] = 'vincPrest inválido — deve ser 0 (Sem vínculo), 1 (Controlada), 2 (Controladora), 3 (Coligada), 4 (Matriz), 5 (Filial), 6 (Outro vínculo) ou 9 (Desconhecido)';
             }
 
             if ($ce->codigoMoeda !== null && !preg_match('/^[0-9]{3}$/', $ce->codigoMoeda)) {
@@ -125,6 +150,22 @@ class DpsValidator
 
             if ($ce->valorServicoMoeda !== null && $ce->valorServicoMoeda <= 0) {
                 $errors[] = 'vServMoeda deve ser maior que zero';
+            }
+
+            if ($ce->mecanismoApoioPrestador !== null && !in_array($ce->mecanismoApoioPrestador, MecanismoApoioPrestador::valores(), true)) {
+                $errors[] = 'mecAFComexP inválido — deve ser 00 a 08';
+            }
+
+            if ($ce->mecanismoApoioTomador !== null && !in_array($ce->mecanismoApoioTomador, MecanismoApoioTomador::valores(), true)) {
+                $errors[] = 'mecAFComexT inválido — deve ser 00 a 26';
+            }
+
+            if ($ce->movimentacaoTemporaria !== null && !in_array($ce->movimentacaoTemporaria, MovimentacaoTemporaria::valores(), true)) {
+                $errors[] = 'movTempBens inválido — deve ser 0 (Desconhecido), 1 (Não), 2 (Vinculada DI) ou 3 (Vinculada DE)';
+            }
+
+            if ($ce->enviarMDIC !== null && !in_array($ce->enviarMDIC, EnviarMdic::valores(), true)) {
+                $errors[] = 'envMDIC inválido — deve ser 0 (Não enviar) ou 1 (Enviar)';
             }
         }
 
@@ -244,15 +285,19 @@ class DpsValidator
         }
 
         // Validações do grupo tribMun
-        if ($request->servico->tipoImunidade !== null && !in_array($request->servico->tipoImunidade, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], true)) {
-            $errors[] = 'tpImunidade inválido — deve ser um número entre 1 e 15';
+        if ($request->servico->tribISSQN !== null && !in_array($request->servico->tribISSQN, TributacaoIssqn::valores(), true)) {
+            $errors[] = 'tribISSQN inválido — deve ser 1 (Operação tributável), 2 (Imunidade), 3 (Exportação) ou 4 (Não Incidência)';
+        }
+
+        if ($request->servico->tipoImunidade !== null && !in_array($request->servico->tipoImunidade, [0, 1, 2, 3, 4, 5], true)) {
+            $errors[] = 'tpImunidade inválido — deve ser 0, 1, 2, 3, 4 ou 5';
         }
 
         if ($request->servico->exigSusp !== null) {
             $es = $request->servico->exigSusp;
 
-            if ($es->tipoSuspensao !== null && !in_array($es->tipoSuspensao, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], true)) {
-                $errors[] = 'tpSusp inválido — deve ser um número entre 1 e 13';
+            if ($es->tipoSuspensao !== null && !in_array($es->tipoSuspensao, [1, 2], true)) {
+                $errors[] = 'tpSusp inválido — deve ser 1 (Decisão Judicial) ou 2 (Processo Administrativo)';
             }
 
             if ($es->numeroProcesso !== null && $es->numeroProcesso === '') {
@@ -262,6 +307,10 @@ class DpsValidator
 
         if ($request->servico->beneficioMunicipal !== null && empty($request->servico->beneficioMunicipal->numeroBeneficio)) {
             $errors[] = 'nBM é obrigatório no grupo BM';
+        }
+
+        if ($request->servico->tpRetISSQN !== null && !in_array($request->servico->tpRetISSQN, TipoRetencaoIssqn::valores(), true)) {
+            $errors[] = 'tpRetISSQN inválido — deve ser 1 (Não Retido), 2 (Retido pelo Tomador) ou 3 (Retido pelo Intermediário)';
         }
 
         // Validações do grupo tribFed
@@ -468,7 +517,7 @@ class DpsValidator
                         $errors[] = "{$prefix}: dtCompDoc deve estar no formato AAAA-MM-DD";
                     }
 
-                    if (!in_array($doc->tpReeRepRes, ['01', '02', '03', '04', '99'], true)) {
+                    if (!in_array($doc->tpReeRepRes, TipoReembolsoRepasseRessarcimento::valores(), true)) {
                         $errors[] = "{$prefix}: tpReeRepRes inválido '{$doc->tpReeRepRes}'";
                     }
 
@@ -481,7 +530,7 @@ class DpsValidator
                     }
 
                     if ($doc->tipoDocumento === 'dFeNacional') {
-                        if (!in_array($doc->tipoChaveDFe, ['1', '2', '3', '9'], true)) {
+                        if (!in_array($doc->tipoChaveDFe, TipoChaveDocumentoFiscal::valores(), true)) {
                             $errors[] = "{$prefix}: tipoChaveDFe inválido '{$doc->tipoChaveDFe}'";
                         }
                         if (empty($doc->chaveDFe)) {
@@ -561,7 +610,7 @@ class DpsValidator
                 $errors[] = 'chSubstda deve ter exatamente 50 dígitos numéricos';
             }
 
-            if (!in_array($s->codigoMotivo, ['01', '02', '03', '04', '05', '99'], true)) {
+            if (!in_array($s->codigoMotivo, MotivoSubstituicao::valores(), true)) {
                 $errors[] = "cMotivo inválido: '{$s->codigoMotivo}'";
             }
 
