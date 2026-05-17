@@ -118,4 +118,27 @@ composer check     # Tudo junto
 
 ---
 
-**Última atualização:** 16/05/2026
+---
+
+## v2.0.3 (17/05/2026)
+
+### Novos Endpoints da API Sefin Nacional
+
+- **HEAD /dps/{id}** - Verificar se NFS-e foi gerada a partir do DPS
+  - `$facade->verificarDpsExiste(string $id): bool`
+- **POST /decisao-judicial/nfse** - Emitir NFS-e por decisão judicial
+  - `$facade->emitirPorDecisaoJudicial(string $nfseXml): NfseResponse`
+
+### Alterações
+
+- HttpClientInterface: novo método `head()`
+- CurlHttpClient: implementação de HEAD request
+- ApiConnector: novo método `head()`
+- ApiEndpoints: métodos `verificarDps()` e `decisaoJudicialNfse()`
+- ConsultarNfseService: `verificarDpsExiste()`
+- EmitirDpsService: `executarPorDecisaoJudicial()` com validação XSD NFSe v1.01
+- prefeituras.json: operações `verificar_dps` e `decisao_judicial_nfse`
+
+---
+
+**Última atualização:** 17/05/2026

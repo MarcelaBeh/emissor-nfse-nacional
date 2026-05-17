@@ -48,6 +48,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoSituacaoTributaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
@@ -67,6 +68,7 @@ class EmitirDpsService
         private RequestBuilder $requestBuilder,
         private NfseXmlParser $nfseXmlParser,
         private IbscbsResponseValidator $ibscbsResponseValidator,
+        private ApiEndpoints $apiEndpoints,
     ) {
     }
 
@@ -104,6 +106,104 @@ class EmitirDpsService
                 $e
             );
         }
+    }
+
+    public function executarPorDecisaoJudicial(string $nfseXml): NfseResponse
+    {
+        try {
+            $this->xsdValidator->validate($nfseXml, 'NFSe');
+
+            $xmlAssinado = $this->xmlSigner->sign($nfseXml, 'infNFSe', 'NFSe');
+            $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?>' . $xmlAssinado;
+
+            $gzipBase64 = $this->compactarXml($xmlAssinado);
+
+            $payload = ['xmlGZipB64' => $gzipBase64];
+
+            $endpoint = $this->apiEndpoints->decisaoJudicialNfse();
+            $response = $this->apiConnector->post($endpoint, $payload);
+
+            return $this->processarRespostaDecisaoJudicial($response);
+
+        } catch (DomainException $e) {
+            throw new ValidationException(
+                "Dados inválidos: {$e->getMessage()}",
+                0,
+                $e
+            );
+        } catch (HttpException $e) {
+            throw new ServiceException(
+                "Falha ao comunicar com API: {$e->getMessage()}",
+                0,
+                $e
+            );
+        } catch (\RuntimeException $e) {
+            throw new ServiceException(
+                "Falha ao processar XML: {$e->getMessage()}",
+                0,
+                $e
+            );
+        }
+    }
+
+    private function compactarXml(string $xml): string
+    {
+        $compressed = gzencode($xml);
+        if ($compressed === false) {
+            throw new \RuntimeException('Falha ao compactar XML');
+        }
+
+        return base64_encode($compressed);
+    }
+
+    /**
+     * @param array<string, mixed> $response
+     */
+    private function processarRespostaDecisaoJudicial(array $response): NfseResponse
+    {
+        if (!$response['success']) {
+            $data = $response['data'] ?? [];
+            $erros = $data['erros'] ?? $data['erro'] ?? [['descricao' => 'Erro desconhecido']];
+
+            return new NfseResponse(
+                success: false,
+                mensagem: $erros[0]['descricao'] ?? 'Falha na emissão por decisão judicial',
+            );
+        }
+
+        $data = $response['data'] ?? [];
+        $nfseXmlGzip = $data['nfseXmlGZipB64'] ?? null;
+
+        if ($nfseXmlGzip) {
+            $xml = $this->descompactarXml($nfseXmlGzip);
+            $parsed = $this->nfseXmlParser->parse($xml);
+
+            return new NfseResponse(
+                success: true,
+                dados: $parsed[0] ?? null,
+                xml: $xml,
+            );
+        }
+
+        return new NfseResponse(
+            success: true,
+            dados: $data,
+        );
+    }
+
+    private function descompactarXml(string $gzipBase64): string
+    {
+        $decoded = base64_decode($gzipBase64, true);
+        if ($decoded === false) {
+            throw new \RuntimeException('Falha ao decodificar base64');
+        }
+
+        $uncompressed = gzdecode($decoded);
+        if ($uncompressed === false) {
+            throw new \RuntimeException('Falha ao descompactar gzip');
+        }
+
+        return $uncompressed;
     }
 
     private function criarDpsFromRequest(DpsRequest $request): Dps

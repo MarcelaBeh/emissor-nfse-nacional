@@ -42,6 +42,16 @@ class CurlHttpClient implements HttpClientInterface
         return $this->request('POST', $url, $data, $headers);
     }
 
+    #[\Override]
+    /**
+     * @param array<string, string> $headers
+     * @return array{status: int, body: string}
+     */
+    public function head(string $url, array $headers = []): array
+    {
+        return $this->request('HEAD', $url, null, $headers);
+    }
+
     /**
      * @param array<string, string> $headers
      * @return array{status: int, body: string}

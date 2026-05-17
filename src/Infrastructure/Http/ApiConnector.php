@@ -42,6 +42,21 @@ class ApiConnector
         return $this->parseResponse($response);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function head(string $endpoint): array
+    {
+        $url = $this->buildUrl($endpoint);
+        $headers = $this->buildHeaders();
+        $response = $this->httpClient->head($url, $headers);
+
+        return [
+            'status' => $response['status'],
+            'success' => $response['status'] >= 200 && $response['status'] < 300,
+        ];
+    }
+
     private function resolveBaseUrl(): string
     {
         $ambiente = $this->config->getTipoAmbiente();

@@ -33,7 +33,9 @@
             "emitir_nfse" : "nfse",
             "cancelar_nfse" : "nfse/{chave}/eventos",
             "consultar_nfse" : "nfse/{chave}",
-            "consultar_dps" : "dps/{id}"
+            "consultar_dps" : "dps/{id}",
+            "verificar_dps" : "dps/{id}",
+            "decisao_judicial_nfse" : "decisao-judicial/nfse"
         }
     }
 }

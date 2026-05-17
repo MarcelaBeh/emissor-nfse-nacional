@@ -66,4 +66,14 @@ class ApiEndpoints
     {
         return str_replace('{chave}', $chave, $this->config->getOperation('consultar_danfse_nfse_download'));
     }
+
+    public function verificarDps(string $id): string
+    {
+        return str_replace('{id}', $id, $this->config->getOperation('verificar_dps'));
+    }
+
+    public function decisaoJudicialNfse(): string
+    {
+        return $this->config->getOperation('decisao_judicial_nfse');
+    }
 }

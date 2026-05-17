@@ -77,6 +77,7 @@ class ServiceFactory
             requestBuilder: $this->requestBuilder,
             nfseXmlParser: new NfseXmlParser(),
             ibscbsResponseValidator: new IbscbsResponseValidator(),
+            apiEndpoints: $this->apiEndpoints,
         );
     }
 

@@ -90,6 +90,16 @@ class NfseNacionalFacade
         return $this->consultarNfseService->consultarDanfseNfse($chave);
     }
 
+    public function verificarDpsExiste(string $id): bool
+    {
+        return $this->consultarNfseService->verificarDpsExiste($id);
+    }
+
+    public function emitirPorDecisaoJudicial(string $nfseXml): NfseResponse
+    {
+        return $this->emitirDpsService->executarPorDecisaoJudicial($nfseXml);
+    }
+
     private function inicializarServicos(): void
     {
         $factory = new ServiceFactory($this->config, $this->certificado);

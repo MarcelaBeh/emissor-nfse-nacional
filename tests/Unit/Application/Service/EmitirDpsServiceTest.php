@@ -16,6 +16,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
@@ -37,6 +38,7 @@ final class EmitirDpsServiceTest extends TestCase
     private RequestBuilder $requestBuilder;
     private NfseXmlParser $nfseXmlParser;
     private IbscbsResponseValidator $ibscbsResponseValidator;
+    private ApiEndpoints $apiEndpoints;
     private EmitirDpsService $service;
 
     protected function setUp(): void
@@ -49,6 +51,7 @@ final class EmitirDpsServiceTest extends TestCase
         $this->requestBuilder = $this->createMock(RequestBuilder::class);
         $this->nfseXmlParser = $this->createMock(NfseXmlParser::class);
         $this->ibscbsResponseValidator = new IbscbsResponseValidator();
+        $this->apiEndpoints = $this->createMock(ApiEndpoints::class);
 
         $this->service = new EmitirDpsService(
             $this->apiConnector,
@@ -59,6 +62,7 @@ final class EmitirDpsServiceTest extends TestCase
             $this->requestBuilder,
             $this->nfseXmlParser,
             $this->ibscbsResponseValidator,
+            $this->apiEndpoints,
         );
     }
 

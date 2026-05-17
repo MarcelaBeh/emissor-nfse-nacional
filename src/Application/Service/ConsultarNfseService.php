@@ -96,6 +96,18 @@ class ConsultarNfseService
         }
     }
 
+    public function verificarDpsExiste(string $id): bool
+    {
+        try {
+            $endpoint = $this->apiEndpoints->verificarDps($id);
+            $response = $this->apiConnector->head($endpoint);
+
+            return $response['success'];
+        } catch (HttpException $e) {
+            return false;
+        }
+    }
+
     /**
      * @return array<int, array<string, mixed>>|array<string, mixed>
      */
