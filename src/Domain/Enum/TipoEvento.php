@@ -45,6 +45,12 @@ enum TipoEvento: string
         };
     }
 
+    /** @return list<string> */
+    public static function valores(): array
+    {
+        return array_map(fn (self $c) => $c->value, self::cases());
+    }
+
     public function xDesc(): string
     {
         return match ($this) {

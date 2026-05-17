@@ -25,6 +25,7 @@ class Prestador
         private ?string $nif = null,
         private ?string $caepf = null,
         private ?string $codigoNaoNif = null,
+        private ?int $regimeApuracaoSimplesNacional = null,
     ) {
         $this->validate();
     }
@@ -118,5 +119,10 @@ class Prestador
     public function getRegimeEspecialTributacao(): RegimeEspecialTributacao
     {
         return $this->regimeEspecialTributacao;
+    }
+
+    public function getRegimeApuracaoSimplesNacional(): ?int
+    {
+        return $this->regimeApuracaoSimplesNacional;
     }
 }

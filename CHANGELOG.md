@@ -67,9 +67,42 @@ Clean Architecture com 4 camadas:
 | Métrica | Valor |
 |---------|-------|
 | PHPStan | Level 8 (0 erros) |
-| Testes | 481 passando |
+| Testes | 631 passando |
 | Code Style | PSR-12 |
 | PHP | 8.3+ |
+
+---
+
+## Atualizações v2.0.1 (16/05/2026)
+
+### Validador DpsValidator
+- Validação completa contra XSDs oficiais v1.01
+- tpEmit obrigatório, cMotivoEmisTI opcional
+- Prestador xNome opcional (minOccurs="0")
+- Tomador/Intermediário: documento + xNome obrigatórios quando bloco existe
+- comExterior: tpMoeda + vServMoeda obrigatórios quando existe
+- atvEvento: dtIni + dtFim obrigatórios quando existe
+- dedução/redução: choice só valida se bloco existir
+- totTrib: bloco opcional
+
+### DTOs
+- ServicoRequest: campos opcionais agora são nullable conforme XSD
+- valorDeducoes, descontoIncondicionado, descontoCondicionado: ?float
+- aliquotaIss: ?float
+- tribISSQN, tpRetISSQN: ?string (obrigatórios no validador)
+
+### Entity Servico
+- Aceita Money|null para descontoIncondicionado, descontoCondicionado, valorDeducoes
+- aliquotaIss agora é ?float
+- Getters atualizados para retornar tipos nullable
+
+### Services e XML
+- EmitirDpsService trata nulos ao criar Money
+- DpsXmlBuilder trata nulos ao gerar XML
+
+### Exemplos
+- MakeDps.php atualizado com tribISSQN e tpRetISSQN
+- MakeDpsComSubstituicao.php atualizado
 
 ---
 
@@ -85,4 +118,4 @@ composer check     # Tudo junto
 
 ---
 
-**Última atualização:** 15/05/2026
+**Última atualização:** 16/05/2026

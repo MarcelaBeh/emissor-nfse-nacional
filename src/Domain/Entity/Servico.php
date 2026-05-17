@@ -19,18 +19,19 @@ class Servico
     public function __construct(
         private string $discriminacao,
         private string $codigoTributacao,
-        private CodigoMunicipio $localPrestacao,
         Money $valorServicos,
-        private Money $valorDeducoes,
-        private Money $descontoIncondicionado,
-        private Money $descontoCondicionado,
-        private float $aliquotaIss,
+        private ?Money $valorDeducoes = null,
+        private ?Money $descontoIncondicionado = null,
+        private ?Money $descontoCondicionado = null,
+        private ?float $aliquotaIss = null,
+        private ?CodigoMunicipio $localPrestacao = null,
         private ?string $codigoNbs = null,
         private ?string $codigoCnae = null,
         private ?Obra $obra = null,
-        private ?string $tribISSQN = null,
-        private ?string $tpRetISSQN = null,
+        private string $tribISSQN = '1',
+        private string $tpRetISSQN = '1',
         private ?string $codigoPaisPrestacao = null,
+        private ?string $codigoPaisResultado = null,
         private ?string $codigoTributacaoMunicipal = null,
         private ?string $codigoInternoContribuinte = null,
         private ?float $valorRecebido = null,
@@ -55,11 +56,17 @@ class Servico
 
     private function calcularValores(Money $valorServicos): void
     {
-        $this->baseCalculo = $valorServicos->subtract($this->valorDeducoes);
-        $this->valorIss = $this->baseCalculo->percentage($this->aliquotaIss);
+        $valorDeducoes = $this->valorDeducoes ?? new Money(0);
+        $descontoIncond = $this->descontoIncondicionado ?? new Money(0);
+        $descontoCond = $this->descontoCondicionado ?? new Money(0);
+
+        $this->baseCalculo = $valorServicos->subtract($valorDeducoes);
+        $this->valorIss = $this->aliquotaIss !== null
+            ? $this->baseCalculo->percentage($this->aliquotaIss)
+            : new Money(0);
         $this->valorTotal = $valorServicos
-            ->subtract($this->descontoIncondicionado)
-            ->subtract($this->descontoCondicionado);
+            ->subtract($descontoIncond)
+            ->subtract($descontoCond);
     }
 
     private function validate(): void
@@ -91,7 +98,7 @@ class Servico
         return $this->codigoTributacao;
     }
 
-    public function getLocalPrestacao(): CodigoMunicipio
+    public function getLocalPrestacao(): ?CodigoMunicipio
     {
         return $this->localPrestacao;
     }
@@ -111,22 +118,22 @@ class Servico
         return $this->valorIss;
     }
 
-    public function getValorDeducoes(): Money
+    public function getValorDeducoes(): ?Money
     {
         return $this->valorDeducoes;
     }
 
-    public function getDescontoIncondicionado(): Money
+    public function getDescontoIncondicionado(): ?Money
     {
         return $this->descontoIncondicionado;
     }
 
-    public function getDescontoCondicionado(): Money
+    public function getDescontoCondicionado(): ?Money
     {
         return $this->descontoCondicionado;
     }
 
-    public function getAliquotaIss(): float
+    public function getAliquotaIss(): ?float
     {
         return $this->aliquotaIss;
     }
@@ -146,12 +153,12 @@ class Servico
         return $this->obra;
     }
 
-    public function getTribISSQN(): ?string
+    public function getTribISSQN(): string
     {
         return $this->tribISSQN;
     }
 
-    public function getTpRetISSQN(): ?string
+    public function getTpRetISSQN(): string
     {
         return $this->tpRetISSQN;
     }
@@ -159,6 +166,11 @@ class Servico
     public function getCodigoPaisPrestacao(): ?string
     {
         return $this->codigoPaisPrestacao;
+    }
+
+    public function getCodigoPaisResultado(): ?string
+    {
+        return $this->codigoPaisResultado;
     }
 
     public function getCodigoTributacaoMunicipal(): ?string

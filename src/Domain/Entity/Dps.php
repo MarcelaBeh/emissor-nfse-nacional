@@ -25,8 +25,8 @@ class Dps
         private TipoEmitente $tipoEmissao,
         private CodigoMunicipio $codigoMunicipioEmissor,
         private Prestador $prestador,
-        private Tomador $tomador,
         private Servico $servico,
+        private ?Tomador $tomador = null,
         private VersaoSchema $versao = VersaoSchema::V1_01,
         private ?Intermediario $intermediario = null,
         private ?Substituicao $substituicao = null,
@@ -137,7 +137,7 @@ class Dps
         return $this->prestador;
     }
 
-    public function getTomador(): Tomador
+    public function getTomador(): ?Tomador
     {
         return $this->tomador;
     }

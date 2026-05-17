@@ -39,8 +39,8 @@ final class ServicoTest extends TestCase
         $this->assertNull($servico->getCodigoNbs());
         $this->assertNull($servico->getCodigoCnae());
         $this->assertNull($servico->getObra());
-        $this->assertNull($servico->getTribISSQN());
-        $this->assertNull($servico->getTpRetISSQN());
+        $this->assertSame('1', $servico->getTribISSQN());
+        $this->assertSame('1', $servico->getTpRetISSQN());
         $this->assertNull($servico->getComExterior());
         $this->assertNull($servico->getAtvEvento());
         $this->assertNull($servico->getInfoCompl());

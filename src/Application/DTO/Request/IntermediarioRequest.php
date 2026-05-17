@@ -7,7 +7,7 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 final readonly class IntermediarioRequest
 {
     public function __construct(
-        public string $documento,
+        public ?string $documento,
         public bool $isCnpj,
         public string $razaoSocial,
         public ?string $telefone,

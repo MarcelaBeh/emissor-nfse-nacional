@@ -25,6 +25,7 @@ final readonly class PrestadorRequest
         public ?string $caepf = null,
         public ?string $codigoNaoNif = null,
         public ?int $regEspTrib = null,
+        public ?int $regApTribSN = null,
     ) {
     }
 }

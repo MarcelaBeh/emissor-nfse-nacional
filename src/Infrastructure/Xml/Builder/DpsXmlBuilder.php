@@ -70,7 +70,10 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         }
 
         $this->buildPrestador($infDpsNode, $entity->getPrestador());
-        $this->buildPessoa($infDpsNode, $entity->getTomador(), 'toma');
+
+        if ($entity->getTomador() !== null) {
+            $this->buildPessoa($infDpsNode, $entity->getTomador(), 'toma');
+        }
 
         if ($entity->getIntermediario() !== null) {
             $this->buildPessoa($infDpsNode, $entity->getIntermediario(), 'interm');
@@ -163,6 +166,9 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $regTrib = $this->dom->createElement('regTrib');
         $prestNode->appendChild($regTrib);
         $this->addChild($regTrib, 'opSimpNac', (string) $prestador->getRegimeTributario()->value, true);
+        if ($prestador->getRegimeApuracaoSimplesNacional() !== null) {
+            $this->addChild($regTrib, 'regApTribSN', (string) $prestador->getRegimeApuracaoSimplesNacional(), false);
+        }
         $this->addChild($regTrib, 'regEspTrib', $prestador->getRegimeEspecialTributacao()->value, true);
     }
 
@@ -241,7 +247,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $servNode->appendChild($locPrest);
         if ($servico->getCodigoPaisPrestacao() !== null) {
             $this->addChild($locPrest, 'cPaisPrestacao', $servico->getCodigoPaisPrestacao(), true);
-        } else {
+        } elseif ($servico->getLocalPrestacao() !== null) {
             $this->addChild($locPrest, 'cLocPrestacao', $servico->getLocalPrestacao()->getCodigo(), true);
         }
 
@@ -407,11 +413,13 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         }
         $this->addChild($vServPrest, 'vServ', number_format($servico->getValorTotal()->getValue(), 2, '.', ''), true);
 
-        if ($servico->getDescontoIncondicionado()->isPositive() || $servico->getDescontoCondicionado()->isPositive()) {
+        $descIncond = $servico->getDescontoIncondicionado();
+        $descCond = $servico->getDescontoCondicionado();
+        if ($descIncond !== null && $descIncond->isPositive() || $descCond !== null && $descCond->isPositive()) {
             $desc = $this->dom->createElement('vDescCondIncond');
             $valNode->appendChild($desc);
-            $this->addChild($desc, 'vDescIncond', number_format($servico->getDescontoIncondicionado()->getValue(), 2, '.', ''), false);
-            $this->addChild($desc, 'vDescCond', number_format($servico->getDescontoCondicionado()->getValue(), 2, '.', ''), false);
+            $this->addChild($desc, 'vDescIncond', $descIncond !== null ? number_format($descIncond->getValue(), 2, '.', '') : '0.00', false);
+            $this->addChild($desc, 'vDescCond', $descCond !== null ? number_format($descCond->getValue(), 2, '.', '') : '0.00', false);
         }
 
         if ($servico->getDocumentosDeducao() !== null) {
@@ -423,11 +431,13 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $tribMun = $this->dom->createElement('tribMun');
         $tribNode->appendChild($tribMun);
-        $this->addChild($tribMun, 'tribISSQN', $servico->getTribISSQN() ?? '1', true);
+        $this->addChild($tribMun, 'tribISSQN', $servico->getTribISSQN(), true);
         if ($servico->getTipoImunidade() !== null) {
             $this->addChild($tribMun, 'tpImunidade', (string) $servico->getTipoImunidade(), false);
         }
-        $this->addChild($tribMun, 'cPaisResult', null, false);
+        if ($servico->getCodigoPaisResultado() !== null) {
+            $this->addChild($tribMun, 'cPaisResult', $servico->getCodigoPaisResultado(), false);
+        }
         if ($servico->getExigSusp() !== null) {
             $this->buildExigSusp($tribMun, $servico->getExigSusp());
         }
@@ -435,8 +445,14 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $bmNode = $this->dom->createElement('BM');
             $tribMun->appendChild($bmNode);
             $this->addChild($bmNode, 'nBM', $servico->getBeneficioMunicipal()->getNumeroBeneficio(), true);
+            if ($servico->getBeneficioMunicipal()->getValorReducaoBC() !== null) {
+                $this->addChild($bmNode, 'vRedBCBM', number_format($servico->getBeneficioMunicipal()->getValorReducaoBC(), 2, '.', ''), false);
+            }
+            if ($servico->getBeneficioMunicipal()->getPercentualReducaoBC() !== null) {
+                $this->addChild($bmNode, 'pRedBCBM', number_format($servico->getBeneficioMunicipal()->getPercentualReducaoBC(), 3, '.', ''), false);
+            }
         }
-        $this->addChild($tribMun, 'tpRetISSQN', $servico->getTpRetISSQN() ?? '1', true);
+        $this->addChild($tribMun, 'tpRetISSQN', $servico->getTpRetISSQN(), true);
         $this->addChild($tribMun, 'pAliq', $servico->getAliquotaIss(), true);
 
         if ($servico->getTribFederal() !== null) {

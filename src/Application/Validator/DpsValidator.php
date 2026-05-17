@@ -5,17 +5,28 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Application\Validator;
 
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\CausaNaoNif;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\EnviarMdic;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MecanismoApoioPrestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MecanismoApoioTomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\ModoPrestacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoSubstituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MovimentacaoTemporaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeEspecialTributacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoChaveDocumentoFiscal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
@@ -23,6 +34,8 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VinculoPrestador;
 
 class DpsValidator
 {
+    private const UFS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+
     public function __construct(
         private ?CstClassTribRepository $cstClassTribRepository = null,
     ) {
@@ -32,607 +45,1401 @@ class DpsValidator
     {
         $errors = [];
 
-        if ($request->tipoAmbiente !== 1 && $request->tipoAmbiente !== 2) {
-            $errors[] = 'Tipo de ambiente inválido';
-        }
-
-        if ($request->serie <= 0) {
-            $errors[] = 'Série deve ser maior que zero';
-        }
-
-        if ($request->numero <= 0) {
-            $errors[] = 'Número deve ser maior que zero';
-        }
-
-        if (empty($request->versaoAplicacao)) {
-            $errors[] = 'Versão da aplicação é obrigatória';
-        }
-
-        if (empty($request->prestador->razaoSocial)) {
-            $errors[] = 'Razão social do prestador é obrigatória';
-        }
-
-        if ($request->prestador->codigoNaoNif !== null && !in_array($request->prestador->codigoNaoNif, CausaNaoNif::valores(), true)) {
-            $errors[] = 'cNaoNIF inválido — deve ser 0 (Não informado), 1 (Dispensado) ou 2 (Não exigência)';
-        }
-
-        if ($request->prestador->regEspTrib !== null && !in_array((string) $request->prestador->regEspTrib, RegimeEspecialTributacao::valores(), true)) {
-            $errors[] = 'regEspTrib inválido — deve ser 0 (Nenhum), 1 (Ato Cooperado), 2 (Estimativa), 3 (Microempresa Municipal), 4 (Notário/Registrador), 5 (Profissional Autônomo), 6 (Sociedade de Profissionais) ou 9 (Outros)';
-        }
-
-        if (empty($request->tomador->razaoSocial)) {
-            $errors[] = 'Razão social do tomador é obrigatória';
-        }
-
-        if (empty($request->servico->discriminacao)) {
-            $errors[] = 'Discriminação do serviço é obrigatória';
-        }
-
-        if ($request->servico->aliquotaIss < 0 || $request->servico->aliquotaIss > 100) {
-            $errors[] = 'Alíquota ISS deve estar entre 0 e 100';
-        }
-
-        if ($request->servico->valorServicos <= 0) {
-            $errors[] = 'Valor dos serviços deve ser maior que zero';
-        }
-
-        // Validações do grupo obra
-        if ($request->servico->obra !== null) {
-            $o = $request->servico->obra;
-
-            if ($o->cObra !== null && (strlen($o->cObra) < 1 || strlen($o->cObra) > 30)) {
-                $errors[] = 'cObra deve ter entre 1 e 30 caracteres';
-            }
-
-            if ($o->cCIB !== null && !preg_match('/^[0-9]{8}$/', $o->cCIB)) {
-                $errors[] = 'cCIB deve ter exatamente 8 dígitos numéricos';
-            }
-
-            $hasCObra = $o->cObra !== null;
-            $hasCCIB = $o->cCIB !== null;
-            $hasEnd = $o->endereco !== null;
-            $choices = ($hasCObra ? 1 : 0) + ($hasCCIB ? 1 : 0) + ($hasEnd ? 1 : 0);
-
-            if ($choices === 0) {
-                $errors[] = 'É obrigatório informar cObra, cCIB ou endereço (end) no grupo obra';
-            }
-            if ($choices > 1) {
-                $errors[] = 'cObra, cCIB e endereço (end) são mutuamente exclusivos — informe apenas um deles';
-            }
-
-            if ($o->endereco !== null) {
-                $e = $o->endereco;
-                if (empty($e->xLgr)) {
-                    $errors[] = 'Logradouro (xLgr) é obrigatório no endereço da obra';
-                }
-                if (empty($e->xBairro)) {
-                    $errors[] = 'Bairro (xBairro) é obrigatório no endereço da obra';
-                }
-            }
-        }
-
-        // Validações dos novos campos do Servico (locPrest, cServ, valores)
-        if ($request->servico->codigoPaisPrestacao !== null && !preg_match('/^[A-Z]{2}$/', $request->servico->codigoPaisPrestacao)) {
-            $errors[] = 'cPaisPrestacao deve ser um código ISO de país de 2 letras maiúsculas';
-        }
-
-        if ($request->servico->codigoTributacaoMunicipal !== null && !preg_match('/^[0-9]{3}$/', $request->servico->codigoTributacaoMunicipal)) {
-            $errors[] = 'cTribMun deve ter exatamente 3 dígitos numéricos';
-        }
-
-        if ($request->servico->codigoInternoContribuinte !== null && !preg_match('/^[a-zA-Z0-9]{1,20}$/', $request->servico->codigoInternoContribuinte)) {
-            $errors[] = 'cIntContrib deve ser alfanumérico de 1 a 20 caracteres';
-        }
-
-        if ($request->servico->valorRecebido !== null && $request->servico->valorRecebido <= 0) {
-            $errors[] = 'vReceb deve ser maior que zero';
-        }
-
-        // Validações do grupo comExterior
-        if ($request->servico->comExterior !== null) {
-            $ce = $request->servico->comExterior;
-
-            if ($ce->modoPrestacao === null) {
-                $errors[] = 'mdPrestacao é obrigatório no grupo comExterior';
-            } elseif (!in_array((string) $ce->modoPrestacao, ModoPrestacao::valores(), true)) {
-                $errors[] = 'mdPrestacao inválido — deve ser 0 (Desconhecido), 1 (Transfronteiriço), 2 (Consumo no Brasil), 3 (Presença Comercial no Exterior) ou 4 (Movimento Temporário PF)';
-            }
-
-            if ($ce->vinculoPrestador === null) {
-                $errors[] = 'vincPrest é obrigatório no grupo comExterior';
-            } elseif (!in_array((string) $ce->vinculoPrestador, VinculoPrestador::valores(), true)) {
-                $errors[] = 'vincPrest inválido — deve ser 0 (Sem vínculo), 1 (Controlada), 2 (Controladora), 3 (Coligada), 4 (Matriz), 5 (Filial), 6 (Outro vínculo) ou 9 (Desconhecido)';
-            }
-
-            if ($ce->codigoMoeda !== null && !preg_match('/^[0-9]{3}$/', $ce->codigoMoeda)) {
-                $errors[] = 'tpMoeda deve ser um código ISO de moeda numérico de 3 dígitos';
-            }
-
-            if ($ce->valorServicoMoeda !== null && $ce->valorServicoMoeda <= 0) {
-                $errors[] = 'vServMoeda deve ser maior que zero';
-            }
-
-            if ($ce->mecanismoApoioPrestador !== null && !in_array($ce->mecanismoApoioPrestador, MecanismoApoioPrestador::valores(), true)) {
-                $errors[] = 'mecAFComexP inválido — deve ser 00 a 08';
-            }
-
-            if ($ce->mecanismoApoioTomador !== null && !in_array($ce->mecanismoApoioTomador, MecanismoApoioTomador::valores(), true)) {
-                $errors[] = 'mecAFComexT inválido — deve ser 00 a 26';
-            }
-
-            if ($ce->movimentacaoTemporaria !== null && !in_array($ce->movimentacaoTemporaria, MovimentacaoTemporaria::valores(), true)) {
-                $errors[] = 'movTempBens inválido — deve ser 0 (Desconhecido), 1 (Não), 2 (Vinculada DI) ou 3 (Vinculada DE)';
-            }
-
-            if ($ce->enviarMDIC !== null && !in_array($ce->enviarMDIC, EnviarMdic::valores(), true)) {
-                $errors[] = 'envMDIC inválido — deve ser 0 (Não enviar) ou 1 (Enviar)';
-            }
-        }
-
-        // Validações do grupo atvEvento
-        if ($request->servico->atvEvento !== null) {
-            $ae = $request->servico->atvEvento;
-
-            if (empty($ae->descricao)) {
-                $errors[] = 'xNome (descricao) é obrigatório no grupo atvEvento';
-            }
-
-            if ($ae->dataInicio !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $ae->dataInicio)) {
-                $errors[] = 'dtIni deve estar no formato AAAA-MM-DD';
-            }
-
-            if ($ae->dataFim !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $ae->dataFim)) {
-                $errors[] = 'dtFim deve estar no formato AAAA-MM-DD';
-            }
-
-            if ($ae->dataInicio !== null && $ae->dataFim !== null && $ae->dataInicio > $ae->dataFim) {
-                $errors[] = 'dtIni não pode ser posterior a dtFim';
-            }
-        }
-
-        // Validações do grupo infoCompl
-        if ($request->servico->infoCompl !== null) {
-            $ic = $request->servico->infoCompl;
-
-            if ($ic->itensPedido !== null) {
-                foreach ($ic->itensPedido as $i => $item) {
-                    if (strlen($item) > 255) {
-                        $errors[] = "gItemPed #{$i} deve ter no máximo 255 caracteres";
-                    }
-                }
-            }
-        }
-
-        // Validações do grupo documentosDeducao (vDedRed)
-        if ($request->servico->documentosDeducao !== null) {
-            $validTypes = ['chNFSe', 'chNFe', 'NFSeMun', 'NFNFS', 'nDocFisc', 'nDoc'];
-
-            foreach ($request->servico->documentosDeducao as $i => $doc) {
-                $prefix = "DocDedRed #{$i}";
-
-                if ($doc->tipoDocumento === null || !in_array($doc->tipoDocumento, $validTypes, true)) {
-                    $errors[] = "{$prefix}: tipoDocumento inválido '{$doc->tipoDocumento}'";
-                }
-
-                if ($doc->tipoDocumento === 'chNFSe' && empty($doc->chaveNFSe)) {
-                    $errors[] = "{$prefix}: chNFSe é obrigatória para tipoDocumento = chNFSe";
-                }
-
-                if ($doc->tipoDocumento === 'chNFSe' && !empty($doc->chaveNFSe) && !preg_match('/^[0-9]{50}$/', $doc->chaveNFSe)) {
-                    $errors[] = "{$prefix}: chNFSe deve ter exatamente 50 dígitos numéricos";
-                }
-
-                if ($doc->tipoDocumento === 'chNFe' && empty($doc->chaveNFe)) {
-                    $errors[] = "{$prefix}: chNFe é obrigatória para tipoDocumento = chNFe";
-                }
-
-                if ($doc->tipoDocumento === 'chNFe' && !empty($doc->chaveNFe) && !preg_match('/^[0-9]{44}$/', $doc->chaveNFe)) {
-                    $errors[] = "{$prefix}: chNFe deve ter exatamente 44 dígitos numéricos";
-                }
-
-                if ($doc->tipoDocumento === 'NFSeMun') {
-                    if (empty($doc->codigoMunicipioNFSe)) {
-                        $errors[] = "{$prefix}: cMunNFSeMun é obrigatório para NFSeMun";
-                    }
-                    if (empty($doc->numeroNFSe)) {
-                        $errors[] = "{$prefix}: nNFSeMun é obrigatório para NFSeMun";
-                    }
-                    if (empty($doc->codigoVerificacaoNFSe)) {
-                        $errors[] = "{$prefix}: cVerifNFSeMun é obrigatório para NFSeMun";
-                    }
-                }
-
-                if ($doc->tipoDocumento === 'NFNFS') {
-                    if (empty($doc->numeroNFS)) {
-                        $errors[] = "{$prefix}: nNFS é obrigatório para NFNFS";
-                    }
-                    if (empty($doc->modeloNFS)) {
-                        $errors[] = "{$prefix}: modNFS é obrigatório para NFNFS";
-                    }
-                    if (empty($doc->serieNFS)) {
-                        $errors[] = "{$prefix}: serieNFS é obrigatório para NFNFS";
-                    }
-                }
-
-                if ($doc->tipoDocumento === 'nDocFisc' && empty($doc->numeroDocFiscal)) {
-                    $errors[] = "{$prefix}: nDocFisc é obrigatório para tipoDocumento = nDocFisc";
-                }
-
-                if ($doc->tipoDocumento === 'nDoc' && empty($doc->numeroDoc)) {
-                    $errors[] = "{$prefix}: nDoc é obrigatório para tipoDocumento = nDoc";
-                }
-
-                if ($doc->dataEmissaoDoc !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dataEmissaoDoc)) {
-                    $errors[] = "{$prefix}: dEmiDoc deve estar no formato AAAA-MM-DD";
-                }
-
-                if ($doc->tipoDeducaoReducao !== null && !in_array($doc->tipoDeducaoReducao, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '99'], true)) {
-                    $errors[] = "{$prefix}: tpDedRed inválido '{$doc->tipoDeducaoReducao}'";
-                }
-
-                if ($doc->tipoDeducaoReducao === '99' && empty($doc->descricaoOutrasDeducoes)) {
-                    $errors[] = "{$prefix}: xDescOutDed é obrigatório quando tpDedRed = 99";
-                }
-
-                if ($doc->valorDedutivel !== null && !is_numeric($doc->valorDedutivel)) {
-                    $errors[] = "{$prefix}: vDedutivelRedutivel deve ser um valor numérico";
-                }
-
-                if ($doc->valorDeducao !== null && !is_numeric($doc->valorDeducao)) {
-                    $errors[] = "{$prefix}: vDeducaoReducao deve ser um valor numérico";
-                }
-            }
-        }
-
-        // Validações do grupo tribMun
-        if ($request->servico->tribISSQN !== null && !in_array($request->servico->tribISSQN, TributacaoIssqn::valores(), true)) {
-            $errors[] = 'tribISSQN inválido — deve ser 1 (Operação tributável), 2 (Imunidade), 3 (Exportação) ou 4 (Não Incidência)';
-        }
-
-        if ($request->servico->tipoImunidade !== null && !in_array($request->servico->tipoImunidade, [0, 1, 2, 3, 4, 5], true)) {
-            $errors[] = 'tpImunidade inválido — deve ser 0, 1, 2, 3, 4 ou 5';
-        }
-
-        if ($request->servico->exigSusp !== null) {
-            $es = $request->servico->exigSusp;
-
-            if ($es->tipoSuspensao !== null && !in_array($es->tipoSuspensao, [1, 2], true)) {
-                $errors[] = 'tpSusp inválido — deve ser 1 (Decisão Judicial) ou 2 (Processo Administrativo)';
-            }
-
-            if ($es->numeroProcesso !== null && $es->numeroProcesso === '') {
-                $errors[] = 'nProcesso não pode ser vazio quando informado';
-            }
-        }
-
-        if ($request->servico->beneficioMunicipal !== null && empty($request->servico->beneficioMunicipal->numeroBeneficio)) {
-            $errors[] = 'nBM é obrigatório no grupo BM';
-        }
-
-        if ($request->servico->tpRetISSQN !== null && !in_array($request->servico->tpRetISSQN, TipoRetencaoIssqn::valores(), true)) {
-            $errors[] = 'tpRetISSQN inválido — deve ser 1 (Não Retido), 2 (Retido pelo Tomador) ou 3 (Retido pelo Intermediário)';
-        }
-
-        // Validações do grupo tribFed
-        if ($request->servico->tribFederal !== null) {
-            $tf = $request->servico->tribFederal;
-
-            if ($tf->pisCofinsCst !== null && !preg_match('/^[0-9]{2}$/', $tf->pisCofinsCst)) {
-                $errors[] = 'CST do PIS/COFINS deve ter exatamente 2 dígitos';
-            }
-
-            if ($tf->pisCofinsAliquotaPis !== null && ($tf->pisCofinsAliquotaPis < 0 || $tf->pisCofinsAliquotaPis > 100)) {
-                $errors[] = 'pAliqPis deve estar entre 0 e 100';
-            }
-
-            if ($tf->pisCofinsAliquotaCofins !== null && ($tf->pisCofinsAliquotaCofins < 0 || $tf->pisCofinsAliquotaCofins > 100)) {
-                $errors[] = 'pAliqCofins deve estar entre 0 e 100';
-            }
-
-            if ($tf->pisCofinsCst !== null && $tf->pisCofinsTipo === null) {
-                $errors[] = 'tipo do PIS/COFINS é obrigatório quando CST é informado';
-            }
-
-            if ($tf->pisCofinsTipo !== null && !in_array($tf->pisCofinsTipo, ['1', '2', '3'], true)) {
-                $errors[] = "tipo do PIS/COFINS inválido '{$tf->pisCofinsTipo}'";
-            }
-        }
-
-        // Validações do grupo totTrib
-        if ($request->servico->totTribTipo !== null) {
-            $validTotTrib = ['vTotTrib', 'pTotTrib', 'indTotTrib', 'pTotTribSN'];
-            if (!in_array($request->servico->totTribTipo, $validTotTrib, true)) {
-                $errors[] = "totTribTipo inválido '{$request->servico->totTribTipo}'";
-            }
-
-            if ($request->servico->totTribTipo === 'pTotTrib') {
-                if ($request->servico->pTotTribFed === null) {
-                    $errors[] = 'pTotTribFed é obrigatório quando totTribTipo = pTotTrib';
-                }
-                if ($request->servico->pTotTribEst === null) {
-                    $errors[] = 'pTotTribEst é obrigatório quando totTribTipo = pTotTrib';
-                }
-                if ($request->servico->pTotTribMun === null) {
-                    $errors[] = 'pTotTribMun é obrigatório quando totTribTipo = pTotTrib';
-                }
-            }
-
-            if ($request->servico->totTribTipo === 'indTotTrib' && $request->servico->indTotTrib === null) {
-                $errors[] = 'indTotTrib é obrigatório quando totTribTipo = indTotTrib';
-            }
-
-            if ($request->servico->totTribTipo === 'pTotTribSN' && $request->servico->pTotTribSN === null) {
-                $errors[] = 'pTotTribSN é obrigatório quando totTribTipo = pTotTribSN';
-            }
-        }
-
-        if ($request->ibscbs !== null) {
-            $req = $request->ibscbs;
-
-            // E0850: IBS/CBS permitido somente a partir de 01/01/2026
-            $dataCompetencia = new \DateTimeImmutable($request->dataCompetencia);
-            $dataLimite = new \DateTimeImmutable('2026-01-01');
-            if ($dataCompetencia < $dataLimite) {
-                $errors[] = 'E0850: IBS/CBS permitido somente a partir da data de competência 01/01/2026';
-            }
-
-            // NBS obrigatório quando IBSCBS informado
-            if (empty($request->servico->codigoNbs)) {
-                $errors[] = 'E1508: Código NBS é obrigatório quando informações de IBS/CBS são declaradas';
-            }
-
-            if ($req->finNFSe === '') {
-                $errors[] = 'Finalidade da NFS-e (finNFSe) é obrigatória para IBS/CBS';
-            }
-
-            if ($req->cIndOp === '') {
-                $errors[] = 'Código indicador da operação (cIndOp) é obrigatório para IBS/CBS';
-            }
-
-            if ($req->indDest === '') {
-                $errors[] = 'Indicador de destinação (indDest) é obrigatório para IBS/CBS';
-            }
-
-            if ($req->cst === '') {
-                $errors[] = 'Código de Situação Tributária (CST) é obrigatório para IBS/CBS';
-            }
-
-            if ($req->cClassTrib === '') {
-                $errors[] = 'Código de Classificação Tributária (cClassTrib) é obrigatório para IBS/CBS';
-            }
-
-            if ($req->finNFSe !== '0') {
-                $errors[] = 'Finalidade da NFS-e deve ser 0 (NFS-e regular)';
-            }
-
-            if (!preg_match('/^[0-9]{6}$/', $req->cIndOp)) {
-                $errors[] = 'cIndOp deve ter exatamente 6 dígitos';
-            }
-
-            if (!preg_match('/^[0-9]{3}$/', $req->cst)) {
-                $errors[] = 'CST deve ter exatamente 3 dígitos';
-            }
-
-            if (!preg_match('/^[0-9]{6}$/', $req->cClassTrib)) {
-                $errors[] = 'cClassTrib deve ter exatamente 6 dígitos';
-            }
-
-            // E0959: 3 primeiros dígitos do cClassTrib devem ser iguais ao CST
-            if (substr($req->cClassTrib, 0, 3) !== $req->cst) {
-                $errors[] = 'E0959: cClassTrib não pertence ao grupo CST informado (3 primeiros dígitos devem ser iguais ao CST)';
-            }
-
-            // E0970: 3 primeiros dígitos do cClassTribReg devem ser iguais ao CSTReg
-            if ($req->tribRegular !== null) {
-                if (substr($req->tribRegular->cClassTribReg, 0, 3) !== $req->tribRegular->cstReg) {
-                    $errors[] = 'E0970: cClassTribReg não pertence ao grupo CSTReg informado (3 primeiros dígitos devem ser iguais ao CSTReg)';
-                }
-            }
-
-            // E0910: indDest=0 → destinatário é o tomador (dest não deve ser informado)
-            //         indDest=1 → destinatário é terceiro (dest deve ser informado)
-            if ($req->indDest === '0' && $req->dest !== null) {
-                $errors[] = 'E0910: destinatário não deve ser identificado (indDest=0, tomador é o destinatário)';
-            }
-            if ($req->indDest === '1' && $req->dest === null) {
-                $errors[] = 'E0910: destinatário deve ser identificado (indDest=1, terceiro é o destinatário)';
-            }
-
-            if ($req->cCredPres !== null && !preg_match('/^[0-9]{2}$/', $req->cCredPres)) {
-                $errors[] = 'cCredPres deve ter exatamente 2 dígitos';
-            }
-
-            if ($req->dest !== null && empty($req->dest->xNome)) {
-                $errors[] = 'Nome do destinatário (xNome) é obrigatório quando informado o grupo dest';
-            }
-
-            // gRefNFSe: grupo de NFS-e referenciadas
-            if ($req->tpOper !== null && $req->tpOper !== '') {
-                $tpOper = (int) $req->tpOper;
-                $hasRef = $req->refNFSeList !== null && $req->refNFSeList !== [];
-
-                if (($tpOper === 2 || $tpOper === 3) && !$hasRef) {
-                    $errors[] = 'gRefNFSe deve ser informado quando tpOper = 2 ou 3';
-                }
-                if (!($tpOper === 2 || $tpOper === 3) && $hasRef) {
-                    $errors[] = 'gRefNFSe não pode ser informado para o tpOper informado';
-                }
-            } elseif ($req->refNFSeList !== null && $req->refNFSeList !== []) {
-                $errors[] = 'gRefNFSe não pode ser informado se tpOper não foi informado';
-            }
-
-            if ($req->refNFSeList !== null) {
-                foreach ($req->refNFSeList as $i => $chave) {
-                    if (!preg_match('/^[0-9]{50}$/', $chave)) {
-                        $errors[] = "E0907: refNFSe #{$i} inválida — deve ter exatamente 50 dígitos numéricos";
-                    }
-                }
-            }
-
-            // Validações do grupo imovel
-            if ($req->imovel !== null) {
-                $im = $req->imovel;
-
-                if ($im->cCIB !== null && !preg_match('/^[0-9]{8}$/', $im->cCIB)) {
-                    $errors[] = 'cCIB deve ter exatamente 8 dígitos numéricos';
-                }
-
-                if ($im->cCIB !== null && $im->endereco !== null) {
-                    $errors[] = 'cCIB e endereço (end) são mutuamente exclusivos — informe apenas um deles';
-                }
-
-                if ($im->cCIB === null && $im->endereco === null) {
-                    $errors[] = 'É obrigatório informar cCIB ou endereço (end) no grupo imovel';
-                }
-
-                if ($im->endereco !== null) {
-                    $e = $im->endereco;
-                    if (empty($e->xLgr)) {
-                        $errors[] = 'Logradouro (xLgr) é obrigatório no endereço do imóvel';
-                    }
-                    if (empty($e->xBairro)) {
-                        $errors[] = 'Bairro (xBairro) é obrigatório no endereço do imóvel';
-                    }
-                }
-            }
-
-            // Validações do grupo gReeRepRes
-            if ($req->reeRepRes !== null) {
-                if (empty($req->reeRepRes->documentos)) {
-                    $errors[] = 'gReeRepRes deve conter ao menos um documento';
-                }
-
-                foreach ($req->reeRepRes->documentos as $i => $doc) {
-                    $prefix = "Documento #{$i}";
-
-                    if (!in_array($doc->tipoDocumento, ['dFeNacional', 'docFiscalOutro', 'docOutro'], true)) {
-                        $errors[] = "{$prefix}: tipoDocumento inválido '{$doc->tipoDocumento}'";
-                    }
-
-                    // Validate dates
-                    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dtEmiDoc)) {
-                        $errors[] = "{$prefix}: dtEmiDoc deve estar no formato AAAA-MM-DD";
-                    }
-                    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dtCompDoc)) {
-                        $errors[] = "{$prefix}: dtCompDoc deve estar no formato AAAA-MM-DD";
-                    }
-
-                    if (!in_array($doc->tpReeRepRes, TipoReembolsoRepasseRessarcimento::valores(), true)) {
-                        $errors[] = "{$prefix}: tpReeRepRes inválido '{$doc->tpReeRepRes}'";
-                    }
-
-                    if ($doc->vlrReeRepRes <= 0) {
-                        $errors[] = "{$prefix}: vlrReeRepRes deve ser maior que zero";
-                    }
-
-                    if ($doc->tpReeRepRes === '99' && empty($doc->xTpReeRepRes)) {
-                        $errors[] = "{$prefix}: xTpReeRepRes é obrigatório quando tpReeRepRes = 99";
-                    }
-
-                    if ($doc->tipoDocumento === 'dFeNacional') {
-                        if (!in_array($doc->tipoChaveDFe, TipoChaveDocumentoFiscal::valores(), true)) {
-                            $errors[] = "{$prefix}: tipoChaveDFe inválido '{$doc->tipoChaveDFe}'";
-                        }
-                        if (empty($doc->chaveDFe)) {
-                            $errors[] = "{$prefix}: chaveDFe é obrigatória para dFeNacional";
-                        }
-                        if ($doc->tipoChaveDFe === '9' && empty($doc->xTipoChaveDFe)) {
-                            $errors[] = "{$prefix}: xTipoChaveDFe é obrigatório quando tipoChaveDFe = 9";
-                        }
-                    }
-
-                    if ($doc->tipoDocumento === 'docFiscalOutro') {
-                        if (!preg_match('/^\d{7}$/', $doc->cMunDocFiscal ?? '')) {
-                            $errors[] = "{$prefix}: cMunDocFiscal deve ter exatamente 7 dígitos";
-                        }
-                        if (empty($doc->nDocFiscal)) {
-                            $errors[] = "{$prefix}: nDocFiscal é obrigatório para docFiscalOutro";
-                        }
-                        if (empty($doc->xDocFiscal)) {
-                            $errors[] = "{$prefix}: xDocFiscal é obrigatório para docFiscalOutro";
-                        }
-                    }
-
-                    if ($doc->tipoDocumento === 'docOutro') {
-                        if (empty($doc->nDoc)) {
-                            $errors[] = "{$prefix}: nDoc é obrigatório para docOutro";
-                        }
-                        if (empty($doc->xDoc)) {
-                            $errors[] = "{$prefix}: xDoc é obrigatório para docOutro";
-                        }
-                    }
-                }
-            }
-
-            // Validações contra tabela de propriedades cClassTrib (IT 2025.002)
-            if ($this->cstClassTribRepository !== null && $req->cClassTrib !== '') {
-                $props = $this->cstClassTribRepository->findByCode($req->cClassTrib);
-
-                if ($props === null) {
-                    $errors[] = "cClassTrib '{$req->cClassTrib}' não encontrado na tabela oficial de classificação tributária";
-                } else {
-                    if (!$props->isValidoParaNfse()) {
-                        $errors[] = "cClassTrib '{$req->cClassTrib}' não é suportado para operações de prestação de serviços (NFS-e)";
-                    }
-
-                    if ($props->isPermiteDiferimento() && $req->diferimento === null) {
-                        $errors[] = 'Diferimento (gDif) deve ser informado para o cClassTrib indicado (permiteDiferimento=true)';
-                    }
-                    if (!$props->isPermiteDiferimento() && $req->diferimento !== null) {
-                        $errors[] = 'Diferimento (gDif) não deve ser informado para o cClassTrib indicado (permiteDiferimento=false)';
-                    }
-
-                    if ($props->isExigeGrupoTributacaoRegular() && $req->tribRegular === null) {
-                        $errors[] = 'Grupo de tributação regular (gTribRegular) deve ser informado para o cClassTrib indicado';
-                    }
-                    if (!$props->isExigeGrupoTributacaoRegular() && $req->tribRegular !== null) {
-                        $errors[] = 'Grupo de tributação regular (gTribRegular) não deve ser informado para o cClassTrib indicado';
-                    }
-                }
-
-                // Valida cClassTribReg se gTribRegular estiver presente
-                if ($req->tribRegular !== null && $req->tribRegular->cClassTribReg !== '') {
-                    $propsReg = $this->cstClassTribRepository->findByCode($req->tribRegular->cClassTribReg);
-                    if ($propsReg === null) {
-                        $errors[] = "cClassTribReg '{$req->tribRegular->cClassTribReg}' não encontrado na tabela oficial de classificação tributária";
-                    } elseif (!$propsReg->isValidoParaNfse()) {
-                        $errors[] = "cClassTribReg '{$req->tribRegular->cClassTribReg}' não é suportado para operações de prestação de serviços (NFS-e)";
-                    }
-                }
-            }
-        }
-
-        // Validações do grupo substituição
-        if ($request->substituicao !== null) {
-            $s = $request->substituicao;
-
-            if (!preg_match('/^[0-9]{50}$/', $s->chaveSubstituida)) {
-                $errors[] = 'chSubstda deve ter exatamente 50 dígitos numéricos';
-            }
-
-            if (!in_array($s->codigoMotivo, MotivoSubstituicao::valores(), true)) {
-                $errors[] = "cMotivo inválido: '{$s->codigoMotivo}'";
-            }
-
-            if ($s->codigoMotivo === '99') {
-                if ($s->descricaoMotivo === null || trim($s->descricaoMotivo) === '') {
-                    $errors[] = 'xMotivo é obrigatório quando cMotivo = 99';
-                }
-            }
-
-            if ($s->descricaoMotivo !== null) {
-                $len = mb_strlen(trim($s->descricaoMotivo));
-                if ($len > 0 && $len < 15) {
-                    $errors[] = 'xMotivo deve ter no mínimo 15 caracteres';
-                }
-                if ($len > 255) {
-                    $errors[] = 'xMotivo deve ter no máximo 255 caracteres';
-                }
-            }
-        }
+        $this->validateInfDps($request, $errors);
+        $this->validatePrestador($request, $errors);
+        $this->validateTomador($request, $errors);
+        $this->validateIntermediario($request, $errors);
+        $this->validateServico($request, $errors);
+        $this->validateIbsCbs($request, $errors);
+        $this->validateSubstituicao($request, $errors);
 
         if (!empty($errors)) {
             throw new ValidationException(implode('; ', $errors));
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateInfDps(DpsRequest $request, array &$errors): void
+    {
+        if (!in_array($request->tipoAmbiente, TipoAmbiente::valores(), true)) {
+            $errors[] = 'tpAmb inválido — deve ser 1 (Produção) ou 2 (Homologação)';
+        }
+
+        if (!in_array($request->tipoEmissao, TipoEmitente::valores(), true)) {
+            $errors[] = 'tpEmit inválido — deve ser 1 (Prestador), 2 (Tomador) ou 3 (Intermediário) (TSEmitenteDPS)';
+        }
+
+        if ($request->cMotivoEmisTI !== null && !in_array($request->cMotivoEmisTI, MotivoEmissaoTI::valores(), true)) {
+            $errors[] = 'cMotivoEmisTI inválido (TSMotivoEmisTI)';
+        }
+
+        $serieStr = sprintf('%05d', $request->serie);
+        if (!preg_match('/^0{0,4}\d{1,5}$/', $serieStr)) {
+            $errors[] = 'serie deve ser numérico de 1 a 5 dígitos (TSSerieDPS)';
+        }
+
+        $nDpsStr = (string) $request->numero;
+        if (!preg_match('/^[1-9][0-9]{0,14}$/', $nDpsStr)) {
+            $errors[] = 'nDPS deve ser numérico de 1 a 15 dígitos, sem leading zeros (TSNumDPS)';
+        }
+
+        if (empty($request->versaoAplicacao)) {
+            $errors[] = 'verAplic é obrigatória';
+        } elseif (strlen($request->versaoAplicacao) > 20) {
+            $errors[] = 'verAplic deve ter no máximo 20 caracteres (TSVerAplic)';
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[\-+]\d{2}:\d{2}$/', $request->dataEmissao)) {
+            $errors[] = 'dhEmi deve estar no formato AAAA-MM-DDTHH:MM:SS±HH:MM (TSDateTimeUTC)';
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $request->dataCompetencia)) {
+            $errors[] = 'dCompet deve estar no formato AAAA-MM-DD (TSData)';
+        }
+
+        if (!preg_match('/^[0-9]{7}$/', $request->codigoMunicipioEmissor)) {
+            $errors[] = 'cLocEmi deve ter exatamente 7 dígitos numéricos (TSCodMunIBGE)';
+        }
+
+        if ($request->chNFSeRej !== null && !preg_match('/^[0-9]{50}$/', $request->chNFSeRej)) {
+            $errors[] = 'chNFSeRej deve ter exatamente 50 dígitos numéricos (TSChaveNFSe)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validatePrestador(DpsRequest $request, array &$errors): void
+    {
+        $p = $request->prestador;
+
+        if (!in_array($p->regimeTributario, RegimeTributario::valores(), true)) {
+            $errors[] = 'opSimpNac inválido — deve ser 1, 2 ou 3 (TSOpSimpNac)';
+        }
+
+        if ($p->regApTribSN !== null && !in_array($p->regApTribSN, [1, 2, 3], true)) {
+            $errors[] = 'regApTribSN inválido — deve ser 1, 2 ou 3 (TSRegimeApuracaoSimpNac)';
+        }
+
+        if ($p->regEspTrib !== null && !in_array((string) $p->regEspTrib, RegimeEspecialTributacao::valores(), true)) {
+            $errors[] = 'regEspTrib inválido — deve ser 0, 1, 2, 3, 4, 5, 6 ou 9 (TSRegEspTrib)';
+        }
+
+        if (strlen($p->razaoSocial) > 300) {
+            $errors[] = 'xNome do prestador deve ter no máximo 300 caracteres (TSNomeRazaoSocial)';
+        }
+
+        $idCount = 0;
+        if ($p->documento !== null) {
+            $idCount++;
+        }
+        if ($p->nif !== null) {
+            $idCount++;
+        }
+        if ($p->codigoNaoNif !== null) {
+            $idCount++;
+        }
+
+        if ($idCount === 0) {
+            $errors[] = 'Prestador deve ter CNPJ, CPF, NIF ou cNaoNIF';
+        }
+        if ($idCount > 1) {
+            $errors[] = 'Prestador: CNPJ, CPF, NIF e cNaoNIF são mutuamente exclusivos';
+        }
+
+        if ($p->documento !== null) {
+            if ($p->isCnpj === true) {
+                if (!preg_match('/^[0-9]{14}$/', $p->documento)) {
+                    $errors[] = 'CNPJ do prestador deve ter 14 dígitos numéricos (TSCNPJ)';
+                }
+            } elseif ($p->isCnpj === false) {
+                if (!preg_match('/^[0-9]{11}$/', $p->documento)) {
+                    $errors[] = 'CPF do prestador deve ter 11 dígitos numéricos (TSCPF)';
+                }
+            }
+        }
+
+        if ($p->nif !== null && (strlen($p->nif) < 1 || strlen($p->nif) > 40)) {
+            $errors[] = 'NIF do prestador deve ter 1 a 40 caracteres (TSNIF)';
+        }
+
+        if ($p->codigoNaoNif !== null && !in_array($p->codigoNaoNif, CausaNaoNif::valores(), true)) {
+            $errors[] = 'cNaoNIF inválido — deve ser 0, 1 ou 2 (TSCodNaoNIF)';
+        }
+
+        if ($p->caepf !== null && !preg_match('/^[0-9]{14}$/', $p->caepf)) {
+            $errors[] = 'CAEPF do prestador deve ter 14 dígitos numéricos (TSCAEPF)';
+        }
+
+        if ($p->inscricaoMunicipal !== null && (strlen($p->inscricaoMunicipal) < 1 || strlen($p->inscricaoMunicipal) > 15)) {
+            $errors[] = 'IM do prestador deve ter 1 a 15 caracteres (TSInscMun)';
+        }
+
+        if (!preg_match('/^[0-9]{7}$/', $p->codigoMunicipio)) {
+            $errors[] = 'cMun do prestador deve ter 7 dígitos numéricos (TSCodMunIBGE)';
+        }
+
+        if (!preg_match('/^[0-9]{8}$/', $p->cep)) {
+            $errors[] = 'CEP do prestador deve ter 8 dígitos numéricos (TSCEP)';
+        }
+
+        if (empty($p->logradouro)) {
+            $errors[] = 'xLgr do prestador é obrigatório (TSLogradouro)';
+        } elseif (strlen($p->logradouro) > 255) {
+            $errors[] = 'xLgr do prestador deve ter no máximo 255 caracteres (TSLogradouro)';
+        }
+
+        if (empty($p->numero)) {
+            $errors[] = 'nro do prestador é obrigatório (TSNumeroEndereco)';
+        } elseif (strlen($p->numero) > 60) {
+            $errors[] = 'nro do prestador deve ter no máximo 60 caracteres (TSNumeroEndereco)';
+        }
+
+        if ($p->complemento !== null && (strlen($p->complemento) < 1 || strlen($p->complemento) > 156)) {
+            $errors[] = 'xCpl do prestador deve ter 1 a 156 caracteres (TSComplementoEndereco)';
+        }
+
+        if (empty($p->bairro)) {
+            $errors[] = 'xBairro do prestador é obrigatório (TSBairro)';
+        } elseif (strlen($p->bairro) > 60) {
+            $errors[] = 'xBairro do prestador deve ter no máximo 60 caracteres (TSBairro)';
+        }
+
+        if (!in_array($p->uf, self::UFS, true)) {
+            $errors[] = 'UF do prestador inválida (TSUF)';
+        }
+
+        if ($p->telefone !== null && !preg_match('/^[0-9]{6,20}$/', $p->telefone)) {
+            $errors[] = 'fone do prestador deve ter 6 a 20 dígitos numéricos (TSTelefone)';
+        }
+
+        if ($p->email !== null && (strlen($p->email) < 1 || strlen($p->email) > 80)) {
+            $errors[] = 'email do prestador deve ter 1 a 80 caracteres (TSEmail)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateTomador(DpsRequest $request, array &$errors): void
+    {
+        $t = $request->tomador;
+        if ($t === null) {
+            return;
+        }
+
+        if (empty($t->razaoSocial)) {
+            $errors[] = 'xNome do tomador é obrigatória (TSNomeRazaoSocial)';
+        } elseif (strlen($t->razaoSocial) > 300) {
+            $errors[] = 'xNome do tomador deve ter no máximo 300 caracteres (TSNomeRazaoSocial)';
+        }
+
+        if ($t->nomeFantasia !== null && (strlen($t->nomeFantasia) < 1 || strlen($t->nomeFantasia) > 150)) {
+            $errors[] = 'xFant do tomador deve ter 1 a 150 caracteres (TSNomeFantasia)';
+        }
+
+        $idCount = 0;
+        if ($t->documento !== null) {
+            $idCount++;
+        }
+        if ($t->nif !== null) {
+            $idCount++;
+        }
+        if ($t->codigoNaoNif !== null) {
+            $idCount++;
+        }
+
+        if ($idCount === 0) {
+            $errors[] = 'Tomador deve ter CNPJ, CPF, NIF ou cNaoNIF';
+        }
+        if ($idCount > 1) {
+            $errors[] = 'Tomador: CNPJ, CPF, NIF e cNaoNIF são mutuamente exclusivos';
+        }
+
+        if ($t->documento !== null) {
+            if ($t->isCnpj === true) {
+                if (!preg_match('/^[0-9]{14}$/', $t->documento)) {
+                    $errors[] = 'CNPJ do tomador deve ter 14 dígitos numéricos (TSCNPJ)';
+                }
+            } elseif ($t->isCnpj === false) {
+                if (!preg_match('/^[0-9]{11}$/', $t->documento)) {
+                    $errors[] = 'CPF do tomador deve ter 11 dígitos numéricos (TSCPF)';
+                }
+            }
+        }
+
+        if ($t->nif !== null && (strlen($t->nif) < 1 || strlen($t->nif) > 40)) {
+            $errors[] = 'NIF do tomador deve ter 1 a 40 caracteres (TSNIF)';
+        }
+
+        if ($t->codigoNaoNif !== null && !in_array($t->codigoNaoNif, CausaNaoNif::valores(), true)) {
+            $errors[] = 'cNaoNIF do tomador inválido — deve ser 0, 1 ou 2 (TSCodNaoNIF)';
+        }
+
+        if ($t->caepf !== null && !preg_match('/^[0-9]{14}$/', $t->caepf)) {
+            $errors[] = 'CAEPF do tomador deve ter 14 dígitos numéricos (TSCAEPF)';
+        }
+
+        if ($t->inscricaoMunicipal !== null && (strlen($t->inscricaoMunicipal) < 1 || strlen($t->inscricaoMunicipal) > 15)) {
+            $errors[] = 'IM do tomador deve ter 1 a 15 caracteres (TSInscMun)';
+        }
+
+        if (!preg_match('/^[0-9]{7}$/', $t->codigoMunicipio)) {
+            $errors[] = 'cMun do tomador deve ter 7 dígitos numéricos (TSCodMunIBGE)';
+        }
+
+        if (!preg_match('/^[0-9]{8}$/', $t->cep)) {
+            $errors[] = 'CEP do tomador deve ter 8 dígitos numéricos (TSCEP)';
+        }
+
+        if (strlen($t->logradouro) > 255) {
+            $errors[] = 'xLgr do tomador deve ter no máximo 255 caracteres (TSLogradouro)';
+        }
+
+        if (strlen($t->numero) > 60) {
+            $errors[] = 'nro do tomador deve ter no máximo 60 caracteres (TSNumeroEndereco)';
+        }
+
+        if ($t->complemento !== null && (strlen($t->complemento) < 1 || strlen($t->complemento) > 156)) {
+            $errors[] = 'xCpl do tomador deve ter 1 a 156 caracteres (TSComplementoEndereco)';
+        }
+
+        if (strlen($t->bairro) > 60) {
+            $errors[] = 'xBairro do tomador deve ter no máximo 60 caracteres (TSBairro)';
+        }
+
+        if (!in_array($t->uf, self::UFS, true)) {
+            $errors[] = 'UF do tomador inválida (TSUF)';
+        }
+
+        if ($t->codigoPais !== null && !preg_match('/^[A-Z]{2}$/', $t->codigoPais)) {
+            $errors[] = 'cPais do tomador deve ser 2 letras maiúsculas (TSCodPaisISO)';
+        }
+
+        if ($t->codigoPostalExterior !== null && (strlen($t->codigoPostalExterior) < 1 || strlen($t->codigoPostalExterior) > 11)) {
+            $errors[] = 'cEndPost do tomador deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
+        }
+
+        if ($t->nomeCidadeExterior !== null && (strlen($t->nomeCidadeExterior) < 1 || strlen($t->nomeCidadeExterior) > 60)) {
+            $errors[] = 'xCidade do tomador deve ter 1 a 60 caracteres (TSCidade)';
+        }
+
+        if ($t->estadoProvinciaExterior !== null && (strlen($t->estadoProvinciaExterior) < 1 || strlen($t->estadoProvinciaExterior) > 60)) {
+            $errors[] = 'xEstProvReg do tomador deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
+        }
+
+        if ($t->telefone !== null && !preg_match('/^[0-9]{6,20}$/', $t->telefone)) {
+            $errors[] = 'fone do tomador deve ter 6 a 20 dígitos numéricos (TSTelefone)';
+        }
+
+        if ($t->email !== null && (strlen($t->email) < 1 || strlen($t->email) > 80)) {
+            $errors[] = 'email do tomador deve ter 1 a 80 caracteres (TSEmail)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIntermediario(DpsRequest $request, array &$errors): void
+    {
+        $i = $request->intermediario;
+        if ($i === null) {
+            return;
+        }
+
+        if (empty($i->razaoSocial)) {
+            $errors[] = 'xNome do intermediário é obrigatória (TSNomeRazaoSocial)';
+        } elseif (strlen($i->razaoSocial) > 300) {
+            $errors[] = 'xNome do intermediário deve ter no máximo 300 caracteres (TSNomeRazaoSocial)';
+        }
+
+        $idCount = 0;
+        if ($i->documento !== null) {
+            $idCount++;
+        }
+        if ($i->nif !== null) {
+            $idCount++;
+        }
+        if ($i->codigoNaoNif !== null) {
+            $idCount++;
+        }
+
+        if ($idCount === 0) {
+            $errors[] = 'Intermediário deve ter CNPJ, CPF, NIF ou cNaoNIF';
+        }
+        if ($idCount > 1) {
+            $errors[] = 'Intermediário: CNPJ, CPF, NIF e cNaoNIF são mutuamente exclusivos';
+        }
+
+        if ($i->documento !== null) {
+            if ($i->isCnpj === true) {
+                if (!preg_match('/^[0-9]{14}$/', $i->documento)) {
+                    $errors[] = 'CNPJ do intermediário deve ter 14 dígitos numéricos (TSCNPJ)';
+                }
+            } elseif ($i->isCnpj === false) {
+                if (!preg_match('/^[0-9]{11}$/', $i->documento)) {
+                    $errors[] = 'CPF do intermediário deve ter 11 dígitos numéricos (TSCPF)';
+                }
+            }
+        }
+
+        if ($i->nif !== null && (strlen($i->nif) < 1 || strlen($i->nif) > 40)) {
+            $errors[] = 'NIF do intermediário deve ter 1 a 40 caracteres (TSNIF)';
+        }
+
+        if ($i->codigoNaoNif !== null && !in_array($i->codigoNaoNif, CausaNaoNif::valores(), true)) {
+            $errors[] = 'cNaoNIF do intermediário inválido — deve ser 0, 1 ou 2 (TSCodNaoNIF)';
+        }
+
+        if ($i->caepf !== null && !preg_match('/^[0-9]{14}$/', $i->caepf)) {
+            $errors[] = 'CAEPF do intermediário deve ter 14 dígitos numéricos (TSCAEPF)';
+        }
+
+        if ($i->inscricaoMunicipal !== null && strlen($i->inscricaoMunicipal) > 15) {
+            $errors[] = 'IM do intermediário deve ter no máximo 15 caracteres (TSInscMun)';
+        }
+
+        $hasAddress = !empty($i->codigoMunicipio) || !empty($i->cep) || !empty($i->logradouro)
+            || !empty($i->numero) || !empty($i->complemento) || !empty($i->bairro) || !empty($i->uf);
+
+        if ($hasAddress) {
+            if (!preg_match('/^[0-9]{7}$/', $i->codigoMunicipio)) {
+                $errors[] = 'cMun do intermediário deve ter 7 dígitos numéricos (TSCodMunIBGE)';
+            }
+
+            if (!preg_match('/^[0-9]{8}$/', $i->cep)) {
+                $errors[] = 'CEP do intermediário deve ter 8 dígitos numéricos (TSCEP)';
+            }
+
+            if (strlen($i->logradouro) > 255) {
+                $errors[] = 'xLgr do intermediário deve ter no máximo 255 caracteres (TSLogradouro)';
+            }
+
+            if (strlen($i->numero) > 60) {
+                $errors[] = 'nro do intermediário deve ter no máximo 60 caracteres (TSNumeroEndereco)';
+            }
+
+            if ($i->complemento !== null && strlen($i->complemento) > 156) {
+                $errors[] = 'xCpl do intermediário deve ter no máximo 156 caracteres (TSComplementoEndereco)';
+            }
+
+            if (strlen($i->bairro) > 60) {
+                $errors[] = 'xBairro do intermediário deve ter no máximo 60 caracteres (TSBairro)';
+            }
+
+            if (!in_array($i->uf, self::UFS, true)) {
+                $errors[] = 'UF do intermediário inválida (TSUF)';
+            }
+        }
+
+        if ($i->codigoPais !== null && !preg_match('/^[A-Z]{2}$/', $i->codigoPais)) {
+            $errors[] = 'cPais do intermediário deve ser 2 letras maiúsculas (TSCodPaisISO)';
+        }
+
+        if ($i->codigoPostalExterior !== null && (strlen($i->codigoPostalExterior) < 1 || strlen($i->codigoPostalExterior) > 11)) {
+            $errors[] = 'cEndPost do intermediário deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
+        }
+
+        if ($i->nomeCidadeExterior !== null && (strlen($i->nomeCidadeExterior) < 1 || strlen($i->nomeCidadeExterior) > 60)) {
+            $errors[] = 'xCidade do intermediário deve ter 1 a 60 caracteres (TSCidade)';
+        }
+
+        if ($i->estadoProvinciaExterior !== null && (strlen($i->estadoProvinciaExterior) < 1 || strlen($i->estadoProvinciaExterior) > 60)) {
+            $errors[] = 'xEstProvReg do intermediário deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
+        }
+
+        if ($i->telefone !== null && !preg_match('/^[0-9]{6,20}$/', $i->telefone)) {
+            $errors[] = 'fone do intermediário deve ter 6 a 20 dígitos numéricos (TSTelefone)';
+        }
+
+        if ($i->email !== null && (strlen($i->email) < 1 || strlen($i->email) > 80)) {
+            $errors[] = 'email do intermediário deve ter 1 a 80 caracteres (TSEmail)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateServico(DpsRequest $request, array &$errors): void
+    {
+        $s = $request->servico;
+
+        if (empty($s->discriminacao)) {
+            $errors[] = 'xDescServ é obrigatória (TSDesc2000)';
+        } elseif (strlen($s->discriminacao) > 2000) {
+            $errors[] = 'xDescServ deve ter no máximo 2000 caracteres (TSDesc2000)';
+        }
+
+        if (empty($s->codigoTributacao)) {
+            $errors[] = 'cTribNac é obrigatório (TSCodTribNac)';
+        } elseif (!preg_match('/^[0-9]{6}$/', $s->codigoTributacao)) {
+            $errors[] = 'cTribNac deve ter 6 dígitos numéricos (TSCodTribNac)';
+        }
+
+        if ($s->codigoTributacaoMunicipal !== null && !preg_match('/^[0-9]{3}$/', $s->codigoTributacaoMunicipal)) {
+            $errors[] = 'cTribMun deve ter 3 dígitos numéricos (TCCodTribMun)';
+        }
+
+        if ($s->codigoNbs !== null && !preg_match('/^[0-9]{9}$/', $s->codigoNbs)) {
+            $errors[] = 'cNBS deve ter 9 dígitos numéricos (TSCodNBS)';
+        }
+
+        if ($s->codigoInternoContribuinte !== null && !preg_match('/^[a-zA-Z0-9]{1,20}$/', $s->codigoInternoContribuinte)) {
+            $errors[] = 'cIntContrib deve ser alfanumérico de 1 a 20 caracteres (TSCodigoInternoContribuinte)';
+        }
+
+        if ($s->valorServicos <= 0) {
+            $errors[] = 'vServ deve ser maior que zero (TSDec15V2)';
+        }
+
+        if ($s->descontoIncondicionado < 0) {
+            $errors[] = 'vDescIncond não pode ser negativo (TSDec15V2)';
+        }
+
+        if ($s->descontoCondicionado < 0) {
+            $errors[] = 'vDescCond não pode ser negativo (TSDec15V2)';
+        }
+
+        if ($s->aliquotaIss < 0 || $s->aliquotaIss > 100) {
+            $errors[] = 'pAliq deve estar entre 0 e 100 (TSDec1V2)';
+        }
+
+        if ($s->valorRecebido !== null && $s->valorRecebido <= 0) {
+            $errors[] = 'vReceb deve ser maior que zero (TSDec15V2)';
+        }
+
+        $this->validateLocPrest($s, $errors);
+        $this->validateObra($s, $errors);
+        $this->validateComExterior($s, $errors);
+        $this->validateAtvEvento($s, $errors);
+        $this->validateInfoCompl($s, $errors);
+        $this->validateDocumentosDeducao($s, $errors);
+        $this->validateTribMun($s, $errors);
+        $this->validateTribFed($s, $errors);
+        $this->validateTotTrib($s, $errors);
+    }
+
+    /** @param array<string> $errors */
+    private function validateLocPrest(ServicoRequest $s, array &$errors): void
+    {
+        $hasLoc = $s->codigoMunicipioPrestacao !== null && $s->codigoMunicipioPrestacao !== '';
+        $hasPais = $s->codigoPaisPrestacao !== null && $s->codigoPaisPrestacao !== '';
+
+        if (!$hasLoc && !$hasPais) {
+            $errors[] = 'É obrigatório informar cLocPrestacao ou cPaisPrestacao (TCLocPrestacao choice)';
+        }
+        if ($hasLoc && $hasPais) {
+            $errors[] = 'cLocPrestacao e cPaisPrestacao são mutuamente exclusivos (TCLocPrestacao choice)';
+        }
+
+        if ($hasLoc && !preg_match('/^[0-9]{7}$/', $s->codigoMunicipioPrestacao)) {
+            $errors[] = 'cLocPrestacao deve ter 7 dígitos numéricos (TSCodMunIBGE)';
+        }
+
+        if ($hasPais && !preg_match('/^[A-Z]{2}$/', $s->codigoPaisPrestacao)) {
+            $errors[] = 'cPaisPrestacao deve ser 2 letras maiúsculas (TSCodPaisISO)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateObra(ServicoRequest $s, array &$errors): void
+    {
+        $o = $s->obra;
+        if ($o === null) {
+            return;
+        }
+
+        if ($o->inscImobFisc !== null && (strlen($o->inscImobFisc) < 1 || strlen($o->inscImobFisc) > 30)) {
+            $errors[] = 'inscImobFisc deve ter 1 a 30 caracteres (TSInscImobFisc)';
+        }
+
+        $hasCObra = $o->cObra !== null;
+        $hasCCIB = $o->cCIB !== null;
+        $hasEnd = $o->endereco !== null;
+        $choices = ($hasCObra ? 1 : 0) + ($hasCCIB ? 1 : 0) + ($hasEnd ? 1 : 0);
+
+        if ($choices === 0) {
+            $errors[] = 'É obrigatório informar cObra, cCIB ou end no grupo obra (TCInfoObra choice)';
+        }
+        if ($choices > 1) {
+            $errors[] = 'cObra, cCIB e end são mutuamente exclusivos no grupo obra (TCInfoObra choice)';
+        }
+
+        if ($hasCObra && (strlen($o->cObra) < 1 || strlen($o->cObra) > 30)) {
+            $errors[] = 'cObra deve ter 1 a 30 caracteres (TSCodObra)';
+        }
+
+        if ($hasCCIB && !preg_match('/^[0-9]{8}$/', $o->cCIB)) {
+            $errors[] = 'cCIB deve ter 8 dígitos numéricos (TSCodCIB)';
+        }
+
+        if ($hasEnd) {
+            $e = $o->endereco;
+            if ($e->cep !== null && !preg_match('/^[0-9]{8}$/', $e->cep)) {
+                $errors[] = 'CEP do endereço da obra deve ter 8 dígitos numéricos (TSCEP)';
+            }
+            if (empty($e->xLgr)) {
+                $errors[] = 'xLgr é obrigatório no endereço da obra (TSLogradouro)';
+            } elseif (strlen($e->xLgr) > 255) {
+                $errors[] = 'xLgr deve ter no máximo 255 caracteres (TSLogradouro)';
+            }
+            if (empty($e->nro)) {
+                $errors[] = 'nro é obrigatório no endereço da obra (TSNumeroEndereco)';
+            } elseif (strlen($e->nro) > 60) {
+                $errors[] = 'nro deve ter no máximo 60 caracteres (TSNumeroEndereco)';
+            }
+            if ($e->xCpl !== null && (strlen($e->xCpl) < 1 || strlen($e->xCpl) > 156)) {
+                $errors[] = 'xCpl deve ter 1 a 156 caracteres (TSComplementoEndereco)';
+            }
+            if (empty($e->xBairro)) {
+                $errors[] = 'xBairro é obrigatório no endereço da obra (TSBairro)';
+            } elseif (strlen($e->xBairro) > 60) {
+                $errors[] = 'xBairro deve ter no máximo 60 caracteres (TSBairro)';
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateComExterior(ServicoRequest $s, array &$errors): void
+    {
+        $ce = $s->comExterior;
+        if ($ce === null) {
+            return;
+        }
+
+        if ($ce->modoPrestacao === null) {
+            $errors[] = 'mdPrestacao é obrigatório (TSModoPrestacao)';
+        } elseif (!in_array((string) $ce->modoPrestacao, ModoPrestacao::valores(), true)) {
+            $errors[] = 'mdPrestacao inválido (TSModoPrestacao)';
+        }
+
+        if ($ce->vinculoPrestador === null) {
+            $errors[] = 'vincPrest é obrigatório (TSVincPrest)';
+        } elseif (!in_array((string) $ce->vinculoPrestador, VinculoPrestador::valores(), true)) {
+            $errors[] = 'vincPrest inválido (TSVincPrest)';
+        }
+
+        if ($ce->codigoMoeda === null) {
+            $errors[] = 'tpMoeda é obrigatório (TSCodMoeda)';
+        } elseif (!preg_match('/^[0-9]{3}$/', $ce->codigoMoeda)) {
+            $errors[] = 'tpMoeda deve ter 3 dígitos numéricos (TSCodMoeda)';
+        }
+
+        if ($ce->valorServicoMoeda === null) {
+            $errors[] = 'vServMoeda é obrigatório (TSDec15V2)';
+        } elseif ($ce->valorServicoMoeda <= 0) {
+            $errors[] = 'vServMoeda deve ser maior que zero (TSDec15V2)';
+        }
+
+        if ($ce->mecanismoApoioPrestador !== null && !in_array($ce->mecanismoApoioPrestador, MecanismoApoioPrestador::valores(), true)) {
+            $errors[] = 'mecAFComexP inválido (TSMecAFComExPrest)';
+        }
+
+        if ($ce->mecanismoApoioTomador !== null && !in_array($ce->mecanismoApoioTomador, MecanismoApoioTomador::valores(), true)) {
+            $errors[] = 'mecAFComexT inválido (TSMecAFComExToma)';
+        }
+
+        if ($ce->movimentacaoTemporaria !== null && !in_array($ce->movimentacaoTemporaria, MovimentacaoTemporaria::valores(), true)) {
+            $errors[] = 'movTempBens inválido (TSMovTempBens)';
+        }
+
+        if ($ce->numeroDeclaracaoImportacao !== null && (strlen($ce->numeroDeclaracaoImportacao) < 1 || strlen($ce->numeroDeclaracaoImportacao) > 12)) {
+            $errors[] = 'nDI deve ter 1 a 12 caracteres (TSNumDocImport)';
+        }
+
+        if ($ce->numeroRegistroExportacao !== null && (strlen($ce->numeroRegistroExportacao) < 1 || strlen($ce->numeroRegistroExportacao) > 12)) {
+            $errors[] = 'nRE deve ter 1 a 12 caracteres (TSNumRegExport)';
+        }
+
+        if ($ce->enviarMDIC !== null && !in_array($ce->enviarMDIC, EnviarMdic::valores(), true)) {
+            $errors[] = 'mdic inválido (TSEnvMDIC)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateAtvEvento(ServicoRequest $s, array &$errors): void
+    {
+        $ae = $s->atvEvento;
+        if ($ae === null) {
+            return;
+        }
+
+        if (empty($ae->descricao)) {
+            $errors[] = 'xNome é obrigatório no grupo atvEvento (TSDesc255)';
+        } elseif (strlen($ae->descricao) > 255) {
+            $errors[] = 'xNome deve ter no máximo 255 caracteres (TSDesc255)';
+        }
+
+        if (empty($ae->dataInicio)) {
+            $errors[] = 'dtIni é obrigatório no grupo atvEvento (TSData)';
+        } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ae->dataInicio)) {
+            $errors[] = 'dtIni deve estar no formato AAAA-MM-DD (TSData)';
+        }
+
+        if (empty($ae->dataFim)) {
+            $errors[] = 'dtFim é obrigatório no grupo atvEvento (TSData)';
+        } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ae->dataFim)) {
+            $errors[] = 'dtFim deve estar no formato AAAA-MM-DD (TSData)';
+        }
+
+        if (!empty($ae->dataInicio) && !empty($ae->dataFim) && $ae->dataInicio > $ae->dataFim) {
+            $errors[] = 'dtIni não pode ser posterior a dtFim';
+        }
+
+        $hasId = $ae->identificacaoEvento !== null && $ae->identificacaoEvento !== '';
+        $hasEnd = $ae->endereco !== null;
+
+        if (!$hasId && !$hasEnd) {
+            $errors[] = 'É obrigatório informar idAtvEvt ou end no grupo atvEvento (TCAtvEvento choice)';
+        }
+        if ($hasId && $hasEnd) {
+            $errors[] = 'idAtvEvt e end são mutuamente exclusivos no grupo atvEvento (TCAtvEvento choice)';
+        }
+
+        if ($hasId && strlen($ae->identificacaoEvento) > 30) {
+            $errors[] = 'idAtvEvt deve ter 1 a 30 caracteres (TSIdeEvento)';
+        }
+
+        if ($hasEnd) {
+            $e = $ae->endereco;
+            if ($e->cep !== null && !preg_match('/^[0-9]{8}$/', $e->cep)) {
+                $errors[] = 'CEP do endereço do evento deve ter 8 dígitos numéricos (TSCEP)';
+            }
+            if (empty($e->logradouro)) {
+                $errors[] = 'xLgr é obrigatório no endereço do evento (TSLogradouro)';
+            } elseif (strlen($e->logradouro) > 255) {
+                $errors[] = 'xLgr deve ter no máximo 255 caracteres (TSLogradouro)';
+            }
+            if (empty($e->numero)) {
+                $errors[] = 'nro é obrigatório no endereço do evento (TSNumeroEndereco)';
+            } elseif (strlen($e->numero) > 60) {
+                $errors[] = 'nro deve ter no máximo 60 caracteres (TSNumeroEndereco)';
+            }
+            if ($e->complemento !== null && (strlen($e->complemento) < 1 || strlen($e->complemento) > 156)) {
+                $errors[] = 'xCpl deve ter 1 a 156 caracteres (TSComplementoEndereco)';
+            }
+            if (empty($e->bairro)) {
+                $errors[] = 'xBairro é obrigatório no endereço do evento (TSBairro)';
+            } elseif (strlen($e->bairro) > 60) {
+                $errors[] = 'xBairro deve ter no máximo 60 caracteres (TSBairro)';
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateInfoCompl(ServicoRequest $s, array &$errors): void
+    {
+        $ic = $s->infoCompl;
+        if ($ic === null) {
+            return;
+        }
+
+        if ($ic->idDocTecnico !== null && (strlen($ic->idDocTecnico) < 1 || strlen($ic->idDocTecnico) > 40)) {
+            $errors[] = 'idDocTec deve ter 1 a 40 caracteres (TSDRT)';
+        }
+
+        if ($ic->docReferencia !== null && (strlen($ic->docReferencia) < 1 || strlen($ic->docReferencia) > 255)) {
+            $errors[] = 'docRef deve ter 1 a 255 caracteres (TSDesc255)';
+        }
+
+        if ($ic->numeroPedido !== null && (strlen($ic->numeroPedido) < 1 || strlen($ic->numeroPedido) > 60)) {
+            $errors[] = 'xPed deve ter 1 a 60 caracteres (TSNumeroEndereco)';
+        }
+
+        if ($ic->itensPedido !== null) {
+            foreach ($ic->itensPedido as $i => $item) {
+                if (strlen($item) > 255) {
+                    $errors[] = "gItemPed #{$i} deve ter no máximo 255 caracteres (TSNumeroEndereco)";
+                }
+            }
+        }
+
+        if ($ic->infoComplementar !== null && (strlen($ic->infoComplementar) < 1 || strlen($ic->infoComplementar) > 2000)) {
+            $errors[] = 'xInfComp deve ter 1 a 2000 caracteres (TSDescInfCompl)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateDocumentosDeducao(ServicoRequest $s, array &$errors): void
+    {
+        $hasPDR = $s->percentualDeducao !== null;
+        $hasVDR = $s->valorDeducaoPadrao !== null;
+        $hasDocs = $s->documentosDeducao !== null;
+
+        if ($hasPDR || $hasVDR || $hasDocs) {
+            $choices = ($hasPDR ? 1 : 0) + ($hasVDR ? 1 : 0) + ($hasDocs ? 1 : 0);
+
+            if ($choices > 1) {
+                $errors[] = 'pDR, vDR e documentos são mutuamente exclusivos (TCInfoDedRed choice)';
+            }
+
+            if ($hasPDR && ($s->percentualDeducao < 0 || $s->percentualDeducao > 100)) {
+                $errors[] = 'pDR deve estar entre 0 e 100 (TSDec3V2)';
+            }
+
+            if ($hasVDR && $s->valorDeducaoPadrao <= 0) {
+                $errors[] = 'vDR deve ser maior que zero (TSDec15V2)';
+            }
+        }
+
+        if ($s->documentosDeducao === null) {
+            return;
+        }
+
+        $validTypes = ['chNFSe', 'chNFe', 'NFSeMun', 'NFNFS', 'nDocFisc', 'nDoc'];
+
+        foreach ($s->documentosDeducao as $i => $doc) {
+            $pfx = "DocDedRed #{$i}";
+
+            if ($doc->tipoDocumento === null || !in_array($doc->tipoDocumento, $validTypes, true)) {
+                $errors[] = "{$pfx}: tipoDocumento inválido";
+            }
+
+            if ($doc->tipoDocumento === 'chNFSe') {
+                if (empty($doc->chaveNFSe)) {
+                    $errors[] = "{$pfx}: chNFSe é obrigatória";
+                } elseif (!preg_match('/^[0-9]{50}$/', $doc->chaveNFSe)) {
+                    $errors[] = "{$pfx}: chNFSe deve ter 50 dígitos numéricos (TSChaveNFSe)";
+                }
+            }
+
+            if ($doc->tipoDocumento === 'chNFe') {
+                if (empty($doc->chaveNFe)) {
+                    $errors[] = "{$pfx}: chNFe é obrigatória";
+                } elseif (!preg_match('/^[0-9]{44}$/', $doc->chaveNFe)) {
+                    $errors[] = "{$pfx}: chNFe deve ter 44 dígitos numéricos (TSChaveNFe)";
+                }
+            }
+
+            if ($doc->tipoDocumento === 'NFSeMun') {
+                if (empty($doc->codigoMunicipioNFSe)) {
+                    $errors[] = "{$pfx}: cMunNFSeMun é obrigatório";
+                } elseif (!preg_match('/^[0-9]{7}$/', $doc->codigoMunicipioNFSe)) {
+                    $errors[] = "{$pfx}: cMunNFSeMun deve ter 7 dígitos numéricos (TSCodMunIBGE)";
+                }
+                if (empty($doc->numeroNFSe)) {
+                    $errors[] = "{$pfx}: nNFSeMun é obrigatório";
+                } elseif (!preg_match('/^[0-9]{15}$/', $doc->numeroNFSe)) {
+                    $errors[] = "{$pfx}: nNFSeMun deve ter 15 dígitos numéricos (TSNum15Dig)";
+                }
+                if (empty($doc->codigoVerificacaoNFSe)) {
+                    $errors[] = "{$pfx}: cVerifNFSeMun é obrigatório";
+                } elseif (!preg_match('/^[a-zA-Z0-9]{1,9}$/', $doc->codigoVerificacaoNFSe)) {
+                    $errors[] = "{$pfx}: cVerifNFSeMun deve ser alfanumérico de 1 a 9 caracteres (TSCodVerificacao)";
+                }
+            }
+
+            if ($doc->tipoDocumento === 'NFNFS') {
+                if (empty($doc->numeroNFS)) {
+                    $errors[] = "{$pfx}: nNFS é obrigatório";
+                } elseif (!preg_match('/^[0-9]{7}$/', $doc->numeroNFS)) {
+                    $errors[] = "{$pfx}: nNFS deve ter 7 dígitos numéricos (TSNum7Dig)";
+                }
+                if (empty($doc->modeloNFS)) {
+                    $errors[] = "{$pfx}: modNFS é obrigatório";
+                } elseif (!preg_match('/^[0-9]{15}$/', $doc->modeloNFS)) {
+                    $errors[] = "{$pfx}: modNFS deve ter 15 dígitos numéricos (TSNum15Dig)";
+                }
+                if (empty($doc->serieNFS)) {
+                    $errors[] = "{$pfx}: serieNFS é obrigatório";
+                } elseif (!preg_match('/^[a-zA-Z0-9]{1,15}$/', $doc->serieNFS)) {
+                    $errors[] = "{$pfx}: serieNFS deve ser alfanumérico de 1 a 15 caracteres (TSSerieNFNFS)";
+                }
+            }
+
+            if ($doc->tipoDocumento === 'nDocFisc' && empty($doc->numeroDocFiscal)) {
+                $errors[] = "{$pfx}: nDocFisc é obrigatório";
+            }
+
+            if ($doc->tipoDocumento === 'nDoc' && empty($doc->numeroDoc)) {
+                $errors[] = "{$pfx}: nDoc é obrigatório";
+            }
+
+            if ($doc->dataEmissaoDoc !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dataEmissaoDoc)) {
+                $errors[] = "{$pfx}: dtEmiDoc deve estar no formato AAAA-MM-DD (xs:date)";
+            }
+
+            if ($doc->tipoDeducaoReducao !== null && !in_array($doc->tipoDeducaoReducao, ['1','2','3','4','5','6','7','8','9','99'], true)) {
+                $errors[] = "{$pfx}: tpDedRed inválido (TSIdeDedRed)";
+            }
+
+            if ($doc->tipoDeducaoReducao === '99' && empty($doc->descricaoOutrasDeducoes)) {
+                $errors[] = "{$pfx}: xDescOutDed é obrigatório quando tpDedRed=99";
+            }
+
+            if ($doc->descricaoOutrasDeducoes !== null && (strlen($doc->descricaoOutrasDeducoes) < 1 || strlen($doc->descricaoOutrasDeducoes) > 150)) {
+                $errors[] = "{$pfx}: xDescOutDed deve ter 1 a 150 caracteres (TSDescOutDedRed)";
+            }
+
+            if ($doc->valorDedutivel !== null && !is_numeric($doc->valorDedutivel)) {
+                $errors[] = "{$pfx}: vDedutivelRedutivel deve ser numérico (TSDec15V2)";
+            }
+
+            if ($doc->valorDeducao !== null && !is_numeric($doc->valorDeducao)) {
+                $errors[] = "{$pfx}: vDeducaoReducao deve ser numérico (TSDec15V2)";
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateTribMun(ServicoRequest $s, array &$errors): void
+    {
+        if ($s->tribISSQN === null) {
+            $errors[] = 'tribISSQN é obrigatório (TSTribISSQN)';
+        } elseif (!in_array($s->tribISSQN, TributacaoIssqn::valores(), true)) {
+            $errors[] = 'tribISSQN inválido (TSTribISSQN)';
+        }
+
+        if ($s->codigoPaisResultado !== null && !preg_match('/^[A-Z]{2}$/', $s->codigoPaisResultado)) {
+            $errors[] = 'cPaisResult deve ser 2 letras maiúsculas (TSCodPaisISO)';
+        }
+
+        if ($s->tipoImunidade !== null && !in_array($s->tipoImunidade, [0,1,2,3,4,5], true)) {
+            $errors[] = 'tpImunidade inválido (TSTipoImunidadeISSQN)';
+        }
+
+        if ($s->exigSusp !== null) {
+            $es = $s->exigSusp;
+            if ($es->tipoSuspensao === null) {
+                $errors[] = 'tpSusp é obrigatório (TSOpExigSuspensa)';
+            } elseif (!in_array($es->tipoSuspensao, [1,2], true)) {
+                $errors[] = 'tpSusp inválido (TSOpExigSuspensa)';
+            }
+            if ($es->numeroProcesso === null || $es->numeroProcesso === '') {
+                $errors[] = 'nProcesso é obrigatório (TSNumProcExigSuspensa)';
+            } elseif (!preg_match('/^[0-9]{30}$/', $es->numeroProcesso)) {
+                $errors[] = 'nProcesso deve ter 30 dígitos numéricos (TSNumProcExigSuspensa)';
+            }
+        }
+
+        if ($s->beneficioMunicipal !== null) {
+            $bm = $s->beneficioMunicipal;
+            if (empty($bm->numeroBeneficio)) {
+                $errors[] = 'nBM é obrigatório (TSNumBeneficioMunicipal)';
+            } elseif (!preg_match('/^[0-9]{14}$/', $bm->numeroBeneficio)) {
+                $errors[] = 'nBM deve ter 14 dígitos numéricos (TSNumBeneficioMunicipal)';
+            }
+
+            $hasVRed = $bm->valorReducaoBC !== null;
+            $hasPRed = $bm->percentualReducaoBC !== null;
+
+            if ($hasVRed && $hasPRed) {
+                $errors[] = 'vRedBCBM e pRedBCBM são mutuamente exclusivos (TCBM choice)';
+            }
+
+            if ($hasVRed && $bm->valorReducaoBC <= 0) {
+                $errors[] = 'vRedBCBM deve ser maior que zero (TSDec15V2)';
+            }
+
+            if ($hasPRed && ($bm->percentualReducaoBC < 0 || $bm->percentualReducaoBC > 100)) {
+                $errors[] = 'pRedBCBM deve estar entre 0 e 100 (TSDec3V2)';
+            }
+        }
+
+        if ($s->tpRetISSQN === null) {
+            $errors[] = 'tpRetISSQN é obrigatório (TSTipoRetISSQN)';
+        } elseif (!in_array($s->tpRetISSQN, TipoRetencaoIssqn::valores(), true)) {
+            $errors[] = 'tpRetISSQN inválido (TSTipoRetISSQN)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateTribFed(ServicoRequest $s, array &$errors): void
+    {
+        $tf = $s->tribFederal;
+        if ($tf === null) {
+            return;
+        }
+
+        if ($tf->pisCofinsCst !== null && !preg_match('/^[0-9]{2}$/', $tf->pisCofinsCst)) {
+            $errors[] = 'CST do PIS/COFINS deve ter 2 dígitos numéricos (TSTipoCST)';
+        }
+
+        if ($tf->pisCofinsAliquotaPis !== null && ($tf->pisCofinsAliquotaPis < 0 || $tf->pisCofinsAliquotaPis > 100)) {
+            $errors[] = 'pAliqPis deve estar entre 0 e 100 (TSDec2V2)';
+        }
+
+        if ($tf->pisCofinsAliquotaCofins !== null && ($tf->pisCofinsAliquotaCofins < 0 || $tf->pisCofinsAliquotaCofins > 100)) {
+            $errors[] = 'pAliqCofins deve estar entre 0 e 100 (TSDec2V2)';
+        }
+
+        if ($tf->pisCofinsCst !== null && $tf->pisCofinsTipo === null) {
+            $errors[] = 'tipo do PIS/COFINS é obrigatório quando CST é informado (TSTipoRetPISCofins)';
+        }
+
+        if ($tf->pisCofinsTipo !== null && !in_array($tf->pisCofinsTipo, ['0','1','2','3','4','5','6','7','8','9'], true)) {
+            $errors[] = 'tipo do PIS/COFINS inválido (TSTipoRetPISCofins)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateTotTrib(ServicoRequest $s, array &$errors): void
+    {
+        $hasTotTrib = $s->totTribTipo !== null || $s->pTotTribFed !== null
+            || $s->pTotTribEst !== null || $s->pTotTribMun !== null
+            || $s->indTotTrib !== null || $s->pTotTribSN !== null;
+
+        if (!$hasTotTrib) {
+            return;
+        }
+
+        $validTypes = ['vTotTrib', 'pTotTrib', 'indTotTrib', 'pTotTribSN'];
+        if ($s->totTribTipo === null || !in_array($s->totTribTipo, $validTypes, true)) {
+            $errors[] = 'totTribTipo é obrigatório — deve ser vTotTrib, pTotTrib, indTotTrib ou pTotTribSN (TCTribTotal choice)';
+        }
+
+        if ($s->totTribTipo === 'pTotTrib') {
+            if ($s->pTotTribFed === null) {
+                $errors[] = 'pTotTribFed é obrigatório quando totTribTipo=pTotTrib (TSDec3V2)';
+            }
+            if ($s->pTotTribEst === null) {
+                $errors[] = 'pTotTribEst é obrigatório quando totTribTipo=pTotTrib (TSDec3V2)';
+            }
+            if ($s->pTotTribMun === null) {
+                $errors[] = 'pTotTribMun é obrigatório quando totTribTipo=pTotTrib (TSDec3V2)';
+            }
+        }
+
+        if ($s->totTribTipo === 'indTotTrib' && $s->indTotTrib === null) {
+            $errors[] = 'indTotTrib é obrigatório quando totTribTipo=indTotTrib (TSTipoIndTotTrib)';
+        }
+
+        if ($s->totTribTipo === 'pTotTribSN' && $s->pTotTribSN === null) {
+            $errors[] = 'pTotTribSN é obrigatório quando totTribTipo=pTotTribSN (TSDec2V2)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbs(DpsRequest $request, array &$errors): void
+    {
+        $req = $request->ibscbs;
+        if ($req === null) {
+            return;
+        }
+
+        $dataCompetencia = new \DateTimeImmutable($request->dataCompetencia);
+        $dataLimite = new \DateTimeImmutable('2026-01-01');
+        if ($dataCompetencia < $dataLimite) {
+            $errors[] = 'E0850: IBS/CBS permitido somente a partir de 01/01/2026';
+        }
+
+        if (empty($request->servico->codigoNbs)) {
+            $errors[] = 'E1508: Código NBS é obrigatório quando IBS/CBS é declarado';
+        }
+
+        if ($req->finNFSe === '') {
+            $errors[] = 'finNFSe é obrigatória (TSRTCFinNFSe)';
+        } elseif (!in_array($req->finNFSe, FinalidadeNfse::valores(), true)) {
+            $errors[] = 'finNFSe inválido (TSRTCFinNFSe)';
+        }
+
+        if ($req->cIndOp === '') {
+            $errors[] = 'cIndOp é obrigatório (TSRTCCodIndOp)';
+        } elseif (!preg_match('/^[0-9]{6}$/', $req->cIndOp)) {
+            $errors[] = 'cIndOp deve ter 6 dígitos numéricos (TSRTCCodIndOp)';
+        }
+
+        if ($req->indDest === '') {
+            $errors[] = 'indDest é obrigatório (TSRTCIndDest)';
+        } elseif (!in_array($req->indDest, IndicadorDestinacao::valores(), true)) {
+            $errors[] = 'indDest inválido (TSRTCIndDest)';
+        }
+
+        if ($req->cst === '') {
+            $errors[] = 'CST é obrigatório (TSRTCCodSitTrib)';
+        } elseif (!preg_match('/^[0-9]{3}$/', $req->cst)) {
+            $errors[] = 'CST deve ter 3 dígitos numéricos (TSRTCCodSitTrib)';
+        }
+
+        if ($req->cClassTrib === '') {
+            $errors[] = 'cClassTrib é obrigatório (TSRTCCodClassTrib)';
+        } elseif (!preg_match('/^[0-9]{6}$/', $req->cClassTrib)) {
+            $errors[] = 'cClassTrib deve ter 6 dígitos numéricos (TSRTCCodClassTrib)';
+        }
+
+        if ($req->cst !== '' && $req->cClassTrib !== '' && substr($req->cClassTrib, 0, 3) !== $req->cst) {
+            $errors[] = 'E0959: 3 primeiros dígitos de cClassTrib devem ser iguais ao CST';
+        }
+
+        if ($req->indFinal !== null && $req->indFinal !== '' && !in_array($req->indFinal, IndicadorFinal::valores(), true)) {
+            $errors[] = 'indFinal inválido (TSRTCIndFinal)';
+        }
+
+        if ($req->tpOper !== null && $req->tpOper !== '' && !in_array($req->tpOper, TipoOperacao::valores(), true)) {
+            $errors[] = 'tpOper inválido (TSRTCTpOper)';
+        }
+
+        if ($req->tpEnteGov !== null && $req->tpEnteGov !== '' && !in_array($req->tpEnteGov, TipoEnteGovernamental::valores(), true)) {
+            $errors[] = 'tpEnteGov inválido (TSRTCTpEnteGov)';
+        }
+
+        if ($req->cCredPres !== null && !preg_match('/^[0-9]{2}$/', $req->cCredPres)) {
+            $errors[] = 'cCredPres deve ter 2 dígitos numéricos (TSRTCCodCredPres)';
+        }
+
+        if ($req->tribRegular !== null) {
+            if (substr($req->tribRegular->cClassTribReg, 0, 3) !== $req->tribRegular->cstReg) {
+                $errors[] = 'E0970: 3 primeiros dígitos de cClassTribReg devem ser iguais ao CSTReg';
+            }
+        }
+
+        if ($req->indDest === '0' && $req->dest !== null) {
+            $errors[] = 'E0910: destinatário não deve ser informado quando indDest=0';
+        }
+        if ($req->indDest === '1' && $req->dest === null) {
+            $errors[] = 'E0910: destinatário deve ser informado quando indDest=1';
+        }
+
+        $this->validateIbsCbsDest($req, $errors);
+        $this->validateIbsCbsImovel($req, $errors);
+        $this->validateIbsCbsRefNFSe($req, $errors);
+        $this->validateIbsCbsReeRepRes($req, $errors);
+        $this->validateIbsCbsDiferimento($req, $errors);
+        $this->validateIbsCbsTribRegular($req, $errors);
+        $this->validateIbsCbsCstClassTrib($req, $errors);
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsDest(IbsCbsRequest $req, array &$errors): void
+    {
+        $dest = $req->dest;
+        if ($dest === null) {
+            return;
+        }
+
+        if (empty($dest->xNome)) {
+            $errors[] = 'xNome do destinatário é obrigatório (TSDesc150)';
+        } elseif (strlen($dest->xNome) > 150) {
+            $errors[] = 'xNome do destinatário deve ter no máximo 150 caracteres (TSDesc150)';
+        }
+
+        $idCount = 0;
+        if ($dest->cnpj !== null) {
+            $idCount++;
+        }
+        if ($dest->cpf !== null) {
+            $idCount++;
+        }
+        if ($dest->nif !== null) {
+            $idCount++;
+        }
+        if ($dest->codigoNaoNif !== null) {
+            $idCount++;
+        }
+
+        if ($idCount === 0) {
+            $errors[] = 'Destinatário deve ter CNPJ, CPF, NIF ou cNaoNIF (TCRTCInfoDest choice)';
+        }
+        if ($idCount > 1) {
+            $errors[] = 'Destinatário: CNPJ, CPF, NIF e cNaoNIF são mutuamente exclusivos';
+        }
+
+        if ($dest->cnpj !== null && !preg_match('/^[0-9]{14}$/', $dest->cnpj)) {
+            $errors[] = 'CNPJ do destinatário deve ter 14 dígitos numéricos (TSCNPJ)';
+        }
+        if ($dest->cpf !== null && !preg_match('/^[0-9]{11}$/', $dest->cpf)) {
+            $errors[] = 'CPF do destinatário deve ter 11 dígitos numéricos (TSCPF)';
+        }
+        if ($dest->nif !== null && (strlen($dest->nif) < 1 || strlen($dest->nif) > 40)) {
+            $errors[] = 'NIF do destinatário deve ter 1 a 40 caracteres (TSNIF)';
+        }
+        if ($dest->codigoNaoNif !== null && !in_array($dest->codigoNaoNif, CausaNaoNif::valores(), true)) {
+            $errors[] = 'cNaoNIF do destinatário inválido (TSCodNaoNIF)';
+        }
+
+        if ($dest->logradouro !== null && (strlen($dest->logradouro) < 1 || strlen($dest->logradouro) > 255)) {
+            $errors[] = 'xLgr do destinatário deve ter 1 a 255 caracteres (TSLogradouro)';
+        }
+        if ($dest->numero !== null && (strlen($dest->numero) < 1 || strlen($dest->numero) > 60)) {
+            $errors[] = 'nro do destinatário deve ter 1 a 60 caracteres (TSNumeroEndereco)';
+        }
+        if ($dest->complemento !== null && (strlen($dest->complemento) < 1 || strlen($dest->complemento) > 156)) {
+            $errors[] = 'xCpl do destinatário deve ter 1 a 156 caracteres (TSComplementoEndereco)';
+        }
+        if ($dest->bairro !== null && (strlen($dest->bairro) < 1 || strlen($dest->bairro) > 60)) {
+            $errors[] = 'xBairro do destinatário deve ter 1 a 60 caracteres (TSBairro)';
+        }
+        if ($dest->codigoMunicipio !== null && !preg_match('/^[0-9]{7}$/', $dest->codigoMunicipio)) {
+            $errors[] = 'cMun do destinatário deve ter 7 dígitos numéricos (TSCodMunIBGE)';
+        }
+        if ($dest->uf !== null && !in_array($dest->uf, self::UFS, true)) {
+            $errors[] = 'UF do destinatário inválida (TSUF)';
+        }
+        if ($dest->cep !== null && !preg_match('/^[0-9]{8}$/', $dest->cep)) {
+            $errors[] = 'CEP do destinatário deve ter 8 dígitos numéricos (TSCEP)';
+        }
+        if ($dest->fone !== null && !preg_match('/^[0-9]{6,20}$/', $dest->fone)) {
+            $errors[] = 'fone do destinatário deve ter 6 a 20 dígitos numéricos (TSTelefone)';
+        }
+        if ($dest->email !== null && (strlen($dest->email) < 1 || strlen($dest->email) > 80)) {
+            $errors[] = 'email do destinatário deve ter 1 a 80 caracteres (TSEmail)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsImovel(IbsCbsRequest $req, array &$errors): void
+    {
+        $im = $req->imovel;
+        if ($im === null) {
+            return;
+        }
+
+        if ($im->inscImobFisc !== null && (strlen($im->inscImobFisc) < 1 || strlen($im->inscImobFisc) > 30)) {
+            $errors[] = 'inscImobFisc deve ter 1 a 30 caracteres (TSInscImobFisc)';
+        }
+
+        if ($im->cCIB !== null && $im->endereco !== null) {
+            $errors[] = 'cCIB e end são mutuamente exclusivos no grupo imovel (TCRTCInfoImovel choice)';
+        }
+        if ($im->cCIB === null && $im->endereco === null) {
+            $errors[] = 'É obrigatório informar cCIB ou end no grupo imovel (TCRTCInfoImovel choice)';
+        }
+
+        if ($im->cCIB !== null && !preg_match('/^[0-9]{8}$/', $im->cCIB)) {
+            $errors[] = 'cCIB deve ter 8 dígitos numéricos (TSCodCIB)';
+        }
+
+        if ($im->endereco !== null) {
+            $e = $im->endereco;
+            if ($e->cep !== null && !preg_match('/^[0-9]{8}$/', $e->cep)) {
+                $errors[] = 'CEP do endereço do imóvel deve ter 8 dígitos numéricos (TSCEP)';
+            }
+            if (empty($e->xLgr)) {
+                $errors[] = 'xLgr é obrigatório no endereço do imóvel (TSLogradouro)';
+            } elseif (strlen($e->xLgr) > 255) {
+                $errors[] = 'xLgr deve ter no máximo 255 caracteres (TSLogradouro)';
+            }
+            if (empty($e->nro)) {
+                $errors[] = 'nro é obrigatório no endereço do imóvel (TSNumeroEndereco)';
+            } elseif (strlen($e->nro) > 60) {
+                $errors[] = 'nro deve ter no máximo 60 caracteres (TSNumeroEndereco)';
+            }
+            if ($e->xCpl !== null && (strlen($e->xCpl) < 1 || strlen($e->xCpl) > 156)) {
+                $errors[] = 'xCpl deve ter 1 a 156 caracteres (TSComplementoEndereco)';
+            }
+            if (empty($e->xBairro)) {
+                $errors[] = 'xBairro é obrigatório no endereço do imóvel (TSBairro)';
+            } elseif (strlen($e->xBairro) > 60) {
+                $errors[] = 'xBairro deve ter no máximo 60 caracteres (TSBairro)';
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsRefNFSe(IbsCbsRequest $req, array &$errors): void
+    {
+        if ($req->tpOper !== null && $req->tpOper !== '') {
+            $tpOper = (int) $req->tpOper;
+            $hasRef = $req->refNFSeList !== null && $req->refNFSeList !== [];
+
+            if (($tpOper === 2 || $tpOper === 3) && !$hasRef) {
+                $errors[] = 'gRefNFSe deve ser informado quando tpOper=2 ou 3';
+            }
+            if (!($tpOper === 2 || $tpOper === 3) && $hasRef) {
+                $errors[] = 'gRefNFSe não pode ser informado para o tpOper informado';
+            }
+        } elseif ($req->refNFSeList !== null && $req->refNFSeList !== []) {
+            $errors[] = 'gRefNFSe não pode ser informado se tpOper não foi informado';
+        }
+
+        if ($req->refNFSeList !== null) {
+            foreach ($req->refNFSeList as $i => $chave) {
+                if (!preg_match('/^[0-9]{50}$/', $chave)) {
+                    $errors[] = "E0907: refNFSe #{$i} deve ter 50 dígitos numéricos (TSChaveNFSe)";
+                }
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsReeRepRes(IbsCbsRequest $req, array &$errors): void
+    {
+        $ree = $req->reeRepRes;
+        if ($ree === null) {
+            return;
+        }
+
+        if (empty($ree->documentos)) {
+            $errors[] = 'gReeRepRes deve conter ao menos um documento';
+        }
+
+        foreach ($ree->documentos as $i => $doc) {
+            $pfx = "Documento #{$i}";
+
+            if (!in_array($doc->tipoDocumento, ['dFeNacional', 'docFiscalOutro', 'docOutro'], true)) {
+                $errors[] = "{$pfx}: tipoDocumento inválido (TCRTCListaDoc choice)";
+            }
+
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dtEmiDoc)) {
+                $errors[] = "{$pfx}: dtEmiDoc deve estar no formato AAAA-MM-DD (TSData)";
+            }
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dtCompDoc)) {
+                $errors[] = "{$pfx}: dtCompDoc deve estar no formato AAAA-MM-DD (TSData)";
+            }
+
+            if (!in_array($doc->tpReeRepRes, TipoReembolsoRepasseRessarcimento::valores(), true)) {
+                $errors[] = "{$pfx}: tpReeRepRes inválido (TSRTCTpReeRepRes)";
+            }
+
+            if ($doc->vlrReeRepRes <= 0) {
+                $errors[] = "{$pfx}: vlrReeRepRes deve ser maior que zero (TSDec15V2)";
+            }
+
+            if ($doc->tpReeRepRes === '99' && empty($doc->xTpReeRepRes)) {
+                $errors[] = "{$pfx}: xTpReeRepRes é obrigatório quando tpReeRepRes=99 (TSDesc150)";
+            }
+
+            if ($doc->xTpReeRepRes !== null && (strlen($doc->xTpReeRepRes) < 1 || strlen($doc->xTpReeRepRes) > 150)) {
+                $errors[] = "{$pfx}: xTpReeRepRes deve ter 1 a 150 caracteres (TSDesc150)";
+            }
+
+            if ($doc->tipoDocumento === 'dFeNacional') {
+                if (!in_array($doc->tipoChaveDFe, TipoChaveDocumentoFiscal::valores(), true)) {
+                    $errors[] = "{$pfx}: tipoChaveDFe inválido (TSRTCTipoChaveDFe)";
+                }
+                if (empty($doc->chaveDFe)) {
+                    $errors[] = "{$pfx}: chaveDFe é obrigatória para dFeNacional (TSRTCChaveDFe)";
+                } elseif (strlen($doc->chaveDFe) > 50) {
+                    $errors[] = "{$pfx}: chaveDFe deve ter no máximo 50 caracteres (TSRTCChaveDFe)";
+                }
+                if ($doc->tipoChaveDFe === '9' && empty($doc->xTipoChaveDFe)) {
+                    $errors[] = "{$pfx}: xTipoChaveDFe é obrigatório quando tipoChaveDFe=9 (TSDesc255)";
+                }
+                if ($doc->xTipoChaveDFe !== null && (strlen($doc->xTipoChaveDFe) < 1 || strlen($doc->xTipoChaveDFe) > 255)) {
+                    $errors[] = "{$pfx}: xTipoChaveDFe deve ter 1 a 255 caracteres (TSDesc255)";
+                }
+            }
+
+            if ($doc->tipoDocumento === 'docFiscalOutro') {
+                if (!preg_match('/^\d{7}$/', $doc->cMunDocFiscal ?? '')) {
+                    $errors[] = "{$pfx}: cMunDocFiscal deve ter 7 dígitos numéricos (TSNum7Dig)";
+                }
+                if (empty($doc->nDocFiscal)) {
+                    $errors[] = "{$pfx}: nDocFiscal é obrigatório para docFiscalOutro (TSDesc255)";
+                } elseif (strlen($doc->nDocFiscal) > 255) {
+                    $errors[] = "{$pfx}: nDocFiscal deve ter no máximo 255 caracteres (TSDesc255)";
+                }
+                if (empty($doc->xDocFiscal)) {
+                    $errors[] = "{$pfx}: xDocFiscal é obrigatório para docFiscalOutro (TSDesc255)";
+                } elseif (strlen($doc->xDocFiscal) > 255) {
+                    $errors[] = "{$pfx}: xDocFiscal deve ter no máximo 255 caracteres (TSDesc255)";
+                }
+            }
+
+            if ($doc->tipoDocumento === 'docOutro') {
+                if (empty($doc->nDoc)) {
+                    $errors[] = "{$pfx}: nDoc é obrigatório para docOutro (TSDesc255)";
+                } elseif (strlen($doc->nDoc) > 255) {
+                    $errors[] = "{$pfx}: nDoc deve ter no máximo 255 caracteres (TSDesc255)";
+                }
+                if (empty($doc->xDoc)) {
+                    $errors[] = "{$pfx}: xDoc é obrigatório para docOutro (TSDesc255)";
+                } elseif (strlen($doc->xDoc) > 255) {
+                    $errors[] = "{$pfx}: xDoc deve ter no máximo 255 caracteres (TSDesc255)";
+                }
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsDiferimento(IbsCbsRequest $req, array &$errors): void
+    {
+        $dif = $req->diferimento;
+        if ($dif === null) {
+            return;
+        }
+
+        if ($dif->pDifUF < 0 || $dif->pDifUF > 100) {
+            $errors[] = 'pDifUF deve estar entre 0 e 100 (TSDec3V2)';
+        }
+        if ($dif->pDifMun < 0 || $dif->pDifMun > 100) {
+            $errors[] = 'pDifMun deve estar entre 0 e 100 (TSDec3V2)';
+        }
+        if ($dif->pDifCBS < 0 || $dif->pDifCBS > 100) {
+            $errors[] = 'pDifCBS deve estar entre 0 e 100 (TSDec3V2)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsTribRegular(IbsCbsRequest $req, array &$errors): void
+    {
+        $tr = $req->tribRegular;
+        if ($tr === null) {
+            return;
+        }
+
+        if (!preg_match('/^[0-9]{3}$/', $tr->cstReg)) {
+            $errors[] = 'CSTReg deve ter 3 dígitos numéricos (TSRTCCodSitTrib)';
+        }
+        if (!preg_match('/^[0-9]{6}$/', $tr->cClassTribReg)) {
+            $errors[] = 'cClassTribReg deve ter 6 dígitos numéricos (TSRTCCodClassTrib)';
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsCstClassTrib(IbsCbsRequest $req, array &$errors): void
+    {
+        if ($this->cstClassTribRepository === null || $req->cClassTrib === '') {
+            return;
+        }
+
+        $props = $this->cstClassTribRepository->findByCode($req->cClassTrib);
+
+        if ($props === null) {
+            $errors[] = "cClassTrib '{$req->cClassTrib}' não encontrado na tabela oficial";
+            return;
+        }
+
+        if (!$props->isValidoParaNfse()) {
+            $errors[] = "cClassTrib '{$req->cClassTrib}' não é suportado para NFS-e";
+        }
+
+        if ($props->isPermiteDiferimento() && $req->diferimento === null) {
+            $errors[] = 'gDif deve ser informado para o cClassTrib indicado';
+        }
+        if (!$props->isPermiteDiferimento() && $req->diferimento !== null) {
+            $errors[] = 'gDif não deve ser informado para o cClassTrib indicado';
+        }
+
+        if ($props->isExigeGrupoTributacaoRegular() && $req->tribRegular === null) {
+            $errors[] = 'gTribRegular deve ser informado para o cClassTrib indicado';
+        }
+        if (!$props->isExigeGrupoTributacaoRegular() && $req->tribRegular !== null) {
+            $errors[] = 'gTribRegular não deve ser informado para o cClassTrib indicado';
+        }
+
+        if ($req->tribRegular !== null && $req->tribRegular->cClassTribReg !== '') {
+            $propsReg = $this->cstClassTribRepository->findByCode($req->tribRegular->cClassTribReg);
+            if ($propsReg === null) {
+                $errors[] = "cClassTribReg '{$req->tribRegular->cClassTribReg}' não encontrado na tabela oficial";
+            } elseif (!$propsReg->isValidoParaNfse()) {
+                $errors[] = "cClassTribReg '{$req->tribRegular->cClassTribReg}' não é suportado para NFS-e";
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateSubstituicao(DpsRequest $request, array &$errors): void
+    {
+        $s = $request->substituicao;
+        if ($s === null) {
+            return;
+        }
+
+        if (!preg_match('/^[0-9]{50}$/', $s->chaveSubstituida)) {
+            $errors[] = 'chSubstda deve ter 50 dígitos numéricos (TSChaveNFSe)';
+        }
+
+        if (!in_array($s->codigoMotivo, MotivoSubstituicao::valores(), true)) {
+            $errors[] = 'cMotivo inválido (TSCodJustSubst)';
+        }
+
+        if ($s->codigoMotivo === '99') {
+            if ($s->descricaoMotivo === null || trim($s->descricaoMotivo) === '') {
+                $errors[] = 'xMotivo é obrigatório quando cMotivo=99 (TSMotivo)';
+            }
+        }
+
+        if ($s->descricaoMotivo !== null) {
+            $len = mb_strlen(trim($s->descricaoMotivo));
+            if ($len > 0 && $len < 15) {
+                $errors[] = 'xMotivo deve ter no mínimo 15 caracteres (TSMotivo)';
+            }
+            if ($len > 255) {
+                $errors[] = 'xMotivo deve ter no máximo 255 caracteres (TSMotivo)';
+            }
         }
     }
 }

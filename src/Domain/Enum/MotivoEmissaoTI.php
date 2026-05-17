@@ -20,4 +20,10 @@ enum MotivoEmissaoTI: int
             self::REJEICAO_NFSE_PRESTADOR => 'Emitindo por rejeitar a NFS-e emitida pelo prestador',
         };
     }
+
+    /** @return list<int> */
+    public static function valores(): array
+    {
+        return array_map(fn (self $c) => $c->value, self::cases());
+    }
 }

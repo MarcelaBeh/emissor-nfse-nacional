@@ -18,4 +18,10 @@ enum TipoEmitente: int
             self::INTERMEDIARIO => 'Emitente: Intermediário',
         };
     }
+
+    /** @return list<int> */
+    public static function valores(): array
+    {
+        return array_map(fn (self $c) => $c->value, self::cases());
+    }
 }

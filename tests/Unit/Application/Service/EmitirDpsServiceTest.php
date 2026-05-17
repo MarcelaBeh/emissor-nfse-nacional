@@ -102,10 +102,8 @@ final class EmitirDpsServiceTest extends TestCase
             codigoTributacao: '12345',
             codigoMunicipioPrestacao: '3550308',
             valorServicos: 1000.00,
-            valorDeducoes: 0.0,
-            descontoIncondicionado: 0.0,
-            descontoCondicionado: 0.0,
-            aliquotaIss: 0.05,
+            tribISSQN: '1',
+            tpRetISSQN: '1',
         );
 
         return new DpsRequest(

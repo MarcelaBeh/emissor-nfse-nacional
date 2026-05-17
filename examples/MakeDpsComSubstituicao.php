@@ -72,10 +72,8 @@ $request = new DpsRequest(
         codigoTributacao: '010101',
         codigoMunicipioPrestacao: '3550308',
         valorServicos: 1500.00,
-        valorDeducoes: 0,
-        descontoIncondicionado: 0,
-        descontoCondicionado: 0,
-        aliquotaIss: 5.0,
+        tribISSQN: '1',
+        tpRetISSQN: '1',
     ),
     substituicao: new SubstituicaoRequest(
         chaveSubstituida: '12345678901234567890123456789012345678901234567890',

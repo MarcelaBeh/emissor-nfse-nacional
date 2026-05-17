@@ -137,37 +137,41 @@ class EmitirDpsService
             nif: $request->prestador->nif,
             caepf: $request->prestador->caepf,
             codigoNaoNif: $request->prestador->codigoNaoNif,
+            regimeApuracaoSimplesNacional: $request->prestador->regApTribSN,
         );
 
-        $documentoTomador = null;
-        if ($request->tomador->documento) {
-            $documentoTomador = $request->tomador->isCnpj
-                ? new Cnpj($request->tomador->documento)
-                : new Cpf($request->tomador->documento);
+        $tomador = null;
+        if ($request->tomador !== null) {
+            $documentoTomador = null;
+            if ($request->tomador->documento) {
+                $documentoTomador = $request->tomador->isCnpj
+                    ? new Cnpj($request->tomador->documento)
+                    : new Cpf($request->tomador->documento);
+            }
+
+            $tomador = new Tomador(
+                documento: $documentoTomador,
+                razaoSocial: $request->tomador->razaoSocial,
+                nomeFantasia: $request->tomador->nomeFantasia,
+                telefone: $request->tomador->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($request->tomador->telefone) : null,
+                email: $request->tomador->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($request->tomador->email) : null,
+                endereco: $this->criarEndereco(
+                    $request->tomador->logradouro,
+                    $request->tomador->numero,
+                    $request->tomador->complemento,
+                    $request->tomador->bairro,
+                    $request->tomador->codigoMunicipio,
+                    $request->tomador->uf,
+                    $request->tomador->cep,
+                    $request->tomador->codigoPais,
+                    $request->tomador->codigoPostalExterior,
+                    $request->tomador->nomeCidadeExterior,
+                    $request->tomador->estadoProvinciaExterior,
+                ),
+                nif: $request->tomador->nif,
+                inscricaoMunicipal: $request->tomador->inscricaoMunicipal,
+            );
         }
-
-        $tomador = new Tomador(
-            documento: $documentoTomador,
-            razaoSocial: $request->tomador->razaoSocial,
-            nomeFantasia: $request->tomador->nomeFantasia,
-            telefone: $request->tomador->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($request->tomador->telefone) : null,
-            email: $request->tomador->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($request->tomador->email) : null,
-            endereco: $this->criarEndereco(
-                $request->tomador->logradouro,
-                $request->tomador->numero,
-                $request->tomador->complemento,
-                $request->tomador->bairro,
-                $request->tomador->codigoMunicipio,
-                $request->tomador->uf,
-                $request->tomador->cep,
-                $request->tomador->codigoPais,
-                $request->tomador->codigoPostalExterior,
-                $request->tomador->nomeCidadeExterior,
-                $request->tomador->estadoProvinciaExterior,
-            ),
-            nif: $request->tomador->nif,
-            inscricaoMunicipal: $request->tomador->inscricaoMunicipal,
-        );
 
         $intermediario = null;
         if ($request->intermediario !== null) {
@@ -238,18 +242,19 @@ class EmitirDpsService
         $servico = new Servico(
             discriminacao: $request->servico->discriminacao,
             codigoTributacao: $request->servico->codigoTributacao,
-            localPrestacao: new CodigoMunicipio($request->servico->codigoMunicipioPrestacao),
             valorServicos: new Money($request->servico->valorServicos),
-            valorDeducoes: new Money($request->servico->valorDeducoes),
-            descontoIncondicionado: new Money($request->servico->descontoIncondicionado),
-            descontoCondicionado: new Money($request->servico->descontoCondicionado),
+            valorDeducoes: $request->servico->valorDeducoes !== null ? new Money($request->servico->valorDeducoes) : null,
+            descontoIncondicionado: $request->servico->descontoIncondicionado !== null ? new Money($request->servico->descontoIncondicionado) : null,
+            descontoCondicionado: $request->servico->descontoCondicionado !== null ? new Money($request->servico->descontoCondicionado) : null,
             aliquotaIss: $request->servico->aliquotaIss,
+            localPrestacao: $request->servico->codigoMunicipioPrestacao !== null ? new CodigoMunicipio($request->servico->codigoMunicipioPrestacao) : null,
             codigoNbs: $request->servico->codigoNbs,
             codigoCnae: $request->servico->codigoCnae,
             obra: $obra,
-            tribISSQN: $request->servico->tribISSQN,
-            tpRetISSQN: $request->servico->tpRetISSQN,
+            tribISSQN: $request->servico->tribISSQN ?? '1',
+            tpRetISSQN: $request->servico->tpRetISSQN ?? '1',
             codigoPaisPrestacao: $request->servico->codigoPaisPrestacao,
+            codigoPaisResultado: $request->servico->codigoPaisResultado,
             codigoTributacaoMunicipal: $request->servico->codigoTributacaoMunicipal,
             codigoInternoContribuinte: $request->servico->codigoInternoContribuinte,
             valorRecebido: $request->servico->valorRecebido,
@@ -589,6 +594,8 @@ class EmitirDpsService
 
         return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\BeneficioMunicipal(
             numeroBeneficio: $req->numeroBeneficio,
+            valorReducaoBC: $req->valorReducaoBC,
+            percentualReducaoBC: $req->percentualReducaoBC,
         );
     }
 

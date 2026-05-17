@@ -56,16 +56,16 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(tipoAmbiente: 3);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Tipo de ambiente inválido');
+        $this->expectExceptionMessage('tpAmb inválido');
         $this->validator->validate($request);
     }
 
     public function test_invalid_serie_throws(): void
     {
-        $request = $this->createValidDpsRequest(serie: 0);
+        $request = $this->createValidDpsRequest(serie: 100000);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Série deve ser maior que zero');
+        $this->expectExceptionMessage('serie deve ser numérico de 1 a 5 dígitos');
         $this->validator->validate($request);
     }
 
@@ -74,7 +74,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(numero: 0);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Número deve ser maior que zero');
+        $this->expectExceptionMessage('nDPS deve ser numérico de 1 a 15 dígitos');
         $this->validator->validate($request);
     }
 
@@ -83,17 +83,16 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(versaoAplicacao: '');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Versão da aplicação é obrigatória');
+        $this->expectExceptionMessage('verAplic é obrigatória');
         $this->validator->validate($request);
     }
 
-    public function test_empty_prestador_razao_social_throws(): void
+    public function test_empty_prestador_razao_social_passes(): void
     {
         $request = $this->createValidDpsRequest(prestadorRazaoSocial: '');
 
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Razão social do prestador é obrigatória');
         $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
     }
 
     public function test_empty_tomador_razao_social_throws(): void
@@ -101,7 +100,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(tomadorRazaoSocial: '');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Razão social do tomador é obrigatória');
+        $this->expectExceptionMessage('xNome do tomador é obrigatória');
         $this->validator->validate($request);
     }
 
@@ -110,7 +109,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(discriminacao: '');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Discriminação do serviço é obrigatória');
+        $this->expectExceptionMessage('xDescServ é obrigatória');
         $this->validator->validate($request);
     }
 
@@ -119,7 +118,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(aliquotaIss: 101);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Alíquota ISS deve estar entre 0 e 100');
+        $this->expectExceptionMessage('pAliq deve estar entre 0 e 100');
         $this->validator->validate($request);
     }
 
@@ -128,7 +127,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(aliquotaIss: -1);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Alíquota ISS deve estar entre 0 e 100');
+        $this->expectExceptionMessage('pAliq deve estar entre 0 e 100');
         $this->validator->validate($request);
     }
 
@@ -137,7 +136,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(valorServicos: 0);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Valor dos serviços deve ser maior que zero');
+        $this->expectExceptionMessage('vServ deve ser maior que zero');
         $this->validator->validate($request);
     }
 
@@ -150,9 +149,7 @@ final class DpsValidatorTest extends TestCase
         );
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage(
-            'Tipo de ambiente inválido; Série deve ser maior que zero; Número deve ser maior que zero'
-        );
+        $this->expectExceptionMessage('tpAmb inválido');
         $this->validator->validate($request);
     }
 
@@ -203,7 +200,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequestWithIbscbs(finNFSe: '');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Finalidade da NFS-e (finNFSe) é obrigatória');
+        $this->expectExceptionMessage('finNFSe é obrigatória');
         $this->validator->validate($request);
     }
 
@@ -212,7 +209,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequestWithIbscbs(finNFSe: '1');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Finalidade da NFS-e deve ser 0');
+        $this->expectExceptionMessage('finNFSe inválido');
         $this->validator->validate($request);
     }
 
@@ -230,7 +227,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequestWithIbscbs(cIndOp: '12345');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('cIndOp deve ter exatamente 6 dígitos');
+        $this->expectExceptionMessage('cIndOp deve ter 6 dígitos numéricos');
         $this->validator->validate($request);
     }
 
@@ -239,7 +236,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequestWithIbscbs(indDest: '');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Indicador de destinação (indDest)');
+        $this->expectExceptionMessage('indDest é obrigatório');
         $this->validator->validate($request);
     }
 
@@ -257,7 +254,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequestWithIbscbs(cst: '12');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('CST deve ter exatamente 3 dígitos');
+        $this->expectExceptionMessage('CST deve ter 3 dígitos numéricos');
         $this->validator->validate($request);
     }
 
@@ -275,7 +272,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequestWithIbscbs(cClassTrib: '12345');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('cClassTrib deve ter exatamente 6 dígitos');
+        $this->expectExceptionMessage('cClassTrib deve ter 6 dígitos numéricos');
         $this->validator->validate($request);
     }
 
@@ -284,7 +281,7 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequestWithIbscbs(cCredPres: '123');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('cCredPres deve ter exatamente 2 dígitos');
+        $this->expectExceptionMessage('cCredPres deve ter 2 dígitos numéricos');
         $this->validator->validate($request);
     }
 
@@ -507,7 +504,7 @@ final class DpsValidatorTest extends TestCase
         );
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('não é suportado para operações de prestação de serviços');
+        $this->expectExceptionMessage('não é suportado para NFS-e');
         $this->validatorWithRepo->validate($request);
     }
 
@@ -764,19 +761,41 @@ final class DpsValidatorTest extends TestCase
 
     // --- Novos campos Servico validation tests ---
 
-    private function createBaseServicoRequest(): ServicoRequest
-    {
+    private function createBaseServicoRequest(
+        ?string $discriminacao = 'Serviço de teste',
+        ?string $codigoTributacao = '010101',
+        ?string $codigoMunicipioPrestacao = '3550308',
+        ?float $valorServicos = 1000.0,
+        ?string $codigoNbs = '123456789',
+    ): ServicoRequest {
         return new ServicoRequest(
+            discriminacao: $discriminacao ?? 'Serviço de teste',
+            codigoTributacao: $codigoTributacao ?? '010101',
+            codigoMunicipioPrestacao: $codigoMunicipioPrestacao ?? '3550308',
+            valorServicos: $valorServicos ?? 1000.0,
+            codigoNbs: $codigoNbs,
+            tribISSQN: '1',
+            tpRetISSQN: '1',
+        );
+    }
+
+    private function createServicoWith(?array $overrides = []): ServicoRequest
+    {
+        $s = new ServicoRequest(
             discriminacao: 'Serviço de teste',
             codigoTributacao: '010101',
             codigoMunicipioPrestacao: '3550308',
             valorServicos: 1000.0,
-            valorDeducoes: 0,
-            descontoIncondicionado: 0,
-            descontoCondicionado: 0,
-            aliquotaIss: 5.0,
-            codigoNbs: '12345678',
+            codigoNbs: '123456789',
+            tribISSQN: '1',
+            tpRetISSQN: '1',
         );
+
+        foreach ($overrides as $key => $value) {
+            $s->$key = $value;
+        }
+
+        return $s;
     }
 
     public function test_codigo_pais_prestacao_invalid_format_throws(): void
@@ -791,7 +810,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 codigoPaisPrestacao: '12',
             ),
         );
@@ -807,14 +826,16 @@ final class DpsValidatorTest extends TestCase
             servico: new ServicoRequest(
                 discriminacao: 'test',
                 codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
                 valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 codigoPaisPrestacao: 'US',
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -834,7 +855,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 codigoTributacaoMunicipal: '12',
             ),
         );
@@ -856,8 +877,11 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 codigoTributacaoMunicipal: '123',
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -877,7 +901,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 codigoInternoContribuinte: 'ABC-123',
             ),
         );
@@ -899,7 +923,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 valorRecebido: 0,
             ),
         );
@@ -921,8 +945,11 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 valorRecebido: 500.0,
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -942,7 +969,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 comExterior: new ComExteriorRequest(
                     modoPrestacao: 1,
                     vinculoPrestador: 2,
@@ -953,6 +980,9 @@ final class DpsValidatorTest extends TestCase
                     movimentacaoTemporaria: '1',
                     enviarMDIC: '0',
                 ),
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -972,7 +1002,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 comExterior: new ComExteriorRequest(
                     vinculoPrestador: 2,
                 ),
@@ -996,7 +1026,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 comExterior: new ComExteriorRequest(
                     modoPrestacao: 1,
                     vinculoPrestador: 2,
@@ -1022,12 +1052,16 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 atvEvento: new AtvEventoRequest(
                     descricao: 'Feira Tecnológica',
                     dataInicio: '2026-06-01',
                     dataFim: '2026-06-10',
+                    identificacaoEvento: 'EVENTO12345678901234567890',
                 ),
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -1047,7 +1081,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 atvEvento: new AtvEventoRequest(
                     dataInicio: '2026-06-01',
                     dataFim: '2026-06-10',
@@ -1072,7 +1106,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 atvEvento: new AtvEventoRequest(
                     descricao: 'Teste',
                     dataInicio: '2026-06-10',
@@ -1098,7 +1132,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 infoCompl: new \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\InfoComplRequest(
                     itensPedido: [str_repeat('x', 256)],
                 ),
@@ -1122,7 +1156,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 documentosDeducao: [
                     new DocDedRedRequest(
                         tipoDocumento: 'chNFe',
@@ -1133,6 +1167,9 @@ final class DpsValidatorTest extends TestCase
                         valorDeducao: '1000.00',
                     ),
                 ],
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -1152,7 +1189,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 documentosDeducao: [
                     new DocDedRedRequest(tipoDocumento: 'invalid'),
                 ],
@@ -1176,7 +1213,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 documentosDeducao: [
                     new DocDedRedRequest(tipoDocumento: 'chNFSe'),
                 ],
@@ -1200,7 +1237,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 documentosDeducao: [
                     new DocDedRedRequest(
                         tipoDocumento: 'chNFSe',
@@ -1211,7 +1248,7 @@ final class DpsValidatorTest extends TestCase
         );
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('chNFSe deve ter exatamente 50 dígitos numéricos');
+        $this->expectExceptionMessage('chNFSe deve ter 50 dígitos numéricos');
         $this->validator->validate($request);
     }
 
@@ -1227,7 +1264,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 documentosDeducao: [
                     new DocDedRedRequest(
                         tipoDocumento: 'chNFe',
@@ -1238,7 +1275,7 @@ final class DpsValidatorTest extends TestCase
         );
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('chNFe deve ter exatamente 44 dígitos numéricos');
+        $this->expectExceptionMessage('chNFe deve ter 44 dígitos numéricos');
         $this->validator->validate($request);
     }
 
@@ -1254,7 +1291,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 documentosDeducao: [
                     new DocDedRedRequest(tipoDocumento: 'nDocFisc'),
                 ],
@@ -1278,7 +1315,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 documentosDeducao: [
                     new DocDedRedRequest(
                         tipoDocumento: 'nDoc',
@@ -1306,7 +1343,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 documentosDeducao: [
                     new DocDedRedRequest(
                         tipoDocumento: 'nDoc',
@@ -1334,11 +1371,14 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 exigSusp: new ExigSuspRequest(
                     tipoSuspensao: 1,
-                    numeroProcesso: 'PROC-12345',
+                    numeroProcesso: '123456789012345678901234567890',
                 ),
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -1358,7 +1398,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 exigSusp: new ExigSuspRequest(tipoSuspensao: 99),
             ),
         );
@@ -1380,10 +1420,13 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 beneficioMunicipal: new BeneficioMunicipalRequest(
-                    numeroBeneficio: 'BM-001',
+                    numeroBeneficio: '12345678901234',
                 ),
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -1403,7 +1446,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 beneficioMunicipal: new BeneficioMunicipalRequest(),
             ),
         );
@@ -1425,13 +1468,16 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 tribFederal: new TribFederalRequest(
                     pisCofinsCst: '01',
                     pisCofinsTipo: '1',
                     pisCofinsAliquotaPis: 1.65,
                     pisCofinsAliquotaCofins: 7.60,
                 ),
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -1451,7 +1497,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 tribFederal: new TribFederalRequest(pisCofinsCst: 'X'),
             ),
         );
@@ -1473,7 +1519,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 tribFederal: new TribFederalRequest(pisCofinsCst: '01'),
             ),
         );
@@ -1495,13 +1541,13 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 totTribTipo: 'invalid',
             ),
         );
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('totTribTipo inválido');
+        $this->expectExceptionMessage('totTribTipo');
         $this->validator->validate($request);
     }
 
@@ -1517,7 +1563,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 totTribTipo: 'pTotTrib',
             ),
         );
@@ -1539,11 +1585,13 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 totTribTipo: 'pTotTrib',
                 pTotTribFed: 10.0,
                 pTotTribEst: 5.0,
                 pTotTribMun: 3.0,
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
         );
 
@@ -1563,7 +1611,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 totTribTipo: 'indTotTrib',
             ),
         );
@@ -1585,7 +1633,7 @@ final class DpsValidatorTest extends TestCase
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
-                codigoNbs: '12345678',
+                codigoNbs: '123456789',
                 totTribTipo: 'pTotTribSN',
             ),
         );
@@ -1597,7 +1645,7 @@ final class DpsValidatorTest extends TestCase
 
     private function createValidDpsRequest(
         int $tipoAmbiente = 1,
-        string $dataEmissao = '2026-06-15T10:00:00',
+        string $dataEmissao = '2026-06-15T10:00:00-03:00',
         string $versaoAplicacao = '1.0.0',
         int $serie = 1,
         int $numero = 123,
@@ -1609,7 +1657,7 @@ final class DpsValidatorTest extends TestCase
         string $discriminacao = 'Serviço de teste',
         float $aliquotaIss = 5.0,
         float $valorServicos = 1000.0,
-        ?string $codigoNbs = '12345678',
+        ?string $codigoNbs = '123456789',
         ?IbsCbsRequest $ibscbs = null,
         ?ObraRequest $obra = null,
         ?ServicoRequest $servico = null,
@@ -1665,6 +1713,9 @@ final class DpsValidatorTest extends TestCase
                 aliquotaIss: $aliquotaIss,
                 codigoNbs: $codigoNbs,
                 obra: $obra,
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
             ),
             ibscbs: $ibscbs,
         );
@@ -1710,7 +1761,7 @@ final class DpsValidatorTest extends TestCase
             obra: new ObraRequest(),
         );
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('cObra, cCIB ou endereço');
+        $this->expectExceptionMessage('cObra, cCIB ou end');
         $this->validator->validate($request);
     }
 
@@ -1771,7 +1822,7 @@ final class DpsValidatorTest extends TestCase
             imovel: new IbsCbsImovelRequest(),
         );
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('cCIB ou endereço');
+        $this->expectExceptionMessage('cCIB ou end');
         $this->validator->validate($request);
     }
 
@@ -1952,7 +2003,7 @@ final class DpsValidatorTest extends TestCase
 
     private function createValidDpsRequestWithIbscbs(
         string $dataCompetencia = '2026-06-01',
-        ?string $codigoNbs = '12345678',
+        ?string $codigoNbs = '123456789',
         string $finNFSe = '0',
         string $cIndOp = '100001',
         string $indDest = '0',

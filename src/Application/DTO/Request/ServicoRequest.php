@@ -9,18 +9,19 @@ final readonly class ServicoRequest
     public function __construct(
         public string $discriminacao,
         public string $codigoTributacao,
-        public string $codigoMunicipioPrestacao,
         public float $valorServicos,
-        public float $valorDeducoes,
-        public float $descontoIncondicionado,
-        public float $descontoCondicionado,
-        public float $aliquotaIss,
+        public ?float $valorDeducoes = null,
+        public ?float $descontoIncondicionado = null,
+        public ?float $descontoCondicionado = null,
+        public ?float $aliquotaIss = null,
+        public ?string $codigoMunicipioPrestacao = null,
         public ?string $codigoNbs = null,
         public ?string $codigoCnae = null,
         public ?ObraRequest $obra = null,
         public ?string $tribISSQN = null,
         public ?string $tpRetISSQN = null,
         public ?string $codigoPaisPrestacao = null,
+        public ?string $codigoPaisResultado = null,
         public ?string $codigoTributacaoMunicipal = null,
         public ?string $codigoInternoContribuinte = null,
         public ?float $valorRecebido = null,
@@ -39,6 +40,8 @@ final readonly class ServicoRequest
         public ?float $pTotTribMun = null,
         public ?string $indTotTrib = null,
         public ?float $pTotTribSN = null,
+        public ?float $percentualDeducao = null,
+        public ?float $valorDeducaoPadrao = null,
     ) {
     }
 }
