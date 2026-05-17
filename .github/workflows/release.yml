@@ -29,29 +29,11 @@ jobs:
       - name: Run PHPStan
         run: composer run stan
 
-      - name: Generate release notes
-        run: |
-          echo "## What's Changed" > release-notes.md
-          git log $(git describe --tags --abbrev=0 HEAD)..HEAD --pretty=format:"* %s (%h)" >> release-notes.md
-          echo "" >> release-notes.md
-          echo "**Full Changelog**: https://github.com/MarcelaBeh/emissor-nfse-nacional/compare/$(git describe --tags --abbrev=0 HEAD)..HEAD" >> release-notes.md
-
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          body_path: release-notes.md
-          draft: false
-          prerelease: false
-
-      - name: Upload artifacts
-        uses: softprops/action-gh-release@v1
-        with:
+          body_path: CHANGELOG.md
           files: |
             composer.json
-            CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
