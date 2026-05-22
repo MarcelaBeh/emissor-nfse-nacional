@@ -55,6 +55,8 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInte
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\LoggerInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\NullLogger;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract\XmlBuilderInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\Contract\XsdValidatorInterface;
@@ -71,6 +73,7 @@ class EmitirDpsService
         private NfseXmlParser $nfseXmlParser,
         private IbscbsResponseValidator $ibscbsResponseValidator,
         private ApiEndpoints $apiEndpoints,
+        private LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -96,12 +99,14 @@ class EmitirDpsService
             return $this->processarResposta($response, $dps);
 
         } catch (DomainException $e) {
+            $this->logger->warning('Validação DPS falhou: {msg}', $e->getMessage());
             throw new ValidationException(
                 "Dados inválidos: {$e->getMessage()}",
                 0,
                 $e
             );
         } catch (HttpException $e) {
+            $this->logger->error('Falha HTTP ao emitir DPS: {msg}', $e->getMessage());
             throw new ServiceException(
                 "Falha ao comunicar com API: {$e->getMessage()}",
                 0,
@@ -128,18 +133,21 @@ class EmitirDpsService
             return $this->processarRespostaDecisaoJudicial($response);
 
         } catch (DomainException $e) {
+            $this->logger->warning('Validação decisão judicial falhou: {msg}', $e->getMessage());
             throw new ValidationException(
                 "Dados inválidos: {$e->getMessage()}",
                 0,
                 $e
             );
         } catch (HttpException $e) {
+            $this->logger->error('Falha HTTP ao emitir por decisão judicial: {msg}', $e->getMessage());
             throw new ServiceException(
                 "Falha ao comunicar com API: {$e->getMessage()}",
                 0,
                 $e
             );
         } catch (\RuntimeException $e) {
+            $this->logger->error('Falha ao processar XML para decisão judicial: {msg}', $e->getMessage());
             throw new ServiceException(
                 "Falha ao processar XML: {$e->getMessage()}",
                 0,
@@ -152,7 +160,7 @@ class EmitirDpsService
     {
         $compressed = gzencode($xml);
         if ($compressed === false) {
-            throw new \RuntimeException('Falha ao compactar XML');
+            throw new ServiceException('Falha ao compactar XML');
         }
 
         return base64_encode($compressed);
@@ -197,12 +205,12 @@ class EmitirDpsService
     {
         $decoded = base64_decode($gzipBase64, true);
         if ($decoded === false) {
-            throw new \RuntimeException('Falha ao decodificar base64');
+            throw new ServiceException('Falha ao decodificar base64');
         }
 
         $uncompressed = gzdecode($decoded);
         if ($uncompressed === false) {
-            throw new \RuntimeException('Falha ao descompactar gzip');
+            throw new ServiceException('Falha ao descompactar gzip');
         }
 
         return $uncompressed;

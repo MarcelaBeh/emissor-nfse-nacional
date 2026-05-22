@@ -11,6 +11,23 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.1.1] - 2026-05-22
+
+### Added
+- `SensitiveDataSanitizer` — sanitiza CPF, CNPJ, e-mail, chaves de acesso (50 dígitos) e campos sensíveis (`senha`, `token`, `password`, etc.) antes de logar; implementado em `src/Infrastructure/Security/`
+- `LoggerInterface` — contrato mínimo (`info`, `warning`, `error`) para injeção nos services
+- `NullLogger` — implementação padrão (sem output); evita dependência de pacotes externos
+- `SanitizedLogger` — implementação opcional com sanitização automática via `SensitiveDataSanitizer`; aceita qualquer `Closure` como writer (arquivo, PSR-3 externo, etc.)
+- `roave/security-advisories` adicionado em `require-dev` — bloqueia instalação de dependências com CVEs conhecidos
+
+### Changed
+- `EmitirDpsService`, `ConsultarNfseService`, `CancelarNfseService`: aceitam `LoggerInterface` como dependência opcional (padrão `NullLogger`) — erros de HTTP e validação são logados via interface
+- `NfseNacionalFacade`: todos os métodos públicos documentados com `@throws` explícitos (`ValidationException`, `ServiceException`, `CertificateExpiredException`, `CertificateExpiringException`)
+- `EmitirDpsService`: `\RuntimeException` em `compactarXml` e `descompactarXml` convertidos para `ServiceException` — exceções tipadas em toda a pilha
+- `composer.json`: adicionados `type: library`, `support` (issues + source), keywords expandidos (sefin, ibs, cbs, nota-fiscal-servico, fiscal, brasil), `role: Maintainer` no autor principal
+
+---
+
 ## [v2.1.0] - 2026-05-22
 
 ### Changed
@@ -129,7 +146,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.1.1...HEAD
+[v2.1.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.1.0...v2.1.1
 [v2.1.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.4...v2.1.0
 [v2.0.4]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.3...v2.0.4
 [v2.0.3]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.2...v2.0.3

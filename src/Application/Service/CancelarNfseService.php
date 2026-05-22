@@ -17,7 +17,9 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\LoggerInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\NullLogger;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract\XmlBuilderInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\Contract\XsdValidatorInterface;
 
@@ -31,6 +33,7 @@ class CancelarNfseService
         private EventoValidator $validator,
         private RequestBuilder $requestBuilder,
         private ApiEndpoints $apiEndpoints,
+        private LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -89,12 +92,14 @@ class CancelarNfseService
             );
 
         } catch (DomainException $e) {
+            $this->logger->warning('Validação cancelamento falhou: {msg}', $e->getMessage());
             throw new ValidationException(
                 "Dados inválidos: {$e->getMessage()}",
                 0,
                 $e
             );
         } catch (HttpException $e) {
+            $this->logger->error('Falha HTTP ao cancelar NFSe: {msg}', $e->getMessage());
             throw new ServiceException(
                 "Falha ao cancelar NFSe: {$e->getMessage()}",
                 0,

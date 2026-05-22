@@ -1,69 +1,87 @@
 {
-  "name": "marcelabeh/emissor-nfse-nacional",
-  "description": "Pacote para geração de NFSe Nacional usando componentes NFePHP (https://github.com/nfephp-org)",
-  "keywords": [
-    "nfse-nacional",
-    "nfse",
-    "mei"
-  ],
-  "license": "LGPL-3.0-or-later",
-  "homepage": "https://github.com/marcelabeh/emissor-nfse-nacional",
-  "autoload": {
-    "psr-4": {
-      "MarcelaBeh\\EmissorNfseNacional\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "MarcelaBeh\\EmissorNfseNacional\\Tests\\": "tests/"
-    }
-  },
-  "authors": [
-    {
-      "name": "Marcela Beatriz",
-      "email": "marcelamartins00@gmail.com"
+    "name": "marcelabeh/emissor-nfse-nacional",
+    "type": "library",
+    "description": "Biblioteca PHP para emissão, consulta e cancelamento de NFS-e Nacional (Sefin) — Clean Architecture, validação XSD v1.01, assinatura SHA-256, suporte IBS/CBS",
+    "keywords": [
+        "nfse",
+        "nfse-nacional",
+        "sefin",
+        "nota-fiscal-servico",
+        "dps",
+        "ibs",
+        "cbs",
+        "nfephp",
+        "fiscal",
+        "brasil"
+    ],
+    "license": "LGPL-3.0-or-later",
+    "homepage": "https://github.com/marcelabeh/emissor-nfse-nacional",
+    "support": {
+        "issues": "https://github.com/marcelabeh/emissor-nfse-nacional/issues",
+        "source": "https://github.com/marcelabeh/emissor-nfse-nacional"
     },
-    {
-      "name": "Fernando Friedrich",
-      "email": "fernando@hadder.com.br",
-      "role": "Original Author"
+    "authors": [
+        {
+            "name": "Marcela Beatriz",
+            "email": "marcelamartins00@gmail.com",
+            "role": "Maintainer"
+        },
+        {
+            "name": "Fernando Friedrich",
+            "email": "fernando@hadder.com.br",
+            "role": "Original Author"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "nfephp-org/sped-common": "^5.1",
+        "ext-dom": "*",
+        "ext-curl": "*",
+        "ext-zlib": "*",
+        "ext-openssl": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^10",
+        "friendsofphp/php-cs-fixer": "^3.59",
+        "roave/security-advisories": "dev-latest"
+    },
+    "autoload": {
+        "psr-4": {
+            "MarcelaBeh\\EmissorNfseNacional\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MarcelaBeh\\EmissorNfseNacional\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite Unit",
+        "test:integration": "phpunit --testsuite Integration",
+        "cs": "php-cs-fixer fix --dry-run --diff",
+        "cs:fix": "php-cs-fixer fix",
+        "stan": "phpstan analyse --memory-limit=512M",
+        "check": [
+            "@cs",
+            "@stan",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Executa todos os testes",
+        "test:unit": "Executa testes unitários",
+        "test:integration": "Executa testes de integração",
+        "cs": "Verifica estilo do código (dry-run)",
+        "cs:fix": "Corrige estilo do código automaticamente",
+        "stan": "Análise estática com PHPStan",
+        "check": "Executa todas as verificações de qualidade"
     }
-  ],
-  "minimum-stability": "dev",
-  "require": {
-    "php": "^8.3",
-    "nfephp-org/sped-common": "^5.1",
-    "ext-dom": "*",
-    "ext-curl": "*",
-    "ext-zlib": "*",
-    "ext-openssl": "*",
-    "ext-mbstring": "*"
-  },
-  "config": {
-    "optimize-autoloader": true
-  },
-  "scripts": {
-    "test": "phpunit",
-    "test:unit": "phpunit --testsuite Unit",
-    "test:integration": "phpunit --testsuite Integration",
-    "cs": "php-cs-fixer fix --dry-run --diff",
-    "cs:fix": "php-cs-fixer fix",
-    "stan": "phpstan analyse --memory-limit=512M",
-    "check": ["@cs", "@stan", "@test"]
-  },
-  "scripts-descriptions": {
-    "test": "Executa todos os testes",
-    "test:unit": "Executa testes unitários",
-    "test:integration": "Executa testes de integração",
-    "cs": "Verifica estilo do código (dry-run)",
-    "cs:fix": "Corrige estilo do código automaticamente",
-    "stan": "Análise estática com PHPStan",
-    "check": "Executa todas as verificações de qualidade"
-  },
-  "prefer-stable": true,
-  "require-dev": {
-    "phpstan/phpstan": "^2.1",
-    "phpunit/phpunit": "^10",
-    "friendsofphp/php-cs-fixer": "^3.59"
-  }
 }
