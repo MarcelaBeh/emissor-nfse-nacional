@@ -26,7 +26,7 @@ class XmlSigner implements Contract\XmlSignerInterface
             $xml,
             $tagname,
             'Id',
-            OPENSSL_ALGO_SHA1,
+            OPENSSL_ALGO_SHA256,
             $this->canonical,
             $rootname
         );

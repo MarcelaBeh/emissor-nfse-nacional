@@ -14,20 +14,20 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract\XmlBuilderInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\Contract\XsdValidatorInterface;
 
 class CancelarNfseService
 {
     public function __construct(
-        private ApiConnector $apiConnector,
-        private EventoXmlBuilder $xmlBuilder,
-        private XmlSigner $xmlSigner,
-        private XsdValidator $xsdValidator,
+        private ApiConnectorInterface $apiConnector,
+        private XmlBuilderInterface $xmlBuilder,
+        private XmlSignerInterface $xmlSigner,
+        private XsdValidatorInterface $xsdValidator,
         private EventoValidator $validator,
         private RequestBuilder $requestBuilder,
         private ApiEndpoints $apiEndpoints,

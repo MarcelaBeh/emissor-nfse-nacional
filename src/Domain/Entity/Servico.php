@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 
@@ -28,8 +30,8 @@ class Servico
         private ?string $codigoNbs = null,
         private ?string $codigoCnae = null,
         private ?Obra $obra = null,
-        private string $tribISSQN = '1',
-        private string $tpRetISSQN = '1',
+        private TributacaoIssqn $tribISSQN = TributacaoIssqn::OPERACAO_TRIBUTAVEL,
+        private TipoRetencaoIssqn $tpRetISSQN = TipoRetencaoIssqn::NAO_RETIDO,
         private ?string $codigoPaisPrestacao = null,
         private ?string $codigoPaisResultado = null,
         private ?string $codigoTributacaoMunicipal = null,
@@ -39,6 +41,8 @@ class Servico
         private ?AtvEvento $atvEvento = null,
         private ?InfoCompl $infoCompl = null,
         private ?array $documentosDeducao = null,
+        private ?float $percentualDeducao = null,
+        private ?float $valorDeducaoPadrao = null,
         private ?int $tipoImunidade = null,
         private ?ExigSusp $exigSusp = null,
         private ?BeneficioMunicipal $beneficioMunicipal = null,
@@ -79,8 +83,15 @@ class Servico
             throw new \InvalidArgumentException('Discriminação deve ter no máximo 2000 caracteres');
         }
 
-        if ($this->aliquotaIss < 0 || $this->aliquotaIss > 100) {
+        if ($this->aliquotaIss !== null && ($this->aliquotaIss < 0 || $this->aliquotaIss > 100)) {
             throw new \InvalidArgumentException('Alíquota ISS deve estar entre 0 e 100');
+        }
+
+        // XSD TCLocPrest exige xs:choice minOccurs="1": exatamente um de cLocPrestacao ou cPaisPrestacao.
+        if ($this->localPrestacao === null && $this->codigoPaisPrestacao === null) {
+            throw new \InvalidArgumentException(
+                'Local de prestação é obrigatório: informe cLocPrestacao (município IBGE) ou cPaisPrestacao (código ISO do país)'
+            );
         }
 
         if (!$this->valorTotal->isPositive()) {
@@ -153,12 +164,12 @@ class Servico
         return $this->obra;
     }
 
-    public function getTribISSQN(): string
+    public function getTribISSQN(): TributacaoIssqn
     {
         return $this->tribISSQN;
     }
 
-    public function getTpRetISSQN(): string
+    public function getTpRetISSQN(): TipoRetencaoIssqn
     {
         return $this->tpRetISSQN;
     }
@@ -207,6 +218,16 @@ class Servico
     public function getDocumentosDeducao(): ?array
     {
         return $this->documentosDeducao;
+    }
+
+    public function getPercentualDeducao(): ?float
+    {
+        return $this->percentualDeducao;
+    }
+
+    public function getValorDeducaoPadrao(): ?float
+    {
+        return $this->valorDeducaoPadrao;
     }
 
     public function getTipoImunidade(): ?int

@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Http;
 
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
 
-class ApiConnector
+class ApiConnector implements ApiConnectorInterface
 {
     private string $baseUrl;
 

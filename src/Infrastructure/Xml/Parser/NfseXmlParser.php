@@ -16,7 +16,10 @@ class NfseXmlParser
         }
 
         $dom = new \DOMDocument('1.0', 'UTF-8');
-        $loaded = @$dom->loadXML($xml);
+        libxml_use_internal_errors(true);
+        $loaded = $dom->loadXML($xml, LIBXML_NONET | LIBXML_NOENT);
+        libxml_clear_errors();
+        libxml_use_internal_errors(false);
         if (!$loaded) {
             return [];
         }

@@ -422,7 +422,15 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->addChild($desc, 'vDescCond', $descCond !== null ? number_format($descCond->getValue(), 2, '.', '') : '0.00', false);
         }
 
-        if ($servico->getDocumentosDeducao() !== null) {
+        if ($servico->getPercentualDeducao() !== null) {
+            $vDedRed = $this->dom->createElement('vDedRed');
+            $valNode->appendChild($vDedRed);
+            $this->addChild($vDedRed, 'pDR', number_format($servico->getPercentualDeducao(), 2, '.', ''), true);
+        } elseif ($servico->getValorDeducaoPadrao() !== null) {
+            $vDedRed = $this->dom->createElement('vDedRed');
+            $valNode->appendChild($vDedRed);
+            $this->addChild($vDedRed, 'vDR', number_format($servico->getValorDeducaoPadrao(), 2, '.', ''), true);
+        } elseif ($servico->getDocumentosDeducao() !== null) {
             $this->buildDedRed($valNode, $servico->getDocumentosDeducao());
         }
 
@@ -431,7 +439,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $tribMun = $this->dom->createElement('tribMun');
         $tribNode->appendChild($tribMun);
-        $this->addChild($tribMun, 'tribISSQN', $servico->getTribISSQN(), true);
+        $this->addChild($tribMun, 'tribISSQN', $servico->getTribISSQN()->value, true);
         if ($servico->getTipoImunidade() !== null) {
             $this->addChild($tribMun, 'tpImunidade', (string) $servico->getTipoImunidade(), false);
         }
@@ -452,7 +460,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
                 $this->addChild($bmNode, 'pRedBCBM', number_format($servico->getBeneficioMunicipal()->getPercentualReducaoBC(), 3, '.', ''), false);
             }
         }
-        $this->addChild($tribMun, 'tpRetISSQN', $servico->getTpRetISSQN(), true);
+        $this->addChild($tribMun, 'tpRetISSQN', $servico->getTpRetISSQN()->value, true);
         $this->addChild($tribMun, 'pAliq', $servico->getAliquotaIss(), true);
 
         if ($servico->getTribFederal() !== null) {

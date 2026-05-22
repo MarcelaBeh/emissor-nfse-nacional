@@ -5,18 +5,17 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Security;
 
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiringException;
 use NFePHP\Common\Certificate;
 
 class CertificateManager implements Contract\CertificateManagerInterface
 {
     private Certificate $certificate;
     private string $tempDir;
-    private \Random\Randomizer $randomizer;
 
     public function __construct(Certificate $certificate)
     {
         $this->certificate = $certificate;
-        $this->randomizer = new \Random\Randomizer();
         $this->validate();
         $this->setupTempDirectory();
     }
@@ -32,9 +31,8 @@ class CertificateManager implements Contract\CertificateManagerInterface
 
         $daysToExpire = $this->certificate->getValidTo()->diff(new \DateTime())->days;
         if ($daysToExpire <= 30) {
-            trigger_error(
-                "Certificado expira em {$daysToExpire} dias",
-                E_USER_WARNING
+            throw new CertificateExpiringException(
+                "Certificado expira em {$daysToExpire} dias"
             );
         }
     }
@@ -61,22 +59,25 @@ class CertificateManager implements Contract\CertificateManagerInterface
      */
     public function saveTemporaryFiles(): array
     {
-        $alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        $files = [
-            'private' => $this->tempDir . $this->randomizer->getBytesFromString($alphabet, 16) . '.pem',
-            'public' => $this->tempDir . $this->randomizer->getBytesFromString($alphabet, 16) . '.pem',
-            'cert' => $this->tempDir . $this->randomizer->getBytesFromString($alphabet, 16) . '.pem',
+        return [
+            'private' => $this->writeSecureTemp((string) $this->certificate->privateKey),
+            'public'  => $this->writeSecureTemp((string) $this->certificate->publicKey),
+            'cert'    => $this->writeSecureTemp((string) $this->certificate),
         ];
+    }
 
-        file_put_contents($files['private'], $this->certificate->privateKey);
-        file_put_contents($files['public'], $this->certificate->publicKey);
-        file_put_contents($files['cert'], $this->certificate);
+    private function writeSecureTemp(string $content): string
+    {
+        // tempnam() cria o arquivo atomicamente com permissão 0600 (owner-only),
+        // eliminando a janela TOCTOU entre file_put_contents e chmod.
+        $path = tempnam($this->tempDir, 'nfse_');
+        if ($path === false) {
+            throw new \RuntimeException('Falha ao criar arquivo temporário seguro');
+        }
 
-        chmod($files['private'], 0o600);
-        chmod($files['public'], 0o600);
-        chmod($files['cert'], 0o600);
+        file_put_contents($path, $content);
 
-        return $files;
+        return $path;
     }
 
     #[\Override]
@@ -86,9 +87,17 @@ class CertificateManager implements Contract\CertificateManagerInterface
     public function cleanTemporaryFiles(array $files): void
     {
         foreach ($files as $file) {
-            if (file_exists($file)) {
-                unlink($file);
+            if (!file_exists($file)) {
+                continue;
             }
+
+            // Sobrescreve o conteúdo antes de deletar para reduzir recuperabilidade dos dados.
+            $size = filesize($file);
+            if ($size !== false && $size > 0) {
+                file_put_contents($file, str_repeat("\0", $size));
+            }
+
+            unlink($file);
         }
     }
 

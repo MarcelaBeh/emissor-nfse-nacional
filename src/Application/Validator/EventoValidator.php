@@ -83,6 +83,11 @@ class EventoValidator
 
         if (empty($request->dataEvento)) {
             $errors[] = 'Data do evento é obrigatória';
+        } elseif (\DateTimeImmutable::createFromFormat(\DateTimeInterface::ATOM, $request->dataEvento) === false
+            && \DateTimeImmutable::createFromFormat('Y-m-d\TH:i:sP', $request->dataEvento) === false
+            && \DateTimeImmutable::createFromFormat('Y-m-d', $request->dataEvento) === false
+        ) {
+            $errors[] = 'Data do evento inválida. Use ISO 8601 (ex: 2026-05-22T10:00:00-03:00)';
         }
 
         if (!empty($errors)) {

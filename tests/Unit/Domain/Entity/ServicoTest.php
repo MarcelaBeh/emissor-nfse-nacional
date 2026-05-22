@@ -13,6 +13,8 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 use PHPUnit\Framework\TestCase;
@@ -39,8 +41,8 @@ final class ServicoTest extends TestCase
         $this->assertNull($servico->getCodigoNbs());
         $this->assertNull($servico->getCodigoCnae());
         $this->assertNull($servico->getObra());
-        $this->assertSame('1', $servico->getTribISSQN());
-        $this->assertSame('1', $servico->getTpRetISSQN());
+        $this->assertSame('1', $servico->getTribISSQN()->value);
+        $this->assertSame('1', $servico->getTpRetISSQN()->value);
         $this->assertNull($servico->getComExterior());
         $this->assertNull($servico->getAtvEvento());
         $this->assertNull($servico->getInfoCompl());
@@ -78,8 +80,8 @@ final class ServicoTest extends TestCase
             aliquotaIss: 5.0,
             codigoNbs: '12345678',
             codigoCnae: '1234567',
-            tribISSQN: '3',
-            tpRetISSQN: '2',
+            tribISSQN: TributacaoIssqn::EXPORTACAO,
+            tpRetISSQN: TipoRetencaoIssqn::RETIDO_TOMADOR,
             codigoPaisPrestacao: '01058',
             codigoTributacaoMunicipal: '3550308',
             codigoInternoContribuinte: 'contrib123',
@@ -95,8 +97,8 @@ final class ServicoTest extends TestCase
 
         $this->assertSame('12345678', $servico->getCodigoNbs());
         $this->assertSame('1234567', $servico->getCodigoCnae());
-        $this->assertSame('3', $servico->getTribISSQN());
-        $this->assertSame('2', $servico->getTpRetISSQN());
+        $this->assertSame('3', $servico->getTribISSQN()->value);
+        $this->assertSame('2', $servico->getTpRetISSQN()->value);
         $this->assertSame('01058', $servico->getCodigoPaisPrestacao());
         $this->assertSame('3550308', $servico->getCodigoTributacaoMunicipal());
         $this->assertSame('contrib123', $servico->getCodigoInternoContribuinte());

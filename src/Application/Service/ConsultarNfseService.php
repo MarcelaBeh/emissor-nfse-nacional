@@ -9,14 +9,14 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\NfseResponse;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
 
 class ConsultarNfseService
 {
     public function __construct(
-        private ApiConnector $apiConnector,
+        private ApiConnectorInterface $apiConnector,
         private ApiEndpoints $apiEndpoints,
         private ConsultaValidator $validator,
         private NfseXmlParser $nfseXmlParser,

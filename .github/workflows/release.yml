@@ -19,20 +19,36 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          extensions: dom, curl, zlib, openssl, mbstring, xml, zip
+          coverage: none
+          tools: composer:v2
 
       - name: Install dependencies
-        run: composer install --no-interaction --optimize-autoloader
+        run: composer install --no-interaction --no-dev --optimize-autoloader
 
-      - name: Run tests
-        run: composer run test
+      - name: Install dev dependencies for quality checks
+        run: composer install --no-interaction --optimize-autoloader
 
       - name: Run PHPStan
         run: composer run stan
 
+      - name: Run tests
+        run: composer run test
+
+      - name: Extract release notes
+        id: extract_notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          # Extract the section for this tag from CHANGELOG.md
+          awk "/^## \[${TAG}\]/{found=1; next} found && /^## \[v/{exit} found{print}" CHANGELOG.md > release_notes.txt
+          if [ ! -s release_notes.txt ]; then
+            echo "Release ${TAG}" > release_notes.txt
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body_path: CHANGELOG.md
+          body_path: release_notes.txt
           files: |
             composer.json
         env:

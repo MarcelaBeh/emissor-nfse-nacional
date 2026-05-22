@@ -1,144 +1,116 @@
-# Emissor NFSe Nacional - v2.0.0
+# Changelog
 
-Biblioteca PHP para integração com a API Nacional de NFS-e.
+Todas as mudanças notáveis neste projeto são documentadas aqui.
 
----
-
-## Arquitetura
-
-Clean Architecture com 4 camadas:
-
-| Camada | Responsabilidade |
-|--------|-----------------|
-| `Domain/` | Entidades, Value Objects, Enums, Contracts |
-| `Application/` | Services, DTOs, Validators |
-| `Infrastructure/` | HTTP, XML, Security, Repository |
-| `Presentation/` | Facade, Factories |
+Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
+e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ---
 
-## Componentes
-
-### Value Objects (10)
-
-| Classe | Descrição |
-|--------|-----------|
-| `Cnpj` | CNPJ com validação de dígito verificador |
-| `Cpf` | CPF com validação de dígito verificador |
-| `ChaveAcesso` | Chave de acesso NFS-e (50 caracteres) |
-| `CodigoMunicipio` | Código IBGE de município (7 dígitos) |
-| `Cep` | CEP brasileiro |
-| `Email` | Email com validação |
-| `Telefone` | Telefone brasileiro |
-| `Money` | Valor monetário (armazenado em centavos) |
-| `InscricaoMunicipal` | Inscrição municipal |
-| `Nif` | Número de Identificação Fiscal |
-
-### Entities (8)
-
-`Dps`, `Nfse`, `Prestador`, `Tomador`, `Intermediario`, `Servico`, `Evento`, `Endereco`
-
-### Services (3)
-
-| Service | Operação |
-|---------|----------|
-| `EmitirDpsService` | Emissão de DPS |
-| `ConsultarNfseService` | Consulta de NFS-e |
-| `CancelarNfseService` | Cancelamento |
-
-### Infrastructure
-
-**HTTP:** `CurlHttpClient`, `ApiConnector`, `RequestBuilder`, `ResponseParser`
-
-**XML:** `DpsXmlBuilder`, `EventoXmlBuilder`, `NfseXmlParser`, `DpsXmlParser`, `ErrorXmlParser`, `XsdValidator`
-
-**Security:** `CertificateManager`, `CertificateValidator`, `XmlSigner`
-
-**Repository:** `CstClassTribRepository` (3 implementações)
-
-### Presentation
-
-`NfseNacionalFacade`, `ServiceFactory`, `ConfigFactory`, `DpsFactory`, `NfseFactory`
+## [Unreleased]
 
 ---
 
-## Métricas
+## [v2.0.4] - 2026-05-22
 
-| Métrica | Valor |
-|---------|-------|
-| PHPStan | Level 8 (0 erros) |
-| Testes | 631 passando |
-| Code Style | PSR-12 |
-| PHP | 8.3+ |
+### Security
+- SHA-1 substituído por SHA-256 na assinatura XML (`XmlSigner`)
+- Proteção XXE em todos os parsers XML (`DpsXmlParser`, `ErrorXmlParser`, `NfseXmlParser`) via `LIBXML_NONET | LIBXML_NOENT`
+- Temporários de certificado reescritos com `tempnam()` eliminando vulnerabilidade TOCTOU; conteúdo zerado antes de `unlink`
+- Expiração de certificado agora lança `CertificateExpiringException` em vez de `trigger_error`
 
----
+### Added
+- `CertificateExpiringException` — exceção dedicada para certificados próximos do vencimento
+- `ApiConnectorInterface` — contrato para o conector HTTP
+- `XsdValidatorInterface` — contrato para o validador XSD
+- `Servico`: campos `percentualDeducao` (`pDR`) e `valorDeducaoPadrao` (`vDR`) conforme XSD `TCInfoDedRed xs:choice`
 
-## Atualizações v2.0.1 (16/05/2026)
+### Changed
+- `Servico`: parâmetros `tribISSQN`/`tpRetISSQN` migrados de `string` para enums tipados (`TributacaoIssqn`, `TipoRetencaoIssqn`)
+- `Servico`: validação `xs:choice` para `locPrest` — obrigatório informar `cLocPrestacao` ou `cPaisPrestacao`
+- `Telefone`: validação ampliada para 6–20 dígitos conforme XSD `TSTelefone` (suporte a números internacionais)
+- `EmitirDpsService`, `CancelarNfseService`, `ConsultarNfseService`: type hints migrados para interfaces (DIP)
+- `XsdValidator`: suporte a múltiplas versões de schema (v1.00 e v1.01) via enum `VersaoSchema`
+- `DpsXmlBuilder`: emite `<pDR>` e `<vDR>` no bloco `<vDedRed>` quando informados
+- CI: matrix agora testa PHP 8.3 e 8.4; PHP-CS-Fixer bloqueia o pipeline em vez de continuar com erro
+- Release workflow: extensions PHP declaradas, extrai release notes apenas da seção da tag atual
 
-### Validador DpsValidator
-- Validação completa contra XSDs oficiais v1.01
-- tpEmit obrigatório, cMotivoEmisTI opcional
-- Prestador xNome opcional (minOccurs="0")
-- Tomador/Intermediário: documento + xNome obrigatórios quando bloco existe
-- comExterior: tpMoeda + vServMoeda obrigatórios quando existe
-- atvEvento: dtIni + dtFim obrigatórios quando existe
-- dedução/redução: choice só valida se bloco existir
-- totTrib: bloco opcional
+### Fixed
+- `EventoValidator`: data do evento agora é validada como ISO 8601 antes de instanciar `DateTimeImmutable`, evitando `DateMalformedStringException` não capturada
+- `DpsXmlBuilder`: `tribISSQN`/`tpRetISSQN` agora usam `.value` do enum corretamente
 
-### DTOs
-- ServicoRequest: campos opcionais agora são nullable conforme XSD
-- valorDeducoes, descontoIncondicionado, descontoCondicionado: ?float
-- aliquotaIss: ?float
-- tribISSQN, tpRetISSQN: ?string (obrigatórios no validador)
-
-### Entity Servico
-- Aceita Money|null para descontoIncondicionado, descontoCondicionado, valorDeducoes
-- aliquotaIss agora é ?float
-- Getters atualizados para retornar tipos nullable
-
-### Services e XML
-- EmitirDpsService trata nulos ao criar Money
-- DpsXmlBuilder trata nulos ao gerar XML
-
-### Exemplos
-- MakeDps.php atualizado com tribISSQN e tpRetISSQN
-- MakeDpsComSubstituicao.php atualizado
+### Removed
+- Dependência `tecnickcom/tcpdf` — nunca utilizada
+- Dependência dev `symfony/var-dumper` — nunca utilizada
+- `Helpers.php` e entrada `autoload.files` — função `now()` nunca chamada
+- `DpsInterface` — interface órfã sem nenhuma implementação
 
 ---
 
-## Comandos
+## [v2.0.3] - 2026-05-16
 
-```bash
-composer test      # PHPUnit
-composer cs        # CS-Fixer dry-run
-composer cs:fix    # CS-Fixer apply
-composer stan      # PHPStan nível 8
-composer check     # Tudo junto
-```
+### Added
+- Endpoint `HEAD /dps/{id}` — verificar se NFS-e foi gerada a partir do DPS (`$facade->verificarDpsExiste()`)
+- Endpoint `POST /decisao-judicial/nfse` — emitir NFS-e por decisão judicial (`$facade->emitirPorDecisaoJudicial()`)
+- `HttpClientInterface`: método `head()`
+- `CurlHttpClient`: implementação de HEAD request
+- `ApiConnector`: método `head()`
+- `ApiEndpoints`: métodos `verificarDps()` e `decisaoJudicialNfse()`
+- `prefeituras.json`: operações `verificar_dps` e `decisao_judicial_nfse`
 
----
+### Changed
+- `ConsultarNfseService`: novo método `verificarDpsExiste()`
+- `EmitirDpsService`: novo método `executarPorDecisaoJudicial()` com validação XSD NFSe v1.01
 
----
-
-## v2.0.3 (17/05/2026)
-
-### Novos Endpoints da API Sefin Nacional
-
-- **HEAD /dps/{id}** - Verificar se NFS-e foi gerada a partir do DPS
-  - `$facade->verificarDpsExiste(string $id): bool`
-- **POST /decisao-judicial/nfse** - Emitir NFS-e por decisão judicial
-  - `$facade->emitirPorDecisaoJudicial(string $nfseXml): NfseResponse`
-
-### Alterações
-
-- HttpClientInterface: novo método `head()`
-- CurlHttpClient: implementação de HEAD request
-- ApiConnector: novo método `head()`
-- ApiEndpoints: métodos `verificarDps()` e `decisaoJudicialNfse()`
-- ConsultarNfseService: `verificarDpsExiste()`
-- EmitirDpsService: `executarPorDecisaoJudicial()` com validação XSD NFSe v1.01
-- prefeituras.json: operações `verificar_dps` e `decisao_judicial_nfse`
+### Fixed
+- Release workflow: dependências dev mantidas para execução de testes no CI
 
 ---
 
-**Última atualização:** 17/05/2026
+## [v2.0.2] - 2026-05-16
+
+### Added
+- GitHub Actions: workflow de release automático ao criar tag `v*`
+- Guia de integração com ERPs (`docs/`)
+
+### Fixed
+- Release workflow: atualização para versão mais recente da action
+
+---
+
+## [v2.0.1] - 2026-05-15
+
+### Added
+- `DpsValidator`: validação completa de todos os campos contra XSDs oficiais v1.01
+  - `tpEmit` obrigatório
+  - `comExterior`: `tpMoeda` + `vServMoeda` obrigatórios quando bloco presente
+  - `atvEvento`: `dtIni` + `dtFim` obrigatórios quando bloco presente
+  - Tomador/Intermediário: documento + `xNome` obrigatórios quando bloco presente
+
+### Changed
+- `ServicoRequest`: campos `valorDeducoes`, `descontoIncondicionado`, `descontoCondicionado`, `aliquotaIss` agora `?float` conforme XSD
+- `Servico`: aceita `Money|null` para descontos e deduções
+- `EmitirDpsService` e `DpsXmlBuilder`: tratamento de nulos nos campos opcionais
+
+---
+
+## [v2.0.0] - 2026-05-15
+
+### Added
+- Lançamento inicial da biblioteca
+- Clean Architecture com 4 camadas: Domain, Application, Infrastructure, Presentation
+- 10 Value Objects: `Cnpj`, `Cpf`, `ChaveAcesso`, `CodigoMunicipio`, `Cep`, `Email`, `Telefone`, `Money`, `InscricaoMunicipal`, `Nif`
+- Entidades de domínio: `Dps`, `Nfse`, `Prestador`, `Tomador`, `Intermediario`, `Servico`, `Evento`, `Endereco`
+- Services: `EmitirDpsService`, `ConsultarNfseService`, `CancelarNfseService`
+- Builders XML: `DpsXmlBuilder`, `EventoXmlBuilder`, `EventoEnvelopeBuilder`
+- Validador XSD contra schemas oficiais v1.00 e v1.01
+- Enums tipados: `TipoAmbiente`, `TributacaoIssqn`, `TipoRetencaoIssqn`, `RegimeTributario`, `VersaoSchema` e outros
+- Facade `NfseNacionalFacade` para uso simplificado
+- PHPStan level 8 configurado (0 erros)
+
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.4...HEAD
+[v2.0.4]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.3...v2.0.4
+[v2.0.3]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.2...v2.0.3
+[v2.0.2]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.1...v2.0.2
+[v2.0.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.0...v2.0.1
+[v2.0.0]: https://github.com/marcelabeh/emissor-nfse-nacional/releases/tag/v2.0.0

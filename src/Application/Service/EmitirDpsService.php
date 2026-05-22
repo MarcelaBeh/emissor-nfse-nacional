@@ -36,6 +36,8 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
@@ -49,21 +51,21 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoSituacaoTributaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract\XmlBuilderInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\Contract\XsdValidatorInterface;
 
 class EmitirDpsService
 {
     public function __construct(
-        private ApiConnector $apiConnector,
-        private DpsXmlBuilder $xmlBuilder,
-        private XmlSigner $xmlSigner,
-        private XsdValidator $xsdValidator,
+        private ApiConnectorInterface $apiConnector,
+        private XmlBuilderInterface $xmlBuilder,
+        private XmlSignerInterface $xmlSigner,
+        private XsdValidatorInterface $xsdValidator,
         private DpsValidator $validator,
         private RequestBuilder $requestBuilder,
         private NfseXmlParser $nfseXmlParser,
@@ -351,8 +353,8 @@ class EmitirDpsService
             codigoNbs: $request->servico->codigoNbs,
             codigoCnae: $request->servico->codigoCnae,
             obra: $obra,
-            tribISSQN: $request->servico->tribISSQN ?? '1',
-            tpRetISSQN: $request->servico->tpRetISSQN ?? '1',
+            tribISSQN: $request->servico->tribISSQN !== null ? TributacaoIssqn::from($request->servico->tribISSQN) : TributacaoIssqn::OPERACAO_TRIBUTAVEL,
+            tpRetISSQN: $request->servico->tpRetISSQN !== null ? TipoRetencaoIssqn::from($request->servico->tpRetISSQN) : TipoRetencaoIssqn::NAO_RETIDO,
             codigoPaisPrestacao: $request->servico->codigoPaisPrestacao,
             codigoPaisResultado: $request->servico->codigoPaisResultado,
             codigoTributacaoMunicipal: $request->servico->codigoTributacaoMunicipal,
@@ -362,6 +364,8 @@ class EmitirDpsService
             atvEvento: $this->criarAtvEvento($request->servico->atvEvento),
             infoCompl: $this->criarInfoCompl($request->servico->infoCompl),
             documentosDeducao: $this->criarDocumentosDeducao($request->servico->documentosDeducao),
+            percentualDeducao: $request->servico->percentualDeducao,
+            valorDeducaoPadrao: $request->servico->valorDeducaoPadrao,
             tipoImunidade: $request->servico->tipoImunidade,
             exigSusp: $this->criarExigSusp($request->servico->exigSusp),
             beneficioMunicipal: $this->criarBeneficioMunicipal($request->servico->beneficioMunicipal),

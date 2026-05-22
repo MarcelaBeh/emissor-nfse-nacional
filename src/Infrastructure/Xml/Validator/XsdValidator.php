@@ -4,16 +4,25 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator;
 
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VersaoSchema;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Exception\XmlValidationException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\Contract\XsdValidatorInterface;
 
-class XsdValidator
+class XsdValidator implements XsdValidatorInterface
 {
     private string $schemasDir;
 
     private const SCHEMAS = [
-        'DPS' => 'DPS_v1.01.xsd',
-        'NFSe' => 'NFSe_v1.01.xsd',
-        'pedRegEvento' => 'pedRegEvento_v1.01.xsd',
+        VersaoSchema::V1_01->value => [
+            'DPS'          => 'DPS_v1.01.xsd',
+            'NFSe'         => 'NFSe_v1.01.xsd',
+            'pedRegEvento' => 'pedRegEvento_v1.01.xsd',
+        ],
+        VersaoSchema::V1_00->value => [
+            'DPS'          => 'DPS_v1.00.xsd',
+            'NFSe'         => 'NFSe_v1.00.xsd',
+            'pedRegEvento' => 'pedRegEvento_v1.00.xsd',
+        ],
     ];
 
     public function __construct(?string $schemasDir = null)
@@ -22,13 +31,15 @@ class XsdValidator
             ?? __DIR__ . '/../../../../storage/schemes/';
     }
 
-    public function validate(string $xml, string $tipo): void
+    public function validate(string $xml, string $tipo, VersaoSchema $versao = VersaoSchema::V1_01): void
     {
-        $xsdFile = self::SCHEMAS[$tipo] ?? null;
+        $schemas = self::SCHEMAS[$versao->value];
+
+        $xsdFile = $schemas[$tipo] ?? null;
 
         if ($xsdFile === null) {
             throw new \InvalidArgumentException(
-                "Tipo de schema desconhecido: {$tipo}. Tipos válidos: " . implode(', ', array_keys(self::SCHEMAS))
+                "Tipo de schema desconhecido: {$tipo}. Tipos válidos: " . implode(', ', array_keys($schemas))
             );
         }
 
@@ -45,7 +56,9 @@ class XsdValidator
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput = false;
 
-        if (!$dom->loadXML($xml)) {
+        // LIBXML_NONET bloqueia requisições de rede durante o parse (previne SSRF/XXE via entidades remotas).
+        // LIBXML_NOENT substitui entidades por seus valores literais sem resolver externas.
+        if (!$dom->loadXML($xml, LIBXML_NONET | LIBXML_NOENT)) {
             $errors = $this->getLibxmlErrors();
             throw new XmlValidationException('XML malformado: ' . implode('; ', $errors));
         }
