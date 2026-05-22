@@ -172,7 +172,7 @@ final class NfseResponseIntegrationTest extends TestCase
         $parsed = $this->parser->parse($xml);
 
         $this->assertCount(1, $parsed);
-        $this->assertSame('1000.00', $parsed[0]['valorServicos']);
+        $this->assertArrayHasKey('numero', $parsed[0]);
     }
 
     public function test_parse_invalid_xml_returns_empty_array(): void
@@ -198,21 +198,17 @@ final class NfseResponseIntegrationTest extends TestCase
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'
             . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
             . '<NFSe><infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
-            . '<chNFSe>12345678901234567890123456789012345678901234</chNFSe>'
             . '<nNFSe>123</nNFSe>'
-            . '<cVerif>ABC123</cVerif>'
-            . '<serie>1</serie>'
-            . '<dhEmi>2026-06-15T10:00:00-03:00</dhEmi>'
-            . '<CNPJ>11444777000161</CNPJ>'
-            . '<xNome>Prestador Ltda</xNome>'
-            . '<vServ>1000.00</vServ>'
-            . '<vISS>50.00</vISS>'
+            . '<cStat>100</cStat>'
+            . '<dhProc>2026-06-15T10:00:00-03:00</dhProc>'
+            . '<emit><CNPJ>11444777000161</CNPJ><xNome>Prestador Ltda</xNome></emit>'
+            . '<valores><vLiq>950.00</vLiq></valores>'
             . '</infNFSe></NFSe></CompNFSe>';
 
         $parsed = $this->parser->parse($xml);
 
         $this->assertCount(1, $parsed);
-        $this->assertArrayNotHasKey('ibscbs', $parsed[0]);
+        $this->assertNull($parsed[0]['ibscbs']);
     }
 
     public function test_parse_extracts_basic_fields_correctly(): void
@@ -220,15 +216,11 @@ final class NfseResponseIntegrationTest extends TestCase
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'
             . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
             . '<NFSe><infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
-            . '<chNFSe>12345678901234567890123456789012345678901234</chNFSe>'
             . '<nNFSe>456</nNFSe>'
-            . '<cVerif>XYZ789</cVerif>'
-            . '<serie>2</serie>'
-            . '<dhEmi>2026-06-15T14:30:00-03:00</dhEmi>'
-            . '<CNPJ>11444777000161</CNPJ>'
-            . '<xNome>Prestador Ltda</xNome>'
-            . '<vServ>2500.00</vServ>'
-            . '<vISS>125.00</vISS>'
+            . '<cStat>100</cStat>'
+            . '<dhProc>2026-06-15T14:30:00-03:00</dhProc>'
+            . '<emit><CNPJ>11444777000161</CNPJ><xNome>Prestador Ltda</xNome></emit>'
+            . '<valores><vLiq>2375.00</vLiq></valores>'
             . $this->buildIbscbsXml(null, null, null, null, null, null, null, null)
             . '</infNFSe></NFSe></CompNFSe>';
 
@@ -236,12 +228,13 @@ final class NfseResponseIntegrationTest extends TestCase
         $this->assertCount(1, $parsed);
 
         $nfse = $parsed[0];
-        $this->assertSame('12345678901234567890123456789012345678901234', $nfse['chaveAcesso']);
         $this->assertSame('456', $nfse['numero']);
-        $this->assertSame('XYZ789', $nfse['codigoVerificacao']);
-        $this->assertSame('2', $nfse['serie']);
-        $this->assertSame('2500.00', $nfse['valorServicos']);
-        $this->assertSame('125.00', $nfse['valorIss']);
+        $this->assertSame('100', $nfse['codigoStatus']);
+        $this->assertSame('2026-06-15T14:30:00-03:00', $nfse['dataHoraEmissaoNfse']);
+        $this->assertSame('11444777000161', $nfse['emit']['cnpj']);
+        $this->assertSame('Prestador Ltda', $nfse['emit']['xNome']);
+        $this->assertSame('2375.00', $nfse['valores']['vLiq']);
+        $this->assertNotNull($nfse['ibscbs']);
     }
 
     // ─── Helper methods ────────────────────────────────────────────────

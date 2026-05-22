@@ -440,11 +440,11 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $tribMun = $this->dom->createElement('tribMun');
         $tribNode->appendChild($tribMun);
         $this->addChild($tribMun, 'tribISSQN', $servico->getTribISSQN()->value, true);
-        if ($servico->getTipoImunidade() !== null) {
-            $this->addChild($tribMun, 'tpImunidade', (string) $servico->getTipoImunidade(), false);
-        }
         if ($servico->getCodigoPaisResultado() !== null) {
             $this->addChild($tribMun, 'cPaisResult', $servico->getCodigoPaisResultado(), false);
+        }
+        if ($servico->getTipoImunidade() !== null) {
+            $this->addChild($tribMun, 'tpImunidade', (string) $servico->getTipoImunidade(), false);
         }
         if ($servico->getExigSusp() !== null) {
             $this->buildExigSusp($tribMun, $servico->getExigSusp());
@@ -455,13 +455,14 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->addChild($bmNode, 'nBM', $servico->getBeneficioMunicipal()->getNumeroBeneficio(), true);
             if ($servico->getBeneficioMunicipal()->getValorReducaoBC() !== null) {
                 $this->addChild($bmNode, 'vRedBCBM', number_format($servico->getBeneficioMunicipal()->getValorReducaoBC(), 2, '.', ''), false);
-            }
-            if ($servico->getBeneficioMunicipal()->getPercentualReducaoBC() !== null) {
+            } elseif ($servico->getBeneficioMunicipal()->getPercentualReducaoBC() !== null) {
                 $this->addChild($bmNode, 'pRedBCBM', number_format($servico->getBeneficioMunicipal()->getPercentualReducaoBC(), 3, '.', ''), false);
             }
         }
         $this->addChild($tribMun, 'tpRetISSQN', $servico->getTpRetISSQN()->value, true);
-        $this->addChild($tribMun, 'pAliq', $servico->getAliquotaIss(), true);
+        if ($servico->getAliquotaIss() !== null) {
+            $this->addChild($tribMun, 'pAliq', number_format($servico->getAliquotaIss(), 2, '.', ''), false);
+        }
 
         if ($servico->getTribFederal() !== null) {
             $this->buildTribFederal($tribNode, $servico->getTribFederal());
@@ -474,8 +475,8 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
     {
         $node = $this->dom->createElement('exigSusp');
         $parent->appendChild($node);
-        $this->addChild($node, 'tpSusp', (string) ($exigSusp->getTipoSuspensao() ?? '1'), true);
-        $this->addChild($node, 'nProcesso', $exigSusp->getNumeroProcesso() ?? '', true);
+        $this->addChild($node, 'tpSusp', (string) $exigSusp->getTipoSuspensao(), true);
+        $this->addChild($node, 'nProcesso', $exigSusp->getNumeroProcesso(), true);
     }
 
     private function buildTribFederal(\DOMNode $parent, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal $tribFed): void

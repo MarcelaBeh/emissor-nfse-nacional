@@ -42,11 +42,6 @@ class ApiEndpoints
         return $operation;
     }
 
-    public function consultarDanfse(string $chave): string
-    {
-        return str_replace('{chave}', $chave, $this->config->getOperation('consultar_danfse'));
-    }
-
     public function emitirNfse(): string
     {
         return $this->config->getOperation('emitir_nfse');
@@ -55,16 +50,6 @@ class ApiEndpoints
     public function cancelarNfse(string $chave): string
     {
         return str_replace('{chave}', $chave, $this->config->getOperation('cancelar_nfse'));
-    }
-
-    public function consultarDanfseNfseCertificado(): string
-    {
-        return $this->config->getOperation('consultar_danfse_nfse_certificado');
-    }
-
-    public function consultarDanfseNfseDownload(string $chave): string
-    {
-        return str_replace('{chave}', $chave, $this->config->getOperation('consultar_danfse_nfse_download'));
     }
 
     public function verificarDps(string $id): string

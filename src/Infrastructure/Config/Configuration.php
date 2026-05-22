@@ -56,8 +56,6 @@ class Configuration implements Contract\ConfigInterface
             'sefin_producao' => 'https://sefin.nfse.gov.br/sefinnacional',
             'adn_homologacao' => 'https://adn.producaorestrita.nfse.gov.br',
             'adn_producao' => 'https://adn.nfse.gov.br',
-            'nfse_homologacao' => 'https://www.producaorestrita.nfse.gov.br/EmissorNacional',
-            'nfse_producao' => 'https://www.nfse.gov.br/EmissorNacional',
         ];
 
         $configFile = __DIR__ . '/../../../storage/prefeituras.json';
@@ -81,9 +79,6 @@ class Configuration implements Contract\ConfigInterface
             'consultar_nfse' => 'nfse/{chave}',
             'consultar_dps' => 'dps/{chave}',
             'consultar_eventos' => 'nfse/{chave}/eventos/{tipoEvento}/{nSequencial}',
-            'consultar_danfse' => 'danfse/{chave}',
-            'consultar_danfse_nfse_certificado' => 'Certificado',
-            'consultar_danfse_nfse_download' => 'Notas/Download/DANFSe/{chave}',
             'emitir_nfse' => 'nfse',
             'cancelar_nfse' => 'nfse/{chave}/eventos',
         ];

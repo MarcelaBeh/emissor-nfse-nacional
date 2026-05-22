@@ -11,6 +11,27 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.1.0] - 2026-05-22
+
+### Changed
+- `NfseXmlParser`: parser expandido para extrair todos os campos da NFS-e conforme XSDs v1.01 — identificação (`ambGer`, `cStat`, `dhProc`, `xLocEmi`, `xLocPrestacao`, `xTribNac`, `xTribMun`, `xNBS`, `xOutInf`), emitente (`emit`), valores da NFS-e, DPS embutida completa (`TCInfDPS`: `verAplic`, `cMotivoEmisTI`, `chNFSeRej`, `cLocEmi`; `TCInfoPrestador`/`TCInfoPessoa`: `cNaoNIF`, `CAEPF`; `TCCServ`: `cIntContrib`; `TCComExterior`; `TCAtvEvento`: `xNome`, `dtIni`, `dtFim`; `TCInfoObra`: `cCIB`; `TCSubstituicao`: `cMotivo`, `xMotivo`; `TCVServPrest`: `vReceb`; `TCInfoDedRed` como bloco choice `pDR|vDR`; `TCTotTrib` como choice `vTotTrib|pTotTrib|indTotTrib`; `TCTribOutrosPisCofins`: `CST`, `vBCPisCofins`, `pAliqPis`, `pAliqCofins`; `TCTribMunicipal`: `pAliq`) e bloco IBS/CBS (`TCRTCIBSCBS`: `cLocalidadeIncid`, `xLocalidadeIncid`, `pRedutor`, `valores`, `totCIBS`)
+
+### Fixed
+- `DpsXmlBuilder`: `pAliq` agora formatado com `number_format(..., 2)` antes de serializar — `TSDec1V2` exige exatamente 2 casas decimais e o cast de float nativo não garante isso; campo omitido quando `null` (era sempre emitido)
+- `DpsXmlBuilder`: ordem de `cPaisResult` e `tpImunidade` em `<tribMun>` corrigida para respeitar a sequência do XSD `TCTribMunicipal` (`cPaisResult` vem antes de `tpImunidade`)
+- `DpsXmlBuilder`: `<BM>` agora emite `vRedBCBM` **ou** `pRedBCBM` (if/elseif) — eram dois `if` independentes, violando o `xs:choice` de `TCBeneficioMunicipal`
+- `DpsXmlBuilder`: `buildExigSusp` removido fallback `?? ''` em `nProcesso` e `?? '1'` em `tpSusp` — string vazia viola o pattern `[0-9]{30}` de `TSNumProcExigSuspensa`; a entidade já garante os valores
+- `DpsValidator`: validação de `inscricaoMunicipal` do intermediário agora verifica comprimento mínimo de 1 caractere além do máximo de 15 — consistente com a validação do prestador e do tomador (`TSInscMun`)
+
+### Removed
+- `NfseNacionalFacade::consultarDanfse()` e `consultarDanfseNfse()` — endpoints da API do governo serão suspensos em 01/07/2026 conforme NT 008; a geração do DANFSe passa a ser responsabilidade do software consumidor a partir do XML da NFS-e retornado por `consultarPorChave()`
+- `ConsultarNfseService::consultarDanfse()` e `consultarDanfseNfse()`
+- `ApiEndpoints::consultarDanfse()`, `consultarDanfseNfseCertificado()` e `consultarDanfseNfseDownload()`
+- Operações `consultar_danfse`, `consultar_danfse_nfse_certificado` e `consultar_danfse_nfse_download` da `Configuration`
+- URLs legadas `nfse_homologacao` e `nfse_producao` do portal emissor nacional — usadas exclusivamente pelo fluxo DANFSE removido
+
+---
+
 ## [v2.0.4] - 2026-05-22
 
 ### Security
@@ -108,7 +129,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.4...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.1.0...HEAD
+[v2.1.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.4...v2.1.0
 [v2.0.4]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.3...v2.0.4
 [v2.0.3]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.2...v2.0.3
 [v2.0.2]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.1...v2.0.2

@@ -74,22 +74,6 @@ class NfseNacionalFacade
         ));
     }
 
-    /**
-     * @return string|array<string, mixed>
-     */
-    public function consultarDanfse(string $chave): string|array
-    {
-        return $this->consultarNfseService->consultarDanfse($chave);
-    }
-
-    /**
-     * @return string|array<string, mixed>
-     */
-    public function consultarDanfseNfse(string $chave): string|array
-    {
-        return $this->consultarNfseService->consultarDanfseNfse($chave);
-    }
-
     public function verificarDpsExiste(string $id): bool
     {
         return $this->consultarNfseService->verificarDpsExiste($id);

@@ -389,8 +389,8 @@ class DpsValidator
             $errors[] = 'CAEPF do intermediário deve ter 14 dígitos numéricos (TSCAEPF)';
         }
 
-        if ($i->inscricaoMunicipal !== null && strlen($i->inscricaoMunicipal) > 15) {
-            $errors[] = 'IM do intermediário deve ter no máximo 15 caracteres (TSInscMun)';
+        if ($i->inscricaoMunicipal !== null && (strlen($i->inscricaoMunicipal) < 1 || strlen($i->inscricaoMunicipal) > 15)) {
+            $errors[] = 'IM do intermediário deve ter entre 1 e 15 caracteres (TSInscMun)';
         }
 
         $hasAddress = !empty($i->codigoMunicipio) || !empty($i->cep) || !empty($i->logradouro)

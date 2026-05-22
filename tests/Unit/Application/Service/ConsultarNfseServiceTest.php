@@ -186,36 +186,4 @@ final class ConsultarNfseServiceTest extends TestCase
         $this->assertSame(['erro' => 'Eventos não encontrados'], $result);
     }
 
-    public function test_consultar_danfse_success_string(): void
-    {
-        $chave = self::CHAVE_50;
-        $pdfContent = 'PDF_BINARY_CONTENT';
-
-        $this->validator->expects($this->once())->method('validate');
-        $this->apiEndpoints->expects($this->once())->method('consultarDanfse');
-        $this->apiConnector->expects($this->once())->method('get')->willReturn(['success' => true, 'data' => $pdfContent]);
-
-        $result = $this->service->consultarDanfse($chave);
-
-        $this->assertSame($pdfContent, $result);
-    }
-
-    public function test_consultar_danfse_fallback_to_nfse(): void
-    {
-        $chave = self::CHAVE_50;
-
-        $this->validator->expects($this->once())->method('validate');
-        $this->apiEndpoints->expects($this->once())->method('consultarDanfse')->willReturn('https://api.example.com/danfse/' . $chave);
-        $this->apiEndpoints->expects($this->once())->method('consultarDanfseNfseCertificado')->willReturn('https://api.example.com/danfse-cert');
-        $this->apiEndpoints->expects($this->once())->method('consultarDanfseNfseDownload')->with($chave)->willReturn('https://api.example.com/download/' . $chave);
-        $this->apiConnector->expects($this->exactly(3))->method('get')->willReturnOnConsecutiveCalls(
-            ['success' => false, 'data' => []],
-            ['success' => true, 'data' => ['sucesso' => true]],
-            ['success' => true, 'data' => 'DANFSE_CONTENT']
-        );
-
-        $result = $this->service->consultarDanfse($chave);
-
-        $this->assertSame('DANFSE_CONTENT', $result);
-    }
 }

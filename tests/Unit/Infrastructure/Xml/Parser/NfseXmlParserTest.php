@@ -22,16 +22,30 @@ final class NfseXmlParserTest extends TestCase
             <?xml version="1.0" encoding="UTF-8"?>
             <CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">
                 <NFSe>
-                    <infNFSe>
-                        <chNFSe>12345678901234567890123456789012345678901234567890</chNFSe>
+                    <infNFSe Id="NFSe12345678901234567890123456789012345678901234">
                         <nNFSe>123</nNFSe>
-                        <cVerif>1234</cVerif>
-                        <serie>1</serie>
-                        <dhEmi>2026-05-15T10:00:00-03:00</dhEmi>
-                        <CNPJ>12345678000195</CNPJ>
-                        <xNome>Empresa Teste LTDA</xNome>
-                        <vServ>1000.00</vServ>
-                        <vISS>50.00</vISS>
+                        <ambGer>Sefin Nacional</ambGer>
+                        <cStat>100</cStat>
+                        <dhProc>2026-05-15T10:00:00-03:00</dhProc>
+                        <emit>
+                            <CNPJ>12345678000195</CNPJ>
+                            <xNome>Empresa Teste LTDA</xNome>
+                        </emit>
+                        <valores>
+                            <vLiq>950.00</vLiq>
+                        </valores>
+                        <DPS>
+                            <infDPS>
+                                <serie>1</serie>
+                                <dhEmi>2026-05-15T10:00:00-03:00</dhEmi>
+                                <valores>
+                                    <vServPrest><vServ>1000.00</vServ></vServPrest>
+                                    <trib>
+                                        <tribMun><tribISSQN>1</tribISSQN></tribMun>
+                                    </trib>
+                                </valores>
+                            </infDPS>
+                        </DPS>
                     </infNFSe>
                 </NFSe>
             </CompNFSe>
@@ -40,15 +54,14 @@ final class NfseXmlParserTest extends TestCase
         $result = $this->parser->parse($xml);
 
         $this->assertCount(1, $result);
-        $this->assertSame('12345678901234567890123456789012345678901234567890', $result[0]['chaveAcesso']);
         $this->assertSame('123', $result[0]['numero']);
-        $this->assertSame('1234', $result[0]['codigoVerificacao']);
-        $this->assertSame('1', $result[0]['serie']);
-        $this->assertSame('2026-05-15T10:00:00-03:00', $result[0]['dataEmissao']);
-        $this->assertSame('12345678000195', $result[0]['prestador']['cnpj']);
-        $this->assertSame('Empresa Teste LTDA', $result[0]['prestador']['nome']);
-        $this->assertSame('1000.00', $result[0]['valorServicos']);
-        $this->assertSame('50.00', $result[0]['valorIss']);
+        $this->assertSame('100', $result[0]['codigoStatus']);
+        $this->assertSame('2026-05-15T10:00:00-03:00', $result[0]['dataHoraEmissaoNfse']);
+        $this->assertSame('12345678000195', $result[0]['emit']['cnpj']);
+        $this->assertSame('Empresa Teste LTDA', $result[0]['emit']['xNome']);
+        $this->assertSame('950.00', $result[0]['valores']['vLiq']);
+        $this->assertSame('1000.00', $result[0]['dps']['valores']['vServPrest']['vServ']);
+        $this->assertSame('1', $result[0]['dps']['serie']);
     }
 
     public function test_parse_empty_xml(): void
