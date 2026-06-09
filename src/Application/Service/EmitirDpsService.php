@@ -54,8 +54,8 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\LoggerInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\NullLogger;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract\XmlBuilderInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
@@ -280,6 +280,8 @@ class EmitirDpsService
                 ),
                 nif: $request->tomador->nif,
                 inscricaoMunicipal: $request->tomador->inscricaoMunicipal,
+                codigoNaoNif: $request->tomador->codigoNaoNif,
+                caepf: $request->tomador->caepf,
             );
         }
 
@@ -778,10 +780,18 @@ class EmitirDpsService
                 if (!empty($parsedList)) {
                     $xmlParsed = $parsedList[0];
 
-                    if ($dps->getIbscbs() !== null && isset($xmlParsed['ibscbs'])) {
+                    if ($dps->getIbscbs() !== null) {
+                        // A DPS enviou IBS/CBS: a resposta DEVE trazer o grupo IBSCBS. Ausência
+                        // (chave presente com valor null, ou ausente) é divergência, não silêncio.
+                        $respIbscbs = $xmlParsed['ibscbs'] ?? null;
+                        if (!is_array($respIbscbs)) {
+                            throw new ServiceException(
+                                'Resposta da SEFIN não contém o grupo IBSCBS apesar de a DPS tê-lo enviado'
+                            );
+                        }
                         $this->ibscbsResponseValidator->validate(
                             $this->buildIbsDataFromDps($dps),
-                            $xmlParsed['ibscbs'],
+                            $respIbscbs,
                         );
                     }
                 }

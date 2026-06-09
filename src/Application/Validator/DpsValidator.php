@@ -280,14 +280,6 @@ class DpsValidator
             $errors[] = 'IM do tomador deve ter 1 a 15 caracteres (TSInscMun)';
         }
 
-        if (!preg_match('/^[0-9]{7}$/', $t->codigoMunicipio)) {
-            $errors[] = 'cMun do tomador deve ter 7 dígitos numéricos (TSCodMunIBGE)';
-        }
-
-        if (!preg_match('/^[0-9]{8}$/', $t->cep)) {
-            $errors[] = 'CEP do tomador deve ter 8 dígitos numéricos (TSCEP)';
-        }
-
         if (strlen($t->logradouro) > 255) {
             $errors[] = 'xLgr do tomador deve ter no máximo 255 caracteres (TSLogradouro)';
         }
@@ -304,24 +296,34 @@ class DpsValidator
             $errors[] = 'xBairro do tomador deve ter no máximo 60 caracteres (TSBairro)';
         }
 
-        if (!in_array($t->uf, self::UFS, true)) {
-            $errors[] = 'UF do tomador inválida (TSUF)';
-        }
+        // TCEndereco é choice endNac | endExt. codigoPais setado => endereço exterior (endExt).
+        $tomadorExterior = $t->codigoPais !== null;
 
-        if ($t->codigoPais !== null && !preg_match('/^[A-Z]{2}$/', $t->codigoPais)) {
-            $errors[] = 'cPais do tomador deve ser 2 letras maiúsculas (TSCodPaisISO)';
-        }
-
-        if ($t->codigoPostalExterior !== null && (strlen($t->codigoPostalExterior) < 1 || strlen($t->codigoPostalExterior) > 11)) {
-            $errors[] = 'cEndPost do tomador deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
-        }
-
-        if ($t->nomeCidadeExterior !== null && (strlen($t->nomeCidadeExterior) < 1 || strlen($t->nomeCidadeExterior) > 60)) {
-            $errors[] = 'xCidade do tomador deve ter 1 a 60 caracteres (TSCidade)';
-        }
-
-        if ($t->estadoProvinciaExterior !== null && (strlen($t->estadoProvinciaExterior) < 1 || strlen($t->estadoProvinciaExterior) > 60)) {
-            $errors[] = 'xEstProvReg do tomador deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
+        if ($tomadorExterior) {
+            // endExt: cPais, cEndPost, xCidade, xEstProvReg são todos obrigatórios (minOccurs=1).
+            if (!preg_match('/^[A-Z]{2}$/', $t->codigoPais)) {
+                $errors[] = 'cPais do tomador deve ser 2 letras maiúsculas (TSCodPaisISO)';
+            }
+            if ($t->codigoPostalExterior === null || strlen($t->codigoPostalExterior) < 1 || strlen($t->codigoPostalExterior) > 11) {
+                $errors[] = 'cEndPost do tomador é obrigatório e deve ter 1 a 11 caracteres para endereço exterior (TSCodigoEndPostal)';
+            }
+            if ($t->nomeCidadeExterior === null || strlen($t->nomeCidadeExterior) < 1 || strlen($t->nomeCidadeExterior) > 60) {
+                $errors[] = 'xCidade do tomador é obrigatória e deve ter 1 a 60 caracteres para endereço exterior (TSCidade)';
+            }
+            if ($t->estadoProvinciaExterior === null || strlen($t->estadoProvinciaExterior) < 1 || strlen($t->estadoProvinciaExterior) > 60) {
+                $errors[] = 'xEstProvReg do tomador é obrigatório e deve ter 1 a 60 caracteres para endereço exterior (TSEstadoProvRegiao)';
+            }
+        } else {
+            // endNac: cMun, CEP, UF obrigatórios.
+            if (!preg_match('/^[0-9]{7}$/', $t->codigoMunicipio)) {
+                $errors[] = 'cMun do tomador deve ter 7 dígitos numéricos (TSCodMunIBGE)';
+            }
+            if (!preg_match('/^[0-9]{8}$/', $t->cep)) {
+                $errors[] = 'CEP do tomador deve ter 8 dígitos numéricos (TSCEP)';
+            }
+            if (!in_array($t->uf, self::UFS, true)) {
+                $errors[] = 'UF do tomador inválida (TSUF)';
+            }
         }
 
         if ($t->telefone !== null && !preg_match('/^[0-9]{6,20}$/', $t->telefone)) {
@@ -393,18 +395,13 @@ class DpsValidator
             $errors[] = 'IM do intermediário deve ter entre 1 e 15 caracteres (TSInscMun)';
         }
 
+        $intermediarioExterior = $i->codigoPais !== null;
+
         $hasAddress = !empty($i->codigoMunicipio) || !empty($i->cep) || !empty($i->logradouro)
-            || !empty($i->numero) || !empty($i->complemento) || !empty($i->bairro) || !empty($i->uf);
+            || !empty($i->numero) || !empty($i->complemento) || !empty($i->bairro) || !empty($i->uf)
+            || $intermediarioExterior;
 
         if ($hasAddress) {
-            if (!preg_match('/^[0-9]{7}$/', $i->codigoMunicipio)) {
-                $errors[] = 'cMun do intermediário deve ter 7 dígitos numéricos (TSCodMunIBGE)';
-            }
-
-            if (!preg_match('/^[0-9]{8}$/', $i->cep)) {
-                $errors[] = 'CEP do intermediário deve ter 8 dígitos numéricos (TSCEP)';
-            }
-
             if (strlen($i->logradouro) > 255) {
                 $errors[] = 'xLgr do intermediário deve ter no máximo 255 caracteres (TSLogradouro)';
             }
@@ -421,25 +418,31 @@ class DpsValidator
                 $errors[] = 'xBairro do intermediário deve ter no máximo 60 caracteres (TSBairro)';
             }
 
-            if (!in_array($i->uf, self::UFS, true)) {
-                $errors[] = 'UF do intermediário inválida (TSUF)';
+            // TCEndereco é choice endNac | endExt.
+            if ($intermediarioExterior) {
+                if (!preg_match('/^[A-Z]{2}$/', $i->codigoPais)) {
+                    $errors[] = 'cPais do intermediário deve ser 2 letras maiúsculas (TSCodPaisISO)';
+                }
+                if ($i->codigoPostalExterior === null || strlen($i->codigoPostalExterior) < 1 || strlen($i->codigoPostalExterior) > 11) {
+                    $errors[] = 'cEndPost do intermediário é obrigatório e deve ter 1 a 11 caracteres para endereço exterior (TSCodigoEndPostal)';
+                }
+                if ($i->nomeCidadeExterior === null || strlen($i->nomeCidadeExterior) < 1 || strlen($i->nomeCidadeExterior) > 60) {
+                    $errors[] = 'xCidade do intermediário é obrigatória e deve ter 1 a 60 caracteres para endereço exterior (TSCidade)';
+                }
+                if ($i->estadoProvinciaExterior === null || strlen($i->estadoProvinciaExterior) < 1 || strlen($i->estadoProvinciaExterior) > 60) {
+                    $errors[] = 'xEstProvReg do intermediário é obrigatório e deve ter 1 a 60 caracteres para endereço exterior (TSEstadoProvRegiao)';
+                }
+            } else {
+                if (!preg_match('/^[0-9]{7}$/', $i->codigoMunicipio)) {
+                    $errors[] = 'cMun do intermediário deve ter 7 dígitos numéricos (TSCodMunIBGE)';
+                }
+                if (!preg_match('/^[0-9]{8}$/', $i->cep)) {
+                    $errors[] = 'CEP do intermediário deve ter 8 dígitos numéricos (TSCEP)';
+                }
+                if (!in_array($i->uf, self::UFS, true)) {
+                    $errors[] = 'UF do intermediário inválida (TSUF)';
+                }
             }
-        }
-
-        if ($i->codigoPais !== null && !preg_match('/^[A-Z]{2}$/', $i->codigoPais)) {
-            $errors[] = 'cPais do intermediário deve ser 2 letras maiúsculas (TSCodPaisISO)';
-        }
-
-        if ($i->codigoPostalExterior !== null && (strlen($i->codigoPostalExterior) < 1 || strlen($i->codigoPostalExterior) > 11)) {
-            $errors[] = 'cEndPost do intermediário deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
-        }
-
-        if ($i->nomeCidadeExterior !== null && (strlen($i->nomeCidadeExterior) < 1 || strlen($i->nomeCidadeExterior) > 60)) {
-            $errors[] = 'xCidade do intermediário deve ter 1 a 60 caracteres (TSCidade)';
-        }
-
-        if ($i->estadoProvinciaExterior !== null && (strlen($i->estadoProvinciaExterior) < 1 || strlen($i->estadoProvinciaExterior) > 60)) {
-            $errors[] = 'xEstProvReg do intermediário deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
         }
 
         if ($i->telefone !== null && !preg_match('/^[0-9]{6,20}$/', $i->telefone)) {
@@ -492,8 +495,9 @@ class DpsValidator
             $errors[] = 'vDescCond não pode ser negativo (TSDec15V2)';
         }
 
-        if ($s->aliquotaIss < 0 || $s->aliquotaIss > 100) {
-            $errors[] = 'pAliq deve estar entre 0 e 100 (TSDec1V2)';
+        // pAliq é TSDec1V2: 1 dígito inteiro + 2 decimais → máximo 9.99 (cobre o teto legal de ISS de 5%).
+        if ($s->aliquotaIss < 0 || $s->aliquotaIss > 9.99) {
+            $errors[] = 'pAliq deve estar entre 0 e 9.99 (TSDec1V2)';
         }
 
         if ($s->valorRecebido !== null && $s->valorRecebido <= 0) {
@@ -947,12 +951,19 @@ class DpsValidator
             $errors[] = 'CST do PIS/COFINS deve ter 2 dígitos numéricos (TSTipoCST)';
         }
 
-        if ($tf->pisCofinsAliquotaPis !== null && ($tf->pisCofinsAliquotaPis < 0 || $tf->pisCofinsAliquotaPis > 100)) {
-            $errors[] = 'pAliqPis deve estar entre 0 e 100 (TSDec2V2)';
+        // pAliqPis/pAliqCofins são TSDec2V2: até 2 dígitos inteiros + 2 decimais → máximo 99.99.
+        if ($tf->pisCofinsAliquotaPis !== null && ($tf->pisCofinsAliquotaPis < 0 || $tf->pisCofinsAliquotaPis > 99.99)) {
+            $errors[] = 'pAliqPis deve estar entre 0 e 99.99 (TSDec2V2)';
         }
 
-        if ($tf->pisCofinsAliquotaCofins !== null && ($tf->pisCofinsAliquotaCofins < 0 || $tf->pisCofinsAliquotaCofins > 100)) {
-            $errors[] = 'pAliqCofins deve estar entre 0 e 100 (TSDec2V2)';
+        if ($tf->pisCofinsAliquotaCofins !== null && ($tf->pisCofinsAliquotaCofins < 0 || $tf->pisCofinsAliquotaCofins > 99.99)) {
+            $errors[] = 'pAliqCofins deve estar entre 0 e 99.99 (TSDec2V2)';
+        }
+
+        // CST é minOccurs=1 no grupo piscofins (TCTribOutrosPisCofins). O builder emite o grupo quando
+        // CST OU pAliqPis está presente — espelhamos essa condição para exigir CST sempre que o grupo sair.
+        if ($tf->pisCofinsAliquotaPis !== null && $tf->pisCofinsCst === null) {
+            $errors[] = 'CST do PIS/COFINS é obrigatório quando pAliqPis é informado (TCTribOutrosPisCofins)';
         }
 
         if ($tf->pisCofinsCst !== null && $tf->pisCofinsTipo === null) {
@@ -990,14 +1001,25 @@ class DpsValidator
             if ($s->pTotTribMun === null) {
                 $errors[] = 'pTotTribMun é obrigatório quando totTribTipo=pTotTrib (TSDec3V2)';
             }
+            // pTotTribFed/Est/Mun são TSDec3V2 → máximo 999.99.
+            foreach (['pTotTribFed' => $s->pTotTribFed, 'pTotTribEst' => $s->pTotTribEst, 'pTotTribMun' => $s->pTotTribMun] as $campo => $valor) {
+                if ($valor !== null && ($valor < 0 || $valor > 999.99)) {
+                    $errors[] = "{$campo} deve estar entre 0 e 999.99 (TSDec3V2)";
+                }
+            }
         }
 
         if ($s->totTribTipo === 'indTotTrib' && $s->indTotTrib === null) {
             $errors[] = 'indTotTrib é obrigatório quando totTribTipo=indTotTrib (TSTipoIndTotTrib)';
         }
 
-        if ($s->totTribTipo === 'pTotTribSN' && $s->pTotTribSN === null) {
-            $errors[] = 'pTotTribSN é obrigatório quando totTribTipo=pTotTribSN (TSDec2V2)';
+        if ($s->totTribTipo === 'pTotTribSN') {
+            if ($s->pTotTribSN === null) {
+                $errors[] = 'pTotTribSN é obrigatório quando totTribTipo=pTotTribSN (TSDec2V2)';
+            } elseif ($s->pTotTribSN < 0 || $s->pTotTribSN > 99.99) {
+                // pTotTribSN é TSDec2V2 → máximo 99.99.
+                $errors[] = 'pTotTribSN deve estar entre 0 e 99.99 (TSDec2V2)';
+            }
         }
     }
 

@@ -62,20 +62,6 @@ final class DpsIdServiceTest extends TestCase
         $this->assertStringContainsString('999999999999999', $id);
     }
 
-    public function test_generatePrefixedEvento(): void
-    {
-        $id = $this->service->generatePrefixedEvento(
-            '35503080012345678901234567890123456789012345',
-            '1',
-            1
-        );
-
-        $this->assertSame(
-            'PRE355030800123456789012345678901234567890123451001',
-            $id
-        );
-    }
-
     private function createDpsWithCnpj(string $cnpj, int $serie, int $numero): Dps
     {
         return new Dps(

@@ -7,7 +7,7 @@
 [![Packagist](https://img.shields.io/packagist/v/marcelabeh/emissor-nfse-nacional.svg)](https://packagist.org/packages/marcelabeh/emissor-nfse-nacional)
 [![PHP Version](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php)](https://www.php.net/)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen)](https://phpstan.org/)
-[![Tests](https://img.shields.io/badge/tests-633%20passing-brightgreen)](https://phpunit.de/)
+[![Tests](https://img.shields.io/badge/tests-663%20passing-brightgreen)](https://phpunit.de/)
 [![License](https://img.shields.io/badge/license-LGPL--3.0-blue.svg)](LICENSE)
 
 **Biblioteca PHP para integração com NFSe Nacional** - Pacote Composer reutilizável para emissão, consulta e cancelamento de Notas Fiscais de Serviço Eletrônicas no padrão nacional.
@@ -61,7 +61,7 @@ $response = $nfse->emitirDps($dpsRequest);
 ## 🔧 Qualidade de Código
 
 ```bash
-composer test    # PHPUnit (633 testes, 1571 assertions)
+composer test    # PHPUnit (663 testes, 1571 assertions)
 composer cs      # PHP-CS-Fixer (dry-run)
 composer cs:fix  # PHP-CS-Fixer (aplicar)
 composer stan    # PHPStan nível 8
@@ -69,7 +69,7 @@ composer check   # Tudo junto
 ```
 
 **Métricas:**
-- ✅ **633 testes** unitários e de integração
+- ✅ **663 testes** unitários e de integração
 - ✅ **PHPStan nível 8** (máximo rigor) - 0 erros
 - ✅ **Clean Architecture** - 9.5/10
 - ✅ **SOLID completo** - 9/10
@@ -157,7 +157,7 @@ Este projeto é uma **reestruturação completa** com Clean Architecture do proj
 ### 👩‍💻 Manutenção Atual
 - **Marcela Beatriz** ([@marcelabeh](https://github.com/marcelabeh))
 - Arquitetura: Clean Architecture + SOLID + DDD
-- Cobertura de testes: 633 testes
+- Cobertura de testes: 663 testes
 - Análise estática: PHPStan level 8
 
 ## 📜 Licença

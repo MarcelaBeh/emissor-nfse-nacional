@@ -56,9 +56,10 @@ class XsdValidator implements XsdValidatorInterface
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput = false;
 
-        // LIBXML_NONET bloqueia requisições de rede durante o parse (previne SSRF/XXE via entidades remotas).
-        // LIBXML_NOENT substitui entidades por seus valores literais sem resolver externas.
-        if (!$dom->loadXML($xml, LIBXML_NONET | LIBXML_NOENT)) {
+        // LIBXML_NONET bloqueia requisições de rede durante o parse, impedindo a resolução de
+        // DTDs/entidades externas — é esta flag que mitiga XXE/SSRF. NÃO usamos LIBXML_NOENT:
+        // ela HABILITA a expansão de entidades (o oposto de proteção) e é desnecessária para validar XSD.
+        if (!$dom->loadXML($xml, LIBXML_NONET)) {
             $errors = $this->getLibxmlErrors();
             throw new XmlValidationException('XML malformado: ' . implode('; ', $errors));
         }

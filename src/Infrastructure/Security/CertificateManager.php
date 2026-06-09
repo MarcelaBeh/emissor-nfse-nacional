@@ -12,12 +12,21 @@ class CertificateManager implements Contract\CertificateManagerInterface
 {
     private Certificate $certificate;
     private string $tempDir;
+    /** @var list<string> arquivos temporários criados, removidos no destrutor */
+    private array $tempFiles = [];
 
     public function __construct(Certificate $certificate)
     {
         $this->certificate = $certificate;
         $this->validate();
         $this->setupTempDirectory();
+    }
+
+    public function __destruct()
+    {
+        // Os arquivos de certificado/chave precisam existir durante toda a vida do cliente HTTP
+        // (são lidos a cada request via CURLOPT_SSLCERT/SSLKEY), então só podem ser limpos aqui.
+        $this->removeFiles($this->tempFiles);
     }
 
     private function validate(): void
@@ -75,7 +84,11 @@ class CertificateManager implements Contract\CertificateManagerInterface
             throw new \RuntimeException('Falha ao criar arquivo temporário seguro');
         }
 
-        file_put_contents($path, $content);
+        $this->tempFiles[] = $path;
+
+        if (file_put_contents($path, $content) === false) {
+            throw new \RuntimeException('Falha ao gravar arquivo temporário do certificado');
+        }
 
         return $path;
     }
@@ -85,6 +98,14 @@ class CertificateManager implements Contract\CertificateManagerInterface
      * @param array<string, string> $files
      */
     public function cleanTemporaryFiles(array $files): void
+    {
+        $this->removeFiles(array_values($files));
+    }
+
+    /**
+     * @param list<string> $files
+     */
+    private function removeFiles(array $files): void
     {
         foreach ($files as $file) {
             if (!file_exists($file)) {

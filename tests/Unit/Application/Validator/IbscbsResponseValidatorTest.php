@@ -180,6 +180,19 @@ final class IbscbsResponseValidatorTest extends TestCase
         $this->validator->validate($ibsData, $nfse);
     }
 
+    public function test_diferimento_parcial_por_esfera_nao_gera_falso_positivo(): void
+    {
+        // Regressão: diferimento só de UF (pDifUF=10, pDifMun=0, pDifCBS=0). buildIbsDataFromDps
+        // preenche os 3 pDif* (float não-nulável), mas pDif=0 significa "não diferido" naquela esfera,
+        // e a SEFIN não retorna vDifMun/vDifCBS. Antes da correção isso disparava E1570/E1580 falsos.
+        $ibsData = ['diferimento' => ['pDifUF' => 10.0, 'pDifMun' => 0.0, 'pDifCBS' => 0.0]];
+        $nfse = $this->makeNfse(vDifUF: '50.00', vDifMun: null, vDifCBS: null);
+
+        $this->validator->validate($ibsData, $nfse);
+
+        $this->expectNotToPerformAssertions();
+    }
+
     // --- E1569/E1570: vDifMun ---
 
     public function test_v_dif_mun_ausente_sem_p_dif_mun_passes(): void

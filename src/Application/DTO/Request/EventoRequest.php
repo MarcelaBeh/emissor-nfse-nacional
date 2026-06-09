@@ -7,7 +7,7 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 final readonly class EventoRequest
 {
     public function __construct(
-        public string $tipoAmbiente,
+        public int $tipoAmbiente,
         public string $versaoAplicacao,
         public string $dataEvento,
         public string $chaveNfse,

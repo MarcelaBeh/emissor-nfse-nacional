@@ -61,7 +61,7 @@ final class CancelarNfseServiceTest extends TestCase
             chaveNfse: self::CHAVE_50,
             dataEvento: '2026-05-15',
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '12345678000195',
             codigoMotivo: '1',
             descricaoMotivo: 'Cancelamento de teste',

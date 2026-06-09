@@ -45,12 +45,4 @@ final readonly class DpsIdService
             . $serie
             . $numero;
     }
-
-    public function generatePrefixedEvento(string $chaveNfse, string $codigoEvento, int $nPedRegEvento): string
-    {
-        return 'PRE'
-            . $chaveNfse
-            . $codigoEvento
-            . str_pad((string) $nPedRegEvento, 3, '0', STR_PAD_LEFT);
-    }
 }

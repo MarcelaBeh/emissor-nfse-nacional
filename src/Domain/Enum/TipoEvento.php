@@ -97,11 +97,33 @@ enum TipoEvento: string
 
     public function needsNumeroProcesso(): bool
     {
-        return in_array($this, [
-            self::CANCELAMENTO_DEFERIDO,
-            self::CANCELAMENTO_INDEFERIDO,
-            self::CANCELAMENTO_OFICIO,
-        ], true);
+        // nProcAdm é minOccurs=1 só no cancelamento por ofício (TE305101).
+        // Em deferido/indeferido (TE105104/105105) é minOccurs=0 no XSD.
+        return $this === self::CANCELAMENTO_OFICIO;
+    }
+
+    /** xProcAdm é minOccurs=1 no cancelamento por ofício (TE305101). */
+    public function needsXProcAdm(): bool
+    {
+        return $this === self::CANCELAMENTO_OFICIO;
+    }
+
+    /** idEvManifRej é minOccurs=1 na anulação da rejeição (TE205208). */
+    public function needsIdEvManifRej(): bool
+    {
+        return $this === self::ANULACAO_REJEICAO;
+    }
+
+    /** codEvento (codEventoBloqueio) é minOccurs=1 no bloqueio por ofício (TE305102). */
+    public function needsCodEventoBloqueio(): bool
+    {
+        return $this === self::BLOQUEIO_OFICIO;
+    }
+
+    /** idBloqOfic é minOccurs=1 no desbloqueio por ofício (TE305103). */
+    public function needsIdBloqOfic(): bool
+    {
+        return $this === self::DESBLOQUEIO_OFICIO;
     }
 
     public function hasMotivo(): bool
@@ -115,6 +137,24 @@ enum TipoEvento: string
             self::REJEICAO_PRESTADOR,
             self::REJEICAO_TOMADOR,
             self::REJEICAO_INTERMEDIARIO,
+        ], true);
+    }
+
+    /**
+     * Indica se a descrição do motivo (xMotivo, mapeado de descricaoMotivo no builder) é obrigatória,
+     * conforme o XSD (xMotivo minOccurs=1). Cobre cancelamento, análise fiscal, deferido, indeferido,
+     * anulação da rejeição e bloqueio por ofício. Onde é minOccurs=0 (substituição, rejeições), a
+     * obrigatoriedade dependeria de regra de NT — não validada aqui (política: seguir só o XSD).
+     */
+    public function descricaoMotivoObrigatoria(): bool
+    {
+        return in_array($this, [
+            self::CANCELAMENTO,
+            self::SOLICITACAO_ANALISE_FISCAL,
+            self::CANCELAMENTO_DEFERIDO,
+            self::CANCELAMENTO_INDEFERIDO,
+            self::ANULACAO_REJEICAO,
+            self::BLOQUEIO_OFICIO,
         ], true);
     }
 }

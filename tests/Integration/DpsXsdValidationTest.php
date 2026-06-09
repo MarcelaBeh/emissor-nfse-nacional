@@ -565,6 +565,37 @@ final class DpsXsdValidationTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    public function test_pred_bcbm_percentual_usa_duas_casas_e_valida_xsd(): void
+    {
+        $bm = new BeneficioMunicipal(
+            numeroBeneficio: '00000000000001',
+            percentualReducaoBC: 12.345,
+        );
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            valorDeducoes: new Money(0),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            beneficioMunicipal: $bm,
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        // Deve sair com 2 casas (arredondado), não com 3.
+        $this->assertStringContainsString('<pRedBCBM>12.35</pRedBCBM>', $xml);
+        $this->assertStringNotContainsString('<pRedBCBM>12.345</pRedBCBM>', $xml);
+
+        // E deve validar contra o XSD (com 3 casas, falharia aqui).
+        $this->xsdValidator->validate($xml, 'DPS');
+    }
+
     public function test_dps_with_trib_federal_validates_against_xsd(): void
     {
         $tribFed = new TribFederal(

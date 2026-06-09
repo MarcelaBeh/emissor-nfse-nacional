@@ -7,6 +7,7 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\Service;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ConsultaRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\NfseResponse;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
+use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
@@ -103,6 +104,11 @@ class ConsultarNfseService
 
     public function verificarDpsExiste(string $id): bool
     {
+        // Id do DPS é TSIdDPS: "DPS" + 42 dígitos (45 caracteres). Valida antes de chamar a API.
+        if (preg_match('/^DPS[0-9]{42}$/', $id) !== 1) {
+            throw new ValidationException('Id do DPS deve estar no formato DPS seguido de 42 dígitos (TSIdDPS)');
+        }
+
         try {
             $endpoint = $this->apiEndpoints->verificarDps($id);
             $response = $this->apiConnector->head($endpoint);

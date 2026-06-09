@@ -11,11 +11,14 @@ use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\EventoValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
+use MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Client\CurlHttpClient;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\CachedCstClassTribRepository;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\FileCstClassTribRepository;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\CertificateManager;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
@@ -35,11 +38,11 @@ class ServiceFactory
     private XmlSigner $xmlSigner;
 
     /**
-     * @param array<string, mixed> $config
+     * @param Configuration|array<string, mixed> $config
      */
-    public function __construct(array $config, Certificate $certificate)
+    public function __construct(Configuration|array $config, Certificate $certificate)
     {
-        $this->configuration = new Configuration($config);
+        $this->configuration = $config instanceof Configuration ? $config : new Configuration($config);
         $this->certificateManager = new CertificateManager($certificate);
         $this->xmlSigner = new XmlSigner($this->certificateManager->getCertificate());
         $this->apiConnector = $this->createApiConnector();
@@ -73,11 +76,24 @@ class ServiceFactory
             xmlBuilder: new DpsXmlBuilder(),
             xmlSigner: $this->xmlSigner,
             xsdValidator: $this->xsdValidator,
-            validator: new DpsValidator(),
+            validator: new DpsValidator($this->createCstClassTribRepository()),
             requestBuilder: $this->requestBuilder,
             nfseXmlParser: new NfseXmlParser(),
             ibscbsResponseValidator: new IbscbsResponseValidator(),
             apiEndpoints: $this->apiEndpoints,
+        );
+    }
+
+    /**
+     * Repositório da tabela oficial CST x cClassTrib (regras de negócio do IBS/CBS da reforma
+     * tributária). Sem ele, validateIbsCbsCstClassTrib do DpsValidator fica inativo.
+     */
+    private function createCstClassTribRepository(): CstClassTribRepository
+    {
+        $tabela = __DIR__ . '/../../../storage/cClassTrib.json';
+
+        return new CachedCstClassTribRepository(
+            new FileCstClassTribRepository($tabela),
         );
     }
 

@@ -11,6 +11,34 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.0] - 2026-06-09
+
+### Fixed
+- IBS/CBS: validação de regras de negócio (`cClassTrib`, `gDif`, `gTribRegular`) estava inativa em produção — `ServiceFactory` não injetava o `CstClassTribRepository` no `DpsValidator`
+- IBS/CBS: diferimento parcial por esfera (`pDif=0`) gerava falso positivo (`E1570`/`E1580`) e bloqueava NFS-e válida
+- IBS/CBS: resposta da SEFIN sem o grupo `IBSCBS` (quando a DPS o enviou) era ignorada silenciosamente; agora lança `ServiceException`
+- IBS/CBS: `cNaoNIF` do destinatário podia violar o `xs:choice` (emitido fora do `if/elseif`)
+- `verificarDpsExiste()` e `emitirPorDecisaoJudicial()` quebravam em runtime — operações `verificar_dps` e `decisao_judicial_nfse` ausentes da configuração
+- `Tomador` por `cNaoNIF`/`CAEPF` era descartado no mapeamento DTO→entidade
+- Endereço exterior de tomador/intermediário gerava `endExt` com campos vazios (validador exigia campos nacionais)
+- `pRedBCBM` formatado com 3 casas decimais era rejeitado pelo XSD (`TSDec3V2` = 2 casas)
+- Ranges decimais alinhados aos tipos XSD (`pAliq`, `pAliqPis/Cofins`, `pTotTrib*`)
+- `tpAmb` como string `'2'` passava na validação e quebrava com `TypeError`
+- Eventos: `xMotivo` obrigatório por tipo (alinhado ao `minOccurs` do XSD), código "Outros" por tipo (9 cancelamento, 99 substituição), e campos dos eventos de ofício/bloqueio (`xProcAdm`, `idEvManifRej`, `codEvento`, `idBloqOfic`)
+- Segurança: `XsdValidator` sem `LIBXML_NOENT`; `CertificateManager` remove arquivos temporários no destrutor; `CurlHttpClient` sem `Content-Type` duplicado
+
+### Changed
+- **BREAKING** — `EventoRequest::tipoAmbiente` e `Evento::getTipoAmbiente()`: `string` → `int` (padronizado com `DpsRequest`)
+- `NfseNacionalFacade::create()` aceita `Configuration|array`
+
+### Removed
+- `DpsIdService::generatePrefixedEvento()` — formato de `Id` antigo (com `nPedRegEvento`, removido pelo governo em 27/12/2025)
+
+### Added
+- Testes `ApiEndpointsTest` e `CClassTribTabelaIntegridadeTest`
+
+---
+
 ## [v2.1.1] - 2026-05-22
 
 ### Added

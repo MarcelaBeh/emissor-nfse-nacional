@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
 use MarcelaBeh\EmissorNfseNacional\Domain\Contract\EventoInterface;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 
@@ -15,7 +16,7 @@ class Evento implements EventoInterface
         private ChaveAcesso $chaveNfse,
         private \DateTimeImmutable $dataEvento,
         private string $versaoAplicacao,
-        private string $tipoAmbiente = '2',
+        private int $tipoAmbiente = 2,
         private ?string $cnpjAutor = null,
         private ?string $cpfAutor = null,
         private ?string $codigoMotivo = null,
@@ -41,7 +42,7 @@ class Evento implements EventoInterface
             throw new \InvalidArgumentException('Versão da aplicação é obrigatória');
         }
 
-        if (!in_array($this->tipoAmbiente, ['1', '2'], true)) {
+        if (!in_array($this->tipoAmbiente, TipoAmbiente::valores(), true)) {
             throw new \InvalidArgumentException('Tipo de ambiente deve ser 1 (Produção) ou 2 (Homologação)');
         }
 
@@ -83,7 +84,7 @@ class Evento implements EventoInterface
         return $this->versaoAplicacao;
     }
 
-    public function getTipoAmbiente(): string
+    public function getTipoAmbiente(): int
     {
         return $this->tipoAmbiente;
     }

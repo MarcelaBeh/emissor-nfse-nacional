@@ -16,6 +16,7 @@ class EventoValidator
     public function validate(EventoRequest $request): void
     {
         $errors = [];
+        $tipoEvento = null;
 
         if (empty($request->chaveNfse)) {
             $errors[] = 'Chave da NFSe é obrigatória';
@@ -77,8 +78,66 @@ class EventoValidator
             $errors[] = 'Número do processo administrativo (nProcAdm) é obrigatório para este tipo de evento';
         }
 
-        if ($request->codigoMotivo === '99' && empty($request->descricaoMotivo)) {
-            $errors[] = 'Descrição do motivo é obrigatória quando código do motivo = 99 (Outros)';
+        // Campos minOccurs=1 específicos dos eventos de ofício/bloqueio/anulação (o builder os gera,
+        // então a lib deve garanti-los antes do XML para não produzir documento inválido).
+        if (isset($tipoEvento) && $tipoEvento->needsXProcAdm() && empty($request->xProcAdm)) {
+            $errors[] = 'Descrição do processo administrativo (xProcAdm) é obrigatória para este tipo de evento';
+        }
+
+        if (isset($tipoEvento) && $tipoEvento->needsIdEvManifRej() && empty($request->idEvManifRej)) {
+            $errors[] = 'Identificador do evento de manifestação rejeitado (idEvManifRej) é obrigatório para este tipo de evento';
+        }
+
+        if (isset($tipoEvento) && $tipoEvento->needsCodEventoBloqueio() && empty($request->codEventoBloqueio)) {
+            $errors[] = 'Código do evento de bloqueio (codEvento) é obrigatório para este tipo de evento';
+        }
+
+        if (isset($tipoEvento) && $tipoEvento->needsIdBloqOfic() && empty($request->idBloqOfic)) {
+            $errors[] = 'Identificador do bloqueio por ofício (idBloqOfic) é obrigatório para este tipo de evento';
+        }
+
+        // Validação de FORMATO dos campos de evento (patterns do XSD), aplicada sempre que o campo é informado.
+        if (!empty($request->cpfAgTrib) && preg_match('/^[0-9]{11}$/', $request->cpfAgTrib) !== 1) {
+            $errors[] = 'CPF do agente tributário (cpfAgTrib) deve ter 11 dígitos numéricos (TSCPF)';
+        }
+
+        if (!empty($request->nProcAdm) && preg_match('/^[0-9]{1,30}$/', $request->nProcAdm) !== 1) {
+            $errors[] = 'Número do processo administrativo (nProcAdm) deve ter 1 a 30 dígitos numéricos (TSNumProcAdmAnaliseFiscalCanc)';
+        }
+
+        if (!empty($request->idEvManifRej) && preg_match('/^[0-9]{59}$/', $request->idEvManifRej) !== 1) {
+            $errors[] = 'idEvManifRej deve ter 59 dígitos numéricos (TSIdNumEvento)';
+        }
+
+        if (!empty($request->idBloqOfic) && preg_match('/^[0-9]{59}$/', $request->idBloqOfic) !== 1) {
+            $errors[] = 'idBloqOfic deve ter 59 dígitos numéricos (TSIdNumEvento)';
+        }
+
+        if (!empty($request->codEventoBloqueio)
+            && !in_array($request->codEventoBloqueio, ['e101101', 'e105102', 'e105104', 'e105105', 'e305101'], true)
+        ) {
+            $errors[] = 'codEvento (codEventoBloqueio) inválido — deve ser e101101, e105102, e105104, e105105 ou e305101 (TSCodigoEventoNFSe)';
+        }
+
+        // xProcAdm é TSMotivo (15–255), igual ao xMotivo.
+        if ($request->xProcAdm !== null && $request->xProcAdm !== '') {
+            $tamanho = mb_strlen($request->xProcAdm);
+            if ($tamanho < 15 || $tamanho > 255) {
+                $errors[] = 'Descrição do processo administrativo (xProcAdm) deve ter entre 15 e 255 caracteres (TSMotivo)';
+            }
+        }
+
+        // xMotivo é minOccurs=1 (obrigatório) no XSD para cancelamento, análise fiscal,
+        // deferido, indeferido, anulação e ofícios. Onde é minOccurs=0 (substituição, rejeições).
+        if (isset($tipoEvento) && $tipoEvento->descricaoMotivoObrigatoria() && empty($request->descricaoMotivo)) {
+            $errors[] = 'Descrição do motivo (xMotivo) é obrigatória para este tipo de evento';
+        }
+
+        if ($request->descricaoMotivo !== null && $request->descricaoMotivo !== '') {
+            $tamanho = mb_strlen($request->descricaoMotivo);
+            if ($tamanho < 15 || $tamanho > 255) {
+                $errors[] = 'Descrição do motivo (xMotivo) deve ter entre 15 e 255 caracteres (TSMotivo)';
+            }
         }
 
         if (empty($request->dataEvento)) {

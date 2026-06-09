@@ -13,6 +13,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\CancelarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiringException;
 use MarcelaBeh\EmissorNfseNacional\Presentation\Factory\ServiceFactory;
@@ -25,19 +26,20 @@ class NfseNacionalFacade
     private CancelarNfseService $cancelarNfseService;
 
     private function __construct(
-        /** @var array<string, mixed> */
-        private array $config,
+        /** @var Configuration|array<string, mixed> */
+        private Configuration|array $config,
         private Certificate $certificado,
     ) {
         $this->inicializarServicos();
     }
 
     /**
-     * @param array<string, mixed> $config
+     * @param Configuration|array<string, mixed> $config aceita o array cru ou um objeto
+     *        Configuration (ex.: produzido por ConfigFactory).
      * @throws CertificateExpiredException se o certificado estiver vencido
      * @throws CertificateExpiringException se o certificado vencer em menos de 30 dias
      */
-    public static function create(array $config, Certificate $certificado): self
+    public static function create(Configuration|array $config, Certificate $certificado): self
     {
         return new self($config, $certificado);
     }

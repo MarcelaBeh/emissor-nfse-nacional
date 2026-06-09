@@ -29,7 +29,8 @@ final class TipoEventoTest extends TestCase
     public function test_cancelamento_deferido(): void
     {
         $this->assertTrue(TipoEvento::CANCELAMENTO_DEFERIDO->needsCpfAgTrib());
-        $this->assertTrue(TipoEvento::CANCELAMENTO_DEFERIDO->needsNumeroProcesso());
+        // nProcAdm é minOccurs=0 no XSD para deferido/indeferido (obrigatório só no cancelamento por ofício).
+        $this->assertFalse(TipoEvento::CANCELAMENTO_DEFERIDO->needsNumeroProcesso());
     }
 
     public function test_cancelamento_oficio(): void

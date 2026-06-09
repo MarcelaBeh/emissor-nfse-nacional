@@ -176,9 +176,12 @@ final class IbscbsResponseValidator
         $pDifMun = $ibsData['diferimento']['pDifMun'] ?? null;
         $pDifCBS = $ibsData['diferimento']['pDifCBS'] ?? null;
 
-        $hasPDifUF = $pDifUF !== null;
-        $hasPDifMun = $pDifMun !== null;
-        $hasPDifCBS = $pDifCBS !== null;
+        // O diferimento é por esfera: pDif=0 significa "não diferido" naquela esfera, e a SEFIN
+        // legitimamente NÃO retorna o vDif correspondente (vDif = vTrib x pDif = 0; vDif é minOccurs=0).
+        // Por isso "informado" = maior que zero, não apenas não-nulo (pDif* é float não-nulável no grupo).
+        $hasPDifUF = $pDifUF !== null && $pDifUF > 0;
+        $hasPDifMun = $pDifMun !== null && $pDifMun > 0;
+        $hasPDifCBS = $pDifCBS !== null && $pDifCBS > 0;
 
         $hasVDifUF = $gIbsUfTot !== null && ($gIbsUfTot['vDifUF'] ?? null) !== null;
         $hasVDifMun = $gIbsMunTot !== null && ($gIbsMunTot['vDifMun'] ?? null) !== null;

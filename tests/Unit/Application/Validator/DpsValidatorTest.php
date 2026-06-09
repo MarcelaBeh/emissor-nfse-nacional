@@ -113,12 +113,13 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
-    public function test_aliquota_iss_above_100_throws(): void
+    public function test_aliquota_iss_above_max_tsdec1v2_throws(): void
     {
-        $request = $this->createValidDpsRequest(aliquotaIss: 101);
+        // pAliq é TSDec1V2 (máx 9.99): 10.00 tem 2 dígitos inteiros e é rejeitado pelo XSD.
+        $request = $this->createValidDpsRequest(aliquotaIss: 10.0);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('pAliq deve estar entre 0 e 100');
+        $this->expectExceptionMessage('pAliq deve estar entre 0 e 9.99 (TSDec1V2)');
         $this->validator->validate($request);
     }
 
@@ -127,8 +128,109 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(aliquotaIss: -1);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('pAliq deve estar entre 0 e 100');
+        $this->expectExceptionMessage('pAliq deve estar entre 0 e 9.99 (TSDec1V2)');
         $this->validator->validate($request);
+    }
+
+    public function test_ptottribsn_acima_de_99_99_throws(): void
+    {
+        // pTotTribSN é TSDec2V2 (máx 99.99): 100 tem 3 dígitos inteiros e é rejeitado pelo XSD.
+        $servico = new ServicoRequest(
+            discriminacao: 'Serviço de teste',
+            codigoTributacao: '010101',
+            valorServicos: 1000.0,
+            valorDeducoes: 0,
+            descontoIncondicionado: 0,
+            descontoCondicionado: 0,
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            totTribTipo: 'pTotTribSN',
+            pTotTribSN: 100.0,
+        );
+        $request = $this->createValidDpsRequest(servico: $servico);
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('pTotTribSN deve estar entre 0 e 99.99 (TSDec2V2)');
+        $this->validator->validate($request);
+    }
+
+    public function test_tomador_exterior_sem_campos_obrigatorios_throws(): void
+    {
+        // Tomador com codigoPais setado (exterior) exige cEndPost/xCidade/xEstProvReg (TCEnderExt).
+        $request = $this->createValidDpsRequest();
+        $request = new DpsRequest(
+            tipoAmbiente: $request->tipoAmbiente,
+            dataEmissao: $request->dataEmissao,
+            versaoAplicacao: $request->versaoAplicacao,
+            serie: $request->serie,
+            numero: $request->numero,
+            dataCompetencia: $request->dataCompetencia,
+            tipoEmissao: $request->tipoEmissao,
+            codigoMunicipioEmissor: $request->codigoMunicipioEmissor,
+            prestador: $request->prestador,
+            servico: $request->servico,
+            tomador: new TomadorRequest(
+                documento: '33444555000181',
+                isCnpj: true,
+                razaoSocial: 'Tomador Exterior',
+                nomeFantasia: null,
+                telefone: null,
+                email: null,
+                logradouro: 'Main Street',
+                numero: '200',
+                complemento: null,
+                bairro: 'Downtown',
+                codigoMunicipio: '0000000',
+                uf: 'SP',
+                cep: '00000000',
+                codigoPais: 'US',
+                // cEndPost/xCidade/xEstProvReg ausentes de propósito
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('para endereço exterior');
+        $this->validator->validate($request);
+    }
+
+    public function test_tomador_exterior_completo_passa(): void
+    {
+        $request = $this->createValidDpsRequest();
+        $request = new DpsRequest(
+            tipoAmbiente: $request->tipoAmbiente,
+            dataEmissao: $request->dataEmissao,
+            versaoAplicacao: $request->versaoAplicacao,
+            serie: $request->serie,
+            numero: $request->numero,
+            dataCompetencia: $request->dataCompetencia,
+            tipoEmissao: $request->tipoEmissao,
+            codigoMunicipioEmissor: $request->codigoMunicipioEmissor,
+            prestador: $request->prestador,
+            servico: $request->servico,
+            tomador: new TomadorRequest(
+                documento: '33444555000181',
+                isCnpj: true,
+                razaoSocial: 'Tomador Exterior',
+                nomeFantasia: null,
+                telefone: null,
+                email: null,
+                logradouro: 'Main Street',
+                numero: '200',
+                complemento: null,
+                bairro: 'Downtown',
+                codigoMunicipio: '0000000',
+                uf: 'SP',
+                cep: '00000000',
+                codigoPais: 'US',
+                codigoPostalExterior: '10001',
+                nomeCidadeExterior: 'New York',
+                estadoProvinciaExterior: 'NY',
+            ),
+        );
+
+        $this->validator->validate($request);
+
+        $this->assertTrue(true);
     }
 
     public function test_valor_servicos_zero_throws(): void

@@ -130,10 +130,18 @@ class CurlHttpClient implements HttpClientInterface
      */
     private function prepareHeaders(array $headers): array
     {
-        $prepared = ['Content-Type: application/json'];
+        $temContentType = false;
+        $prepared = [];
 
         foreach ($headers as $key => $value) {
+            if (strcasecmp($key, 'Content-Type') === 0) {
+                $temContentType = true;
+            }
             $prepared[] = "{$key}: {$value}";
+        }
+
+        if (!$temContentType) {
+            array_unshift($prepared, 'Content-Type: application/json');
         }
 
         return $prepared;

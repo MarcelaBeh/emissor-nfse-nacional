@@ -28,7 +28,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
             codigoMotivo: '1',
             descricaoMotivo: 'Erro na emissão da NFSe',
@@ -47,6 +47,28 @@ final class EventoXmlBuilderTest extends TestCase
         $this->assertStringContainsString('<chNFSe>' . self::CHAVE_50 . '</chNFSe>', $xml);
     }
 
+    public function test_id_pedregevento_segue_pattern_tsidpedregevt(): void
+    {
+        // Regressão: o Id é PRE + chave(50) + tipoEvento(6) = 59 chars, sem nPedRegEvento
+        // (campo removido pelo governo em 27/12/2025). Deve casar o pattern XSD PRE[0-9]{56}.
+        $evento = new Evento(
+            tipo: TipoEvento::CANCELAMENTO,
+            chaveNfse: new ChaveAcesso(self::CHAVE_50),
+            dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
+            versaoAplicacao: '1.0.0',
+            tipoAmbiente: 2,
+            cnpjAutor: '11444777000161',
+            codigoMotivo: '1',
+            descricaoMotivo: 'Erro na emissão da NFSe',
+        );
+
+        $xml = $this->builder->build($evento);
+
+        self::assertSame(1, preg_match('/Id="(PRE[0-9]{56})"/', $xml, $m), 'Id deve casar PRE[0-9]{56}');
+        self::assertSame(59, strlen($m[1]));
+        self::assertSame('PRE' . self::CHAVE_50 . '101101', $m[1]);
+    }
+
     public function test_build_cancelamento_with_cpf_autor(): void
     {
         $evento = new Evento(
@@ -54,7 +76,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cpfAutor: '52998224725',
             codigoMotivo: '2',
             descricaoMotivo: 'Serviço não prestado conforme contrato',
@@ -73,7 +95,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
             codigoMotivo: '02',
             descricaoMotivo: 'Desenquadramento do Simples Nacional',
@@ -95,7 +117,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
             codigoMotivo: '9',
             descricaoMotivo: 'Outros motivos para análise fiscal',
@@ -114,7 +136,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
         );
 
@@ -132,7 +154,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
         );
 
@@ -149,7 +171,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
             codigoMotivo: '1',
         );
@@ -168,7 +190,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cpfAgTrib: '52998224725',
             idEvManifRej: '12345678901234567890123456789012345678901234567890123456789',
             descricaoMotivo: 'Anulação da rejeição por erro na análise',
@@ -188,7 +210,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
             cpfAgTrib: '52998224725',
             nProcAdm: '12345',
@@ -210,7 +232,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cpfAgTrib: '52998224725',
             codEventoBloqueio: 'e101101',
             descricaoMotivo: 'Bloqueio determinado por autoridade fiscal',
@@ -229,7 +251,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cpfAgTrib: '52998224725',
             idBloqOfic: '12345678901234567890123456789012345678901234567890123456789',
         );
@@ -247,7 +269,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
             nSeqEvento: '001',
         );
@@ -286,7 +308,7 @@ final class EventoXmlBuilderTest extends TestCase
                 'chaveNfse' => new ChaveAcesso(self::CHAVE_50),
                 'dataEvento' => new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
                 'versaoAplicacao' => '1.0.0',
-                'tipoAmbiente' => '2',
+                'tipoAmbiente' => 2,
                 'cnpjAutor' => '11444777000161',
             ];
 
@@ -309,7 +331,7 @@ final class EventoXmlBuilderTest extends TestCase
             chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
-            tipoAmbiente: '2',
+            tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
         );
 

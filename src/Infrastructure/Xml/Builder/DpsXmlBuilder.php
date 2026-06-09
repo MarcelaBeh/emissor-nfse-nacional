@@ -456,7 +456,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             if ($servico->getBeneficioMunicipal()->getValorReducaoBC() !== null) {
                 $this->addChild($bmNode, 'vRedBCBM', number_format($servico->getBeneficioMunicipal()->getValorReducaoBC(), 2, '.', ''), false);
             } elseif ($servico->getBeneficioMunicipal()->getPercentualReducaoBC() !== null) {
-                $this->addChild($bmNode, 'pRedBCBM', number_format($servico->getBeneficioMunicipal()->getPercentualReducaoBC(), 3, '.', ''), false);
+                $this->addChild($bmNode, 'pRedBCBM', number_format($servico->getBeneficioMunicipal()->getPercentualReducaoBC(), 2, '.', ''), false);
             }
         }
         $this->addChild($tribMun, 'tpRetISSQN', $servico->getTpRetISSQN()->value, true);
@@ -655,15 +655,17 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $destNode = $this->dom->createElement('dest');
         $parent->appendChild($destNode);
 
+        // XSD TCRTCInfoDest: choice CNPJ | CPF | NIF | cNaoNIF (exatamente um).
         if ($dest->getCnpj()) {
             $this->addChild($destNode, 'CNPJ', $dest->getCnpj()->getNumero(), false);
         } elseif ($dest->getCpf()) {
             $this->addChild($destNode, 'CPF', $dest->getCpf()->getNumero(), false);
         } elseif ($dest->getNif()) {
             $this->addChild($destNode, 'NIF', $dest->getNif(), false);
+        } elseif ($dest->getCodigoNaoNif() !== null) {
+            $this->addChild($destNode, 'cNaoNIF', $dest->getCodigoNaoNif(), false);
         }
 
-        $this->addChild($destNode, 'cNaoNIF', $dest->getCodigoNaoNif(), false);
         $this->addChild($destNode, 'xNome', $dest->getXNome(), true);
 
         if ($dest->getEndereco() !== null) {
