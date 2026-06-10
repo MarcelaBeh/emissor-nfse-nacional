@@ -788,7 +788,7 @@ class EmitirDpsService
         if (!$response['success']) {
             return new NfseResponse(
                 success: false,
-                mensagem: is_array($response['data']) ? ($response['data']['mensagem'] ?? 'Erro ao emitir DPS') : 'Erro ao emitir DPS',
+                mensagem: $this->extrairMensagemErro($response['data']),
                 dados: is_array($response['data']) ? $response['data'] : null,
             );
         }
@@ -828,6 +828,47 @@ class EmitirDpsService
             dados: is_array($data) ? $data : null,
             xml: is_string($data) ? $data : null,
         );
+    }
+
+    /**
+     * Extrai a mensagem de erro real da resposta da SEFIN. A SEFIN retorna os erros
+     * em formato estruturado (`erros[]`/`erro[]` com `codigo`+`descricao`), e não no
+     * campo `mensagem` — por isso a leitura ingênua de `data['mensagem']` caía sempre
+     * no fallback genérico. O payload cru completo continua disponível em `dados`.
+     *
+     * @param mixed $data
+     */
+    private function extrairMensagemErro(mixed $data): string
+    {
+        if (!is_array($data)) {
+            return 'Erro ao emitir DPS';
+        }
+
+        $erros = $data['erros'] ?? $data['erro'] ?? null;
+        if (is_array($erros) && $erros !== []) {
+            $primeiro = $erros[0] ?? null;
+            if (is_array($primeiro)) {
+                $codigo = $primeiro['codigo'] ?? $primeiro['Codigo'] ?? null;
+                $descricao = $primeiro['descricao'] ?? $primeiro['Descricao']
+                    ?? $primeiro['mensagem'] ?? $primeiro['Mensagem'] ?? null;
+                if (is_string($descricao) && $descricao !== '') {
+                    return is_string($codigo) && $codigo !== ''
+                        ? "{$codigo} - {$descricao}"
+                        : $descricao;
+                }
+            }
+            if (is_string($primeiro) && $primeiro !== '') {
+                return $primeiro;
+            }
+        }
+
+        foreach (['mensagem', 'message', 'Mensagem', 'Message'] as $chave) {
+            if (isset($data[$chave]) && is_string($data[$chave]) && $data[$chave] !== '') {
+                return $data[$chave];
+            }
+        }
+
+        return 'Erro ao emitir DPS';
     }
 
     /**

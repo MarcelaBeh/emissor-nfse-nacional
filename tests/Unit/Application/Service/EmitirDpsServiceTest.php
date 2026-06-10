@@ -151,6 +151,67 @@ final class EmitirDpsServiceTest extends TestCase
         $this->assertSame($responseXml, $response->xml);
     }
 
+    public function test_executar_erro_sefin_extrai_codigo_e_descricao(): void
+    {
+        // RISCO-05: payload REAL da SEFIN (SefinNacional_1.6.0) — os erros vêm em
+        // erros[] com Codigo/Descricao (maiúsculas), não no campo 'mensagem'.
+        // A resposta deve trazer a mensagem real, não o genérico "Erro ao emitir DPS".
+        $request = $this->createValidDpsRequest();
+        $xml = '<?xml version="1.0"?><DPS></DPS>';
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
+
+        $dadosSefin = [
+            'tipoAmbiente' => 2,
+            'versaoAplicativo' => 'SefinNacional_1.6.0',
+            'dataHoraProcessamento' => '2026-06-10T15:59:08.4981439-03:00',
+            'idDPS' => 'DPS130260325797320000014800002000000000000025',
+            'erros' => [
+                [
+                    'Codigo' => 'E0617',
+                    'Descricao' => 'Não é permitido informar alíquota quando o prestador de serviço não é optante do simples nacional (opSimpNac = 1) na data de competência informada na DPS.',
+                ],
+            ],
+        ];
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn($xml);
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildDpsPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiConnector->expects($this->once())->method('post')->willReturn([
+            'success' => false,
+            'data' => $dadosSefin,
+        ]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertFalse($response->success);
+        $this->assertStringStartsWith('E0617 - Não é permitido informar alíquota', $response->mensagem);
+        $this->assertSame($dadosSefin, $response->dados); // payload cru preservado integralmente
+    }
+
+    public function test_executar_erro_sefin_sem_erros_usa_fallback(): void
+    {
+        $request = $this->createValidDpsRequest();
+        $xml = '<?xml version="1.0"?><DPS></DPS>';
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn($xml);
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildDpsPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiConnector->expects($this->once())->method('post')->willReturn([
+            'success' => false,
+            'data' => ['outroCampo' => 'x'],
+        ]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertFalse($response->success);
+        $this->assertSame('Erro ao emitir DPS', $response->mensagem);
+    }
+
     public function test_executar_validation_error(): void
     {
         $request = $this->createValidDpsRequest();

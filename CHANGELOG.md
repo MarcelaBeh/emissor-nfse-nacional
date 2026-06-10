@@ -23,6 +23,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - `Nif` (VO): limite 20 → 40 caracteres (`TSNIF`)
 - Eventos: `xMotivo` exigido nas rejeições quando `cMotivo=9` (AnexoIV E1944/E1949/E1954)
 - Schema: pattern do `serie` mantido sem âncoras `^`/`$` (literais em XSD rejeitam toda série)
+- Erro de emissão retornava sempre `"Erro ao emitir DPS"` genérico; agora extrai `Codigo`+`Descricao` de `erros[]` da SEFIN (o payload cru segue em `dados`)
 
 ### Changed
 - `Configuration::getVersion()` deriva a versão da tag git/Packagist (`composer-runtime-api`)
