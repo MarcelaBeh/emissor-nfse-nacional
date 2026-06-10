@@ -179,6 +179,59 @@ final class EventoValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
+    public function test_rejeicao_motivo_outros_sem_descricao_throws(): void
+    {
+        // AnexoIV E1944: rejeição do prestador (202205) com cMotivo=9 (Outros)
+        // exige xMotivo, mesmo o campo sendo minOccurs=0 no XSD.
+        $request = new EventoRequest(
+            tipoEvento: '202205',
+            chaveNfse: self::CHAVE_50,
+            dataEvento: '2026-05-15',
+            versaoAplicacao: '1.0.0',
+            tipoAmbiente: 2,
+            cnpjAutor: '12345678000195',
+            codigoMotivo: '9',
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('xMotivo) é obrigatória quando o código do motivo é "Outros"');
+        $this->validator->validate($request);
+    }
+
+    public function test_rejeicao_motivo_outros_com_descricao_passa(): void
+    {
+        $request = new EventoRequest(
+            tipoEvento: '202205',
+            chaveNfse: self::CHAVE_50,
+            dataEvento: '2026-05-15',
+            versaoAplicacao: '1.0.0',
+            tipoAmbiente: 2,
+            cnpjAutor: '12345678000195',
+            codigoMotivo: '9',
+            descricaoMotivo: 'Motivo especifico da rejeicao',
+        );
+
+        $this->validator->validate($request);
+        $this->assertTrue(true);
+    }
+
+    public function test_rejeicao_motivo_nao_outros_sem_descricao_passa(): void
+    {
+        // cMotivo != 9: xMotivo permanece opcional (minOccurs=0).
+        $request = new EventoRequest(
+            tipoEvento: '202205',
+            chaveNfse: self::CHAVE_50,
+            dataEvento: '2026-05-15',
+            versaoAplicacao: '1.0.0',
+            tipoAmbiente: 2,
+            cnpjAutor: '12345678000195',
+            codigoMotivo: '1',
+        );
+
+        $this->validator->validate($request);
+        $this->assertTrue(true);
+    }
+
     public function test_anulacao_rejeicao_sem_id_ev_manif_rej_throws(): void
     {
         // TE205208: idEvManifRej é minOccurs=1 no XSD.

@@ -14,7 +14,9 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoExterior;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsFornecedor;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
@@ -198,6 +200,60 @@ final class DpsXsdValidationTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    public function test_dps_g_ree_rep_res_com_fornec_valida_no_xsd(): void
+    {
+        // Regressão bugs 1-3 (auditoria NT 004): o grupo fornec (com cNaoNIF)
+        // deve gerar XML válido contra o XSD — prova no nível do schema, não só do validador.
+        $doc = new IbsCbsDocumentoReeRepRes(
+            tipo: 'docOutro',
+            dtEmiDoc: new \DateTimeImmutable('2026-01-15'),
+            dtCompDoc: new \DateTimeImmutable('2026-01-15'),
+            tpReeRepRes: TipoReembolsoRepasseRessarcimento::REPASSE_IMOVEIS_CORRETORES,
+            vlrReeRepRes: '1500.00',
+            nDoc: 'DOC-1',
+            xDoc: 'Documento não fiscal',
+            fornec: new IbsCbsFornecedor(
+                codigoNaoNif: '1',
+                xNome: 'Fornecedor Estrangeiro Lda',
+            ),
+        );
+        $reeRepRes = new IbsCbsReeRepRes([$doc]);
+        $ibscbs = $this->createIbscbs(reeRepRes: $reeRepRes);
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        self::assertStringContainsString('<fornec>', $xml);
+        self::assertStringContainsString('<cNaoNIF>1</cNaoNIF>', $xml);
+        $this->xsdValidator->validate($xml, 'DPS');
+    }
+
+    public function test_dps_imovel_endext_valida_no_xsd(): void
+    {
+        // Regressão bug 10 (auditoria NT 004): imóvel com endExt gera XML válido no XSD.
+        $endExt = new IbsCbsEnderecoExterior(
+            cEndPost: '1100-001',
+            xCidade: 'Lisboa',
+            xEstProvReg: 'Lisboa',
+        );
+        $imovel = new IbsCbsImovel(
+            endereco: new IbsCbsEnderecoObra(
+                cep: null,
+                endExt: $endExt,
+                xLgr: 'Rua Augusta',
+                nro: '50',
+                xBairro: 'Baixa',
+            ),
+        );
+        $ibscbs = $this->createIbscbs(imovel: $imovel);
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        self::assertStringContainsString('<endExt>', $xml);
+        $this->xsdValidator->validate($xml, 'DPS');
+    }
+
     public function test_dps_with_destinatario_terceiro_validates_against_xsd(): void
     {
         $enderecoDest = $this->createEndereco();
@@ -219,6 +275,41 @@ final class DpsXsdValidationTest extends TestCase
         $this->xsdValidator->validate($xml, 'DPS');
 
         $this->expectNotToPerformAssertions();
+    }
+
+    public function test_dps_with_destinatario_exterior_endext_validates_against_xsd(): void
+    {
+        // Regressão bug 9 (auditoria NT 004): o ramo endExt do dest era inalcançável.
+        // Agora um destinatário no exterior gera <endExt> e valida no XSD.
+        $enderecoExterior = new Endereco(
+            logradouro: 'Rua Augusta',
+            numero: '100',
+            complemento: null,
+            bairro: 'Baixa',
+            codigoMunicipio: new CodigoMunicipio('0000000'),
+            uf: '',
+            cep: new Cep('00000000'),
+            codigoPais: 'PT',
+            nomeCidadeExterior: 'Lisboa',
+            estadoProvinciaExterior: 'Lisboa',
+            codigoPostalExterior: '1100-001',
+        );
+        $dest = new IbsCbsDest(
+            cnpj: new Cnpj('11444777000161'),
+            xNome: 'Destinatário Exterior Lda',
+            endereco: $enderecoExterior,
+        );
+        $ibscbs = $this->createIbscbs(
+            indDest: IndicadorDestinacao::TERCEIRO,
+            dest: $dest,
+        );
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        self::assertStringContainsString('<endExt>', $xml);
+        self::assertStringContainsString('<cPais>PT</cPais>', $xml);
+        $this->xsdValidator->validate($xml, 'DPS');
     }
 
     public function test_dps_with_trib_regular_and_diferimento_validates_against_xsd(): void

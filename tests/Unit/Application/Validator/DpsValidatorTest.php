@@ -13,7 +13,9 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ExigSuspRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDestRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDiferimentoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDocumentoReeRepResRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsEnderecoExteriorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsEnderecoObraRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsFornecedorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsImovelRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsReeRepResRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
@@ -1745,6 +1747,208 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
+    // ===== Regressão auditoria NT 004 (v2.2.3): conformidade IBS/CBS contra XSD v1.01 =====
+
+    public function test_nt004_cib_aceita_alfanumerico_de_8_chars(): void
+    {
+        // TSCodCIB = string length=8 SEM pattern de dígitos: 'AB12CD34' é válido.
+        $request = $this->createValidDpsRequestWithIbscbs(
+            imovel: new IbsCbsImovelRequest(cCIB: 'AB12CD34'),
+        );
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_nt004_fornec_sem_identificador_throws(): void
+    {
+        $request = $this->createValidDpsRequestWithIbscbs(
+            reeRepRes: new IbsCbsReeRepResRequest([
+                new IbsCbsDocumentoReeRepResRequest(
+                    tipoDocumento: 'docOutro',
+                    dtEmiDoc: '2026-01-15',
+                    dtCompDoc: '2026-01-15',
+                    tpReeRepRes: '01',
+                    vlrReeRepRes: 100.00,
+                    nDoc: 'DOC-1',
+                    xDoc: 'Documento',
+                    fornec: new IbsCbsFornecedorRequest(xNome: 'Fornecedor Sem Doc'),
+                ),
+            ]),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('fornecedor deve ter CNPJ, CPF, NIF ou cNaoNIF');
+        $this->validator->validate($request);
+    }
+
+    public function test_nt004_fornec_cnaonif_invalido_throws(): void
+    {
+        $request = $this->createValidDpsRequestWithIbscbs(
+            reeRepRes: new IbsCbsReeRepResRequest([
+                new IbsCbsDocumentoReeRepResRequest(
+                    tipoDocumento: 'docOutro',
+                    dtEmiDoc: '2026-01-15',
+                    dtCompDoc: '2026-01-15',
+                    tpReeRepRes: '01',
+                    vlrReeRepRes: 100.00,
+                    nDoc: 'DOC-1',
+                    xDoc: 'Documento',
+                    fornec: new IbsCbsFornecedorRequest(codigoNaoNif: '9', xNome: 'Forn'),
+                ),
+            ]),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('cNaoNIF do fornecedor inválido');
+        $this->validator->validate($request);
+    }
+
+    public function test_nt004_fornec_valido_passa(): void
+    {
+        $request = $this->createValidDpsRequestWithIbscbs(
+            reeRepRes: new IbsCbsReeRepResRequest([
+                new IbsCbsDocumentoReeRepResRequest(
+                    tipoDocumento: 'docOutro',
+                    dtEmiDoc: '2026-01-15',
+                    dtCompDoc: '2026-01-15',
+                    tpReeRepRes: '01',
+                    vlrReeRepRes: 100.00,
+                    nDoc: 'DOC-1',
+                    xDoc: 'Documento',
+                    fornec: new IbsCbsFornecedorRequest(cnpj: '11444777000161', xNome: 'Fornecedor Ltda'),
+                ),
+            ]),
+        );
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_nt004_dest_endereco_sem_cep_throws(): void
+    {
+        // Bug 7: antes a lib fabricava CEP '00000000'. Agora exige CEP no endNac.
+        $request = $this->createValidDpsRequestWithIbscbs(
+            dest: new IbsCbsDestRequest(
+                cnpj: '11444777000161',
+                xNome: 'Destinatário Ltda',
+                logradouro: 'Rua X',
+                numero: '10',
+                bairro: 'Centro',
+                codigoMunicipio: '3550308',
+                uf: 'SP',
+                // cep ausente
+            ),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('CEP do destinatário é obrigatório');
+        $this->validator->validate($request);
+    }
+
+    public function test_nt004_dest_endereco_sem_numero_throws(): void
+    {
+        // Bug 8: antes gerava <nro></nro> vazio (viola TSNumeroEndereco minLength=1).
+        $request = $this->createValidDpsRequestWithIbscbs(
+            dest: new IbsCbsDestRequest(
+                cnpj: '11444777000161',
+                xNome: 'Destinatário Ltda',
+                logradouro: 'Rua X',
+                bairro: 'Centro',
+                codigoMunicipio: '3550308',
+                uf: 'SP',
+                cep: '01001000',
+                // numero ausente
+            ),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('nro do destinatário é obrigatório');
+        $this->validator->validate($request);
+    }
+
+    public function test_nt004_imovel_endext_valido_passa(): void
+    {
+        // Bug 10: endExt do imóvel agora é validado; campos válidos devem passar.
+        $request = $this->createValidDpsRequestWithIbscbs(
+            imovel: new IbsCbsImovelRequest(
+                endereco: new IbsCbsEnderecoObraRequest(
+                    endExt: new IbsCbsEnderecoExteriorRequest(
+                        cEndPost: 'AB-12345',
+                        xCidade: 'Lisboa',
+                        xEstProvReg: 'Lisboa',
+                    ),
+                    xLgr: 'Rua do Imóvel',
+                    nro: '100',
+                    xBairro: 'Baixa',
+                ),
+            ),
+        );
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_nt004_refnfse_acima_de_99_throws(): void
+    {
+        // XSD: refNFSe maxOccurs=99 (gRefNFSe). 100 chaves deve falhar.
+        $chave = str_repeat('1', 50);
+        $request = $this->createValidDpsRequestWithIbscbs(
+            tpOper: '2',
+            refNFSeList: array_fill(0, 100, $chave),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('no máximo 99 refNFSe');
+        $this->validator->validate($request);
+    }
+
+    public function test_nt004_docdedred_acima_de_1000_throws(): void
+    {
+        // XSD: docDedRed maxOccurs=1000. 1001 documentos deve falhar.
+        $doc = new DocDedRedRequest(
+            tipoDocumento: 'chNFe',
+            chaveNFe: '12345678901234567890123456789012345678901234',
+            tipoDeducaoReducao: '1',
+            dataEmissaoDoc: '2026-05-15',
+            valorDedutivel: '1000.00',
+            valorDeducao: '1000.00',
+        );
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                valorDeducoes: 0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                documentosDeducao: array_fill(0, 1001, $doc),
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
+            ),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('no máximo 1000 documentos');
+        $this->validator->validate($request);
+    }
+
+    public function test_nt004_imovel_endext_cidade_vazia_throws(): void
+    {
+        $request = $this->createValidDpsRequestWithIbscbs(
+            imovel: new IbsCbsImovelRequest(
+                endereco: new IbsCbsEnderecoObraRequest(
+                    endExt: new IbsCbsEnderecoExteriorRequest(
+                        cEndPost: 'AB-12345',
+                        xCidade: '',
+                        xEstProvReg: 'Lisboa',
+                    ),
+                    xLgr: 'Rua do Imóvel',
+                    nro: '100',
+                    xBairro: 'Baixa',
+                ),
+            ),
+        );
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('xCidade do endExt do imóvel');
+        $this->validator->validate($request);
+    }
+
     private function createValidDpsRequest(
         int $tipoAmbiente = 1,
         string $dataEmissao = '2026-06-15T10:00:00-03:00',
@@ -1886,7 +2090,7 @@ final class DpsValidatorTest extends TestCase
             obra: new ObraRequest(cCIB: '1234567'),
         );
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('8 dígitos');
+        $this->expectExceptionMessage('8 caracteres');
         $this->validator->validate($request);
     }
 
@@ -1951,7 +2155,7 @@ final class DpsValidatorTest extends TestCase
             imovel: new IbsCbsImovelRequest(cCIB: '1234567'),
         );
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('8 dígitos');
+        $this->expectExceptionMessage('8 caracteres');
         $this->validator->validate($request);
     }
 

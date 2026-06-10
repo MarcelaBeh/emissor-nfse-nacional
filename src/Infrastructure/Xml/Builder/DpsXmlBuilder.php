@@ -13,6 +13,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use NFePHP\Common\DOMImproved as Dom;
 
@@ -69,7 +70,8 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->buildSubstituicao($infDpsNode, $entity->getSubstituicao());
         }
 
-        $this->buildPrestador($infDpsNode, $entity->getPrestador());
+        $prestadorEhEmitente = $entity->getTipoEmitente() === TipoEmitente::PRESTADOR;
+        $this->buildPrestador($infDpsNode, $entity->getPrestador(), $prestadorEhEmitente);
 
         if ($entity->getTomador() !== null) {
             $this->buildPessoa($infDpsNode, $entity->getTomador(), 'toma');
@@ -127,7 +129,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $this->addChild($substNode, 'xMotivo', $substituicao->getDescricaoMotivo(), false);
     }
 
-    private function buildPrestador(\DOMNode $parent, Prestador $prestador): void
+    private function buildPrestador(\DOMNode $parent, Prestador $prestador, bool $prestadorEhEmitente): void
     {
         $prestNode = $this->dom->createElement('prest');
         $parent->appendChild($prestNode);
@@ -151,9 +153,15 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->addChild($prestNode, 'IM', $prestador->getInscricaoMunicipal(), false);
         }
 
-        $this->addChild($prestNode, 'xNome', $prestador->getRazaoSocial(), true);
 
-        $this->buildEndereco($prestNode, $prestador->getEndereco());
+        if (!$prestadorEhEmitente) {
+            $this->addChild($prestNode, 'xNome', $prestador->getRazaoSocial(), false);
+
+            $endereco = $prestador->getEndereco();
+            if ($endereco !== null) {
+                $this->buildEndereco($prestNode, $endereco);
+            }
+        }
 
         if ($prestador->getTelefone()) {
             $this->addChild($prestNode, 'fone', $prestador->getTelefone()->getNumero(), false);

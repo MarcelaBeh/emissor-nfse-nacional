@@ -21,6 +21,10 @@ final readonly class IbsCbsDestRequest
         public ?string $cep = null,
         public ?string $fone = null,
         public ?string $email = null,
+        public ?string $codigoPais = null,
+        public ?string $codigoPostalExterior = null,
+        public ?string $nomeCidadeExterior = null,
+        public ?string $estadoProvinciaExterior = null,
     ) {
     }
 }

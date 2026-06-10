@@ -133,6 +133,14 @@ class EventoValidator
             $errors[] = 'Descrição do motivo (xMotivo) é obrigatória para este tipo de evento';
         }
 
+        if (
+            isset($tipoEvento)
+            && $this->exigeDescricaoQuandoMotivoOutros($tipoEvento, $request->codigoMotivo)
+            && empty($request->descricaoMotivo)
+        ) {
+            $errors[] = 'Descrição do motivo (xMotivo) é obrigatória quando o código do motivo é "Outros"';
+        }
+
         if ($request->descricaoMotivo !== null && $request->descricaoMotivo !== '') {
             $tamanho = mb_strlen($request->descricaoMotivo);
             if ($tamanho < 15 || $tamanho > 255) {
@@ -174,5 +182,16 @@ class EventoValidator
         }
 
         return $errors;
+    }
+
+    private function exigeDescricaoQuandoMotivoOutros(TipoEvento $tipoEvento, ?string $codigoMotivo): bool
+    {
+        $ehRejeicao = in_array($tipoEvento, [
+            TipoEvento::REJEICAO_PRESTADOR,
+            TipoEvento::REJEICAO_TOMADOR,
+            TipoEvento::REJEICAO_INTERMEDIARIO,
+        ], true);
+
+        return $ehRejeicao && $codigoMotivo === MotivoRejeicao::OUTROS->value;
     }
 }

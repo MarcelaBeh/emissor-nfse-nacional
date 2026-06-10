@@ -19,7 +19,7 @@ class Prestador
         private string $razaoSocial,
         private ?Telefone $telefone,
         private ?Email $email,
-        private Endereco $endereco,
+        private ?Endereco $endereco,
         private RegimeTributario $regimeTributario,
         private RegimeEspecialTributacao $regimeEspecialTributacao = RegimeEspecialTributacao::NENHUM,
         private ?string $nif = null,
@@ -91,7 +91,7 @@ class Prestador
         return $this->email;
     }
 
-    public function getEndereco(): Endereco
+    public function getEndereco(): ?Endereco
     {
         return $this->endereco;
     }

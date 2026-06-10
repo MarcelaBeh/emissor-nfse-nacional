@@ -11,6 +11,24 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.2] - 2026-06-10
+
+### Fixed
+- **BUG-06** — prestador-emitente: `xNome` e `<end>` do prestador são `minOccurs=0` no XSD e proibidos quando `tpEmit=1` (`E0121`/`E0128`); agora omitidos nesse caso
+- `gReeRepRes/documentos/fornec`: grupo do fornecedor não era validado (choice, `xNome`, `cNaoNIF`)
+- Tetos de cardinalidade XSD não validados: `documentos` e `docDedRed` (1000), `refNFSe` (99)
+- `dest`: endereço sem CEP/número fabricava `<CEP>00000000</CEP>`/`<nro>` vazio; agora exige campos do `endNac`
+- `dest/end/endExt` e `imovel/end/endExt`: endereço no exterior inalcançável/não validado
+- `cCIB`: exigia 8 dígitos; `TSCodCIB` aceita 8 alfanuméricos
+- `Nif` (VO): limite 20 → 40 caracteres (`TSNIF`)
+- Eventos: `xMotivo` exigido nas rejeições quando `cMotivo=9` (AnexoIV E1944/E1949/E1954)
+- Schema: pattern do `serie` mantido sem âncoras `^`/`$` (literais em XSD rejeitam toda série)
+
+### Changed
+- `Configuration::getVersion()` deriva a versão da tag git/Packagist (`composer-runtime-api`)
+
+---
+
 ## [v2.2.1] - 2026-06-10
 
 ### Fixed
@@ -187,7 +205,10 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.2...HEAD
+[v2.2.2]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.1...v2.2.2
+[v2.2.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.0...v2.2.1
+[v2.2.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.1.1...v2.2.0
 [v2.1.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.1.0...v2.1.1
 [v2.1.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.4...v2.1.0
 [v2.0.4]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.0.3...v2.0.4

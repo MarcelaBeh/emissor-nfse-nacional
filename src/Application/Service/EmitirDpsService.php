@@ -224,6 +224,18 @@ class EmitirDpsService
                 ? new Cnpj($request->prestador->documento)
                 : new Cpf($request->prestador->documento);
         }
+        $enderecoPrestador = null;
+        if ($request->prestador->logradouro !== null && $request->prestador->cep !== null) {
+            $enderecoPrestador = $this->criarEndereco(
+                $request->prestador->logradouro,
+                $request->prestador->numero ?? '',
+                $request->prestador->complemento,
+                $request->prestador->bairro ?? '',
+                $request->prestador->codigoMunicipio,
+                $request->prestador->uf ?? '',
+                $request->prestador->cep
+            );
+        }
 
         $prestador = new Prestador(
             documento: $documentoPrestador,
@@ -231,15 +243,7 @@ class EmitirDpsService
             razaoSocial: $request->prestador->razaoSocial,
             telefone: $request->prestador->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($request->prestador->telefone) : null,
             email: $request->prestador->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($request->prestador->email) : null,
-            endereco: $this->criarEndereco(
-                $request->prestador->logradouro,
-                $request->prestador->numero,
-                $request->prestador->complemento,
-                $request->prestador->bairro,
-                $request->prestador->codigoMunicipio,
-                $request->prestador->uf,
-                $request->prestador->cep
-            ),
+            endereco: $enderecoPrestador,
             regimeTributario: \MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario::from($request->prestador->regimeTributario),
             regimeEspecialTributacao: $request->prestador->regEspTrib !== null
                 ? \MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeEspecialTributacao::from((string) $request->prestador->regEspTrib)
@@ -412,15 +416,33 @@ class EmitirDpsService
                 }
 
                 $endDest = null;
-                if ($d->logradouro && $d->codigoMunicipio) {
+                $destEhExterior = $d->codigoPais !== null;
+                if ($destEhExterior && $d->logradouro !== null && $d->numero !== null && $d->bairro !== null) {
+                    $endDest = $this->criarEndereco(
+                        $d->logradouro,
+                        $d->numero,
+                        $d->complemento,
+                        $d->bairro,
+                        $d->codigoMunicipio ?? '0000000',
+                        $d->uf ?? '',
+                        $d->cep ?? '00000000',
+                        $d->codigoPais,
+                        $d->codigoPostalExterior,
+                        $d->nomeCidadeExterior,
+                        $d->estadoProvinciaExterior,
+                    );
+                } elseif (
+                    $d->logradouro !== null && $d->numero !== null && $d->bairro !== null
+                    && $d->codigoMunicipio !== null && $d->cep !== null
+                ) {
                     $endDest = new Endereco(
                         logradouro: $d->logradouro,
-                        numero: $d->numero ?? '',
+                        numero: $d->numero,
                         complemento: $d->complemento,
-                        bairro: $d->bairro ?? '',
+                        bairro: $d->bairro,
                         codigoMunicipio: new CodigoMunicipio($d->codigoMunicipio),
                         uf: $d->uf ?? '',
-                        cep: $d->cep ? new Cep($d->cep) : new Cep('00000000'),
+                        cep: new Cep($d->cep),
                     );
                 }
 

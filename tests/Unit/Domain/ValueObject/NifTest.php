@@ -36,8 +36,16 @@ final class NifTest extends TestCase
 
     public function test_nif_too_long_throws_exception(): void
     {
+        // XSD TSNIF: maxLength=40. 41 caracteres deve falhar.
         $this->expectException(ValidationException::class);
-        new Nif('123456789012345678901');
+        new Nif(str_repeat('A', 41));
+    }
+
+    public function test_nif_with_40_chars_is_valid(): void
+    {
+        // Limite superior do TSNIF (maxLength=40) deve ser aceito.
+        $nif = new Nif(str_repeat('A', 40));
+        $this->assertSame(str_repeat('A', 40), (string) $nif);
     }
 
     public function test_to_string(): void

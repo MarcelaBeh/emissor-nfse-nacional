@@ -158,6 +158,13 @@
   <xs:simpleType name="TSSerieDPS">
     <xs:restriction base="xs:string">
       <xs:maxLength value="5"/>
+      <!-- DESVIO INTENCIONAL do XSD oficial publicado (NT 004 v2.0, dez/2025):
+           o pacote oficial trouxe o pattern "^0{0,4}\d{1,5}$". Em XSD os patterns
+           são implicitamente ancorados, então o ^ e o $ viram LITERAIS e o pattern
+           passa a rejeitar TODO valor de série (1, 00001, 99999 ...). A SEFAZ de
+           produção, porém, aceita séries normalmente. Mantido o pattern sem âncoras
+           literais para refletir o comportamento real do validador da SEFAZ.
+           Não "corrigir" de volta para ^$ sem confirmar mudança no validador oficial. -->
       <xs:pattern value="0{0,4}\d{1,5}"/>
       <xs:whiteSpace value="preserve"/>
     </xs:restriction>
