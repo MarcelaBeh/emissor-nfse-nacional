@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Config;
 
+use Composer\InstalledVersions;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Exception\ConfigException;
 
 class Configuration implements Contract\ConfigInterface
 {
+    private const PACKAGE_NAME = 'marcelabeh/emissor-nfse-nacional';
+
     /** @var array<string, mixed> */
     private array $config;
     /** @var array<string, string> */
@@ -154,6 +157,8 @@ class Configuration implements Contract\ConfigInterface
     #[\Override]
     public function getVersion(): string
     {
-        return '2.0.0';
+        $version = InstalledVersions::getPrettyVersion(self::PACKAGE_NAME);
+
+        return $version ?? 'dev-unknown';
     }
 }

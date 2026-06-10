@@ -7,17 +7,32 @@ namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Client;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\HttpClientInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\ConnectionException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\TimeoutException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\CertificateManagerInterface;
 
 class CurlHttpClient implements HttpClientInterface
 {
     private const DEFAULT_TIMEOUT = 60;
     private const DEFAULT_CONNECT_TIMEOUT = 10;
 
+    /**
+     * Caminhos dos PEMs temporários, materializados sob demanda na primeira
+     * request e reusados nas seguintes.
+     *
+     * @var array{private: string, public: string, cert: string}|null
+     */
+    private ?array $certFiles = null;
+
+    /**
+     * O CertificateManager é mantido vivo por este cliente (único consumidor
+     * dos PEMs): o cURL relê os arquivos do disco a cada request via
+     * CURLOPT_SSLCERT/SSLKEY, e o __destruct do manager os apaga. Possuir o
+     * manager aqui mantém posse e consumo no mesmo objeto, sem depender da
+     * ordem de coleta de lixo de objetos externos.
+     */
     public function __construct(
         private int $timeout = self::DEFAULT_TIMEOUT,
         private int $connectTimeout = self::DEFAULT_CONNECT_TIMEOUT,
-        private ?string $certPath = null,
-        private ?string $privateKeyPath = null,
+        private ?CertificateManagerInterface $certificateManager = null,
         private ?string $keyPassword = null,
     ) {
     }
@@ -85,12 +100,17 @@ class CurlHttpClient implements HttpClientInterface
             }
         }
 
-        if ($this->certPath !== null && $this->certPath !== '') {
-            $options[CURLOPT_SSLCERT] = $this->certPath;
-        }
+        if ($this->certificateManager !== null) {
+            $this->certFiles ??= $this->certificateManager->saveTemporaryFiles();
 
-        if ($this->privateKeyPath !== null && $this->privateKeyPath !== '') {
-            $options[CURLOPT_SSLKEY] = $this->privateKeyPath;
+            $certPath = $this->certFiles['cert'];
+            $keyPath = $this->certFiles['private'];
+            if ($certPath === '' || $keyPath === '') {
+                throw new ConnectionException('Falha ao materializar os arquivos do certificado cliente');
+            }
+
+            $options[CURLOPT_SSLCERT] = $certPath;
+            $options[CURLOPT_SSLKEY] = $keyPath;
         }
 
         if ($this->keyPassword !== null && $this->keyPassword !== '') {

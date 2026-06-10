@@ -53,13 +53,14 @@ class ServiceFactory
 
     private function createApiConnector(): ApiConnector
     {
-        $certFiles = $this->certificateManager->saveTemporaryFiles();
-
+        // O cliente HTTP passa a possuir o CertificateManager: ele é o único
+        // consumidor dos PEMs (lidos pelo cURL a cada request) e, possuindo o
+        // manager, mantém os arquivos vivos enquanto existir. Posse e consumo
+        // ficam no mesmo objeto, sem keep-alive externo dependente do GC.
         $httpClient = new CurlHttpClient(
             timeout: 60,
             connectTimeout: 10,
-            certPath: $certFiles['cert'],
-            privateKeyPath: $certFiles['private'],
+            certificateManager: $this->certificateManager,
             keyPassword: null,
         );
 

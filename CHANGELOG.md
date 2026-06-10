@@ -11,6 +11,19 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.1] - 2026-06-10
+
+### Fixed
+- Certificado coletado prematuramente pelo GC: o `ServiceFactory` (única referência ao `CertificateManager`) era descartado logo após inicializar os serviços, disparando o `__destruct` que apaga os PEMs temporários. Como o cURL os relê do disco a cada request, a emissão falhava com `CURL Error 58: could not load PEM client certificate`. A posse do `CertificateManager` foi movida para o `CurlHttpClient` — único consumidor dos PEMs —, eliminando a dependência da ordem de coleta de lixo
+
+### Changed
+- `CurlHttpClient` passa a receber `CertificateManagerInterface` (em vez de `certPath`/`privateKeyPath`) e materializa os PEMs sob demanda na primeira request, memoizando os caminhos. Nenhum segredo é escrito em disco se nenhuma request for feita
+
+### Added
+- Teste de regressão `CertificateLifetimeTest`: garante que os PEMs persistem enquanto o cliente HTTP vive e são removidos quando ele é destruído
+
+---
+
 ## [v2.2.0] - 2026-06-09
 
 ### Fixed

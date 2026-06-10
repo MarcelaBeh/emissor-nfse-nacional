@@ -586,7 +586,7 @@ class Configuration implements Contract\ConfigInterface
     
     public function getVersion(): string
     {
-        return '2.0.0';
+        return InstalledVersions::getPrettyVersion(self::PACKAGE_NAME) ?? 'dev-unknown';
     }
 }
 ```
@@ -1086,7 +1086,7 @@ vendor/bin/phpunit --filter=EmitirDpsTest
 
 **Status da Implementação:**
 
-✅ **Completo - v2.0.0**
+✅ **Completo** — consulte o [CHANGELOG](../CHANGELOG.md) para a versão e as mudanças de cada release.
 
 ---
 
