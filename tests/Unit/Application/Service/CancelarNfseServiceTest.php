@@ -119,6 +119,63 @@ final class CancelarNfseServiceTest extends TestCase
         $this->assertSame('NFSe ja cancelada', $response->mensagem);
     }
 
+    public function test_executar_erro_sefin_extrai_codigo_e_descricao(): void
+    {
+        // A SEFIN retorna os erros de evento em erro[] com Codigo/Descricao —
+        // não no campo 'mensagem'. A resposta deve trazer a mensagem real.
+        $request = $this->createValidEventoRequest();
+        $xml = '<?xml version="1.0"?><pedRegEvento></pedRegEvento>';
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><pedRegEvento></pedRegEvento>';
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn($xml);
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildEventoPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiEndpoints->expects($this->once())->method('cancelarNfse')->willReturn('https://api/x');
+        $this->apiConnector->expects($this->once())->method('post')->willReturn([
+            'success' => false,
+            'data' => [
+                'versaoAplicativo' => 'SefinNacional_1.6.0',
+                'erro' => [
+                    ['Codigo' => 'E1860', 'Descricao' => 'Evento impede o cancelamento.'],
+                ],
+            ],
+        ]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertFalse($response->success);
+        $this->assertSame('E1860 - Evento impede o cancelamento.', $response->mensagem);
+    }
+
+    public function test_executar_erro_sefin_vazio_usa_fallback(): void
+    {
+        // Caso real observado: a SEFIN retorna erro:[] vazio, sem detalhe.
+        // Deve cair no fallback claro, e o payload cru segue em dados.
+        $request = $this->createValidEventoRequest();
+        $xml = '<?xml version="1.0"?><pedRegEvento></pedRegEvento>';
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><pedRegEvento></pedRegEvento>';
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn($xml);
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildEventoPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiEndpoints->expects($this->once())->method('cancelarNfse')->willReturn('https://api/x');
+        $dados = ['versaoAplicativo' => 'SefinNacional_1.6.0', 'erro' => []];
+        $this->apiConnector->expects($this->once())->method('post')->willReturn([
+            'success' => false,
+            'data' => $dados,
+        ]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertFalse($response->success);
+        $this->assertSame('Erro ao cancelar NFSe', $response->mensagem);
+        $this->assertSame($dados, $response->dados);
+    }
+
     public function test_executar_validation_error(): void
     {
         $request = $this->createValidEventoRequest();

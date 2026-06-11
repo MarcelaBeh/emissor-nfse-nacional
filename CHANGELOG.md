@@ -11,6 +11,14 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.4] - 2026-06-11
+
+### Fixed
+- Erro de cancelamento e demais eventos retornava sempre `"Erro ao cancelar NFSe"` genérico; agora extrai `Codigo`+`Descricao` de `erro[]` da SEFIN (`SefinNacional_1.6.0`), igual à emissão. O payload cru segue em `dados`
+- Emissão bem-sucedida retornava a chave gerada localmente (do DPS) e não preenchia o número; agora `chaveAcesso` e `numero` vêm da NFS-e autorizada na resposta da SEFIN (atributo `Id` e `nNFSe`)
+
+---
+
 ## [v2.2.3] - 2026-06-10
 
 ### Fixed
@@ -212,7 +220,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.3...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.4...HEAD
+[v2.2.4]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.3...v2.2.4
 [v2.2.3]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.2...v2.2.3
 [v2.2.2]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.1...v2.2.2
 [v2.2.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.0...v2.2.1

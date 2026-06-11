@@ -131,8 +131,9 @@ final class EmitirDpsServiceTest extends TestCase
         $xml = '<?xml version="1.0"?><DPS><infDPS Id="' . self::CHAVE_50 . '"></infDPS></DPS>';
         $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS><infDPS Id="' . self::CHAVE_50 . '"></infDPS></DPS>';
         $payload = ['xml' => $xmlAssinado];
-        $responseXml = '<?xml version="1.0"?><CompNFSe><NFSe><infNFSe><chNFSe>' . self::CHAVE_50 . '</chNFSe><nNFSe>1</nNFSe><cVerif>1234</cVerif><serie>1</serie><dhEmi>2026-05-15T10:00:00</dhEmi><CNPJ>12345678000195</CNPJ><xNome>Empresa Teste</xNome><vServ>1000.00</vServ><vISS>50.00</vISS></infNFSe></NFSe></CompNFSe>';
-        $parsedData = ['chaveAcesso' => self::CHAVE_50, 'numero' => '1'];
+        $responseXml = '<?xml version="1.0"?><CompNFSe><NFSe><infNFSe Id="NFS' . self::CHAVE_50 . '"><nNFSe>196</nNFSe></infNFSe></NFSe></CompNFSe>';
+        // O parser devolve a chave REAL no 'id' (NFS + 50 dígitos) e o nNFSe em 'numero'.
+        $parsedData = ['id' => 'NFS' . self::CHAVE_50, 'numero' => '196'];
 
         $this->validator->expects($this->once())->method('validate')->with($this->isInstanceOf(DpsRequest::class));
         $this->xmlBuilder->expects($this->once())->method('build')->willReturn($xml);
@@ -146,9 +147,34 @@ final class EmitirDpsServiceTest extends TestCase
 
         $this->assertInstanceOf(NfseResponse::class, $response);
         $this->assertTrue($response->success);
-        $this->assertNotNull($response->chaveAcesso);
-        $this->assertSame(50, strlen($response->chaveAcesso));
+        // Chave REAL da NFS-e (sem o prefixo NFS), não a calculada localmente do DPS.
+        $this->assertSame(self::CHAVE_50, $response->chaveAcesso);
+        $this->assertSame('196', $response->numero);
         $this->assertSame($responseXml, $response->xml);
+    }
+
+    public function test_executar_id_malformado_cai_no_fallback_da_chave_local(): void
+    {
+        // Se o Id da NFS-e não bater TSIdNFSe (NFS + 50 dígitos), não vira chave
+        // inválida silenciosa: cai na chave gerada localmente a partir do DPS.
+        $request = $this->createValidDpsRequest();
+        $xml = '<?xml version="1.0"?><DPS><infDPS Id="' . self::CHAVE_50 . '"></infDPS></DPS>';
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
+        $responseXml = '<?xml version="1.0"?><CompNFSe><NFSe><infNFSe Id="LIXO123"></infNFSe></NFSe></CompNFSe>';
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn($xml);
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildDpsPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiConnector->expects($this->once())->method('post')->willReturn(['success' => true, 'data' => $responseXml]);
+        $this->nfseXmlParser->expects($this->once())->method('parse')->willReturn([['id' => 'LIXO123', 'numero' => null]]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertTrue($response->success);
+        $this->assertSame(50, strlen((string) $response->chaveAcesso)); // chave local (fallback), não 'LIXO'
+        $this->assertNull($response->numero);
     }
 
     public function test_executar_erro_sefin_extrai_codigo_e_descricao(): void

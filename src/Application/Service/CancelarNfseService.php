@@ -25,6 +25,8 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\Contract\XsdVali
 
 class CancelarNfseService
 {
+    use SefinErrorMessageTrait;
+
     public function __construct(
         private ApiConnectorInterface $apiConnector,
         private XmlBuilderInterface $xmlBuilder,
@@ -80,7 +82,7 @@ class CancelarNfseService
             if (!$response['success']) {
                 return new EventoResponse(
                     success: false,
-                    mensagem: $response['data']['mensagem'] ?? 'Erro ao cancelar NFSe',
+                    mensagem: $this->extrairMensagemErro($response['data'] ?? null, 'Erro ao cancelar NFSe'),
                     dados: $response['data'] ?? null,
                 );
             }
