@@ -26,14 +26,8 @@ class NfseXmlParser
 
         $data = [];
 
-        $nfseNodes = $dom->getElementsByTagName('CompNFSe');
-        foreach ($nfseNodes as $compNfse) {
-            $nfse = $compNfse->getElementsByTagName('NFSe')->item(0);
-            if ($nfse === null) {
-                continue;
-            }
-
-            $infNfse = $nfse->getElementsByTagName('infNFSe')->item(0);
+        foreach ($dom->getElementsByTagName('NFSe') as $nfse) {
+            $infNfse = $this->getDirectChild($nfse, 'infNFSe');
             if ($infNfse === null) {
                 continue;
             }

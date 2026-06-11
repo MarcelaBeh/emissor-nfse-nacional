@@ -131,7 +131,7 @@ final class EmitirDpsServiceTest extends TestCase
         $xml = '<?xml version="1.0"?><DPS><infDPS Id="' . self::CHAVE_50 . '"></infDPS></DPS>';
         $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS><infDPS Id="' . self::CHAVE_50 . '"></infDPS></DPS>';
         $payload = ['xml' => $xmlAssinado];
-        $responseXml = '<?xml version="1.0"?><CompNFSe><NFSe><infNFSe Id="NFS' . self::CHAVE_50 . '"><nNFSe>196</nNFSe></infNFSe></NFSe></CompNFSe>';
+        $responseXml = '<?xml version="1.0"?><NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01"><infNFSe Id="NFS' . self::CHAVE_50 . '"><nNFSe>196</nNFSe></infNFSe></NFSe>';
         // O parser devolve a chave REAL no 'id' (NFS + 50 dígitos) e o nNFSe em 'numero'.
         $parsedData = ['id' => 'NFS' . self::CHAVE_50, 'numero' => '196'];
 
@@ -153,6 +153,57 @@ final class EmitirDpsServiceTest extends TestCase
         $this->assertSame($responseXml, $response->xml);
     }
 
+    /**
+     * Regressão fim-a-fim (LIB-A): usa o NfseXmlParser REAL — não o mock — com o
+     * XML de emissão real da SEFIN, cuja raiz é <NFSe>. O parser antigo só lia um
+     * envelope <CompNFSe> inexistente nesta API e retornava [], fazendo a resposta
+     * cair no fallback (chave do DPS, numero null). Este teste exercita
+     * parser→serviço de ponta a ponta: chaveAcesso e numero vêm da NFS-e real.
+     */
+    public function test_executar_emissao_real_popula_chave_e_numero_com_parser_real(): void
+    {
+        $chave50 = '13026032218586475000177000000000019926060970939220';
+        $responseXml = <<<XML
+            <?xml version="1.0" encoding="UTF-8"?>
+            <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
+                <infNFSe Id="NFS{$chave50}">
+                    <nNFSe>199</nNFSe>
+                    <cStat>100</cStat>
+                    <emit><CNPJ>18586475000177</CNPJ></emit>
+                    <valores><vLiq>0.01</vLiq></valores>
+                </infNFSe>
+            </NFSe>
+            XML;
+
+        $service = new EmitirDpsService(
+            $this->apiConnector,
+            $this->xmlBuilder,
+            $this->xmlSigner,
+            $this->xsdValidator,
+            $this->validator,
+            $this->requestBuilder,
+            new NfseXmlParser(),
+            $this->ibscbsResponseValidator,
+            $this->apiEndpoints,
+        );
+
+        $request = $this->createValidDpsRequest();
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn('<DPS></DPS>');
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildDpsPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiConnector->expects($this->once())->method('post')->willReturn(['success' => true, 'data' => $responseXml]);
+
+        $response = $service->executar($request);
+
+        $this->assertTrue($response->success);
+        $this->assertSame($chave50, $response->chaveAcesso);
+        $this->assertSame('199', $response->numero);
+    }
+
     public function test_executar_id_malformado_cai_no_fallback_da_chave_local(): void
     {
         // Se o Id da NFS-e não bater TSIdNFSe (NFS + 50 dígitos), não vira chave
@@ -160,7 +211,7 @@ final class EmitirDpsServiceTest extends TestCase
         $request = $this->createValidDpsRequest();
         $xml = '<?xml version="1.0"?><DPS><infDPS Id="' . self::CHAVE_50 . '"></infDPS></DPS>';
         $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
-        $responseXml = '<?xml version="1.0"?><CompNFSe><NFSe><infNFSe Id="LIXO123"></infNFSe></NFSe></CompNFSe>';
+        $responseXml = '<?xml version="1.0"?><NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01"><infNFSe Id="LIXO123"></infNFSe></NFSe>';
 
         $this->validator->expects($this->once())->method('validate');
         $this->xmlBuilder->expects($this->once())->method('build')->willReturn($xml);

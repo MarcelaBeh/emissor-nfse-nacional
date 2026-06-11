@@ -11,6 +11,16 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.5] - 2026-06-11
+
+### Fixed
+- `NfseXmlParser::parse()` exigia um envelope `<CompNFSe>` que a Sefin Nacional não usa em nenhuma resposta, retornando vazio para o XML real; com isso a v2.2.4 não populava `chaveAcesso`/`numero` e caía no fallback (chave do DPS, número nulo). Agora ancora em `<NFSe>` — a raiz real da emissão e da consulta (`SefinNacional_1.6.0`), conforme o XSD oficial (`TCNFSe`)
+
+### Removed
+- Dependência do envelope `<CompNFSe>` (leiaute ABRASF municipal), inexistente nas respostas desta API e ausente do XSD oficial
+
+---
+
 ## [v2.2.4] - 2026-06-11
 
 ### Fixed
@@ -220,7 +230,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.4...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.5...HEAD
+[v2.2.5]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.4...v2.2.5
 [v2.2.4]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.3...v2.2.4
 [v2.2.3]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.2...v2.2.3
 [v2.2.2]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.1...v2.2.2

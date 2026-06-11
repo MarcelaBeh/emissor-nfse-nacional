@@ -196,14 +196,14 @@ final class NfseResponseIntegrationTest extends TestCase
     public function test_parse_nfse_without_ibscbs_returns_null(): void
     {
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
-            . '<NFSe><infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
+            . '<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">'
+            . '<infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
             . '<nNFSe>123</nNFSe>'
             . '<cStat>100</cStat>'
             . '<dhProc>2026-06-15T10:00:00-03:00</dhProc>'
             . '<emit><CNPJ>11444777000161</CNPJ><xNome>Prestador Ltda</xNome></emit>'
             . '<valores><vLiq>950.00</vLiq></valores>'
-            . '</infNFSe></NFSe></CompNFSe>';
+            . '</infNFSe></NFSe>';
 
         $parsed = $this->parser->parse($xml);
 
@@ -214,15 +214,15 @@ final class NfseResponseIntegrationTest extends TestCase
     public function test_parse_extracts_basic_fields_correctly(): void
     {
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
-            . '<NFSe><infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
+            . '<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">'
+            . '<infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
             . '<nNFSe>456</nNFSe>'
             . '<cStat>100</cStat>'
             . '<dhProc>2026-06-15T14:30:00-03:00</dhProc>'
             . '<emit><CNPJ>11444777000161</CNPJ><xNome>Prestador Ltda</xNome></emit>'
             . '<valores><vLiq>2375.00</vLiq></valores>'
             . $this->buildIbscbsXml(null, null, null, null, null, null, null, null)
-            . '</infNFSe></NFSe></CompNFSe>';
+            . '</infNFSe></NFSe>';
 
         $parsed = $this->parser->parse($xml);
         $this->assertCount(1, $parsed);
@@ -242,16 +242,14 @@ final class NfseResponseIntegrationTest extends TestCase
     private function createCompleteNfseResponseXml(): string
     {
         return '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
-            . $this->buildInfNfse('1', '1000.00')
-            . '</CompNFSe>';
+            . $this->buildInfNfse('1', '1000.00');
     }
 
     private function createNfseResponseWithCreditoPresumido(): string
     {
         return '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
-            . '<NFSe><infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
+            . '<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">'
+            . '<infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
             . '<chNFSe>12345678901234567890123456789012345678901234</chNFSe>'
             . '<nNFSe>123</nNFSe><cVerif>ABC123</cVerif><serie>1</serie>'
             . '<dhEmi>2026-06-15T10:00:00-03:00</dhEmi>'
@@ -262,14 +260,14 @@ final class NfseResponseIntegrationTest extends TestCase
                 gIbsCredPres: ['pCredPresIBS' => '10.00', 'vCredPresIBS' => '100.00'],
                 gCbsCredPres: ['pCredPresCBS' => '5.00', 'vCredPresCBS' => '50.00'],
             )
-            . '</infNFSe></NFSe></CompNFSe>';
+            . '</infNFSe></NFSe>';
     }
 
     private function createNfseResponseWithDiferimento(): string
     {
         return '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
-            . '<NFSe><infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
+            . '<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">'
+            . '<infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
             . '<chNFSe>12345678901234567890123456789012345678901234</chNFSe>'
             . '<nNFSe>123</nNFSe><cVerif>ABC123</cVerif><serie>1</serie>'
             . '<dhEmi>2026-06-15T10:00:00-03:00</dhEmi>'
@@ -281,7 +279,7 @@ final class NfseResponseIntegrationTest extends TestCase
                 vDifMun: '25.00',
                 vDifCBS: '40.00',
             )
-            . '</infNFSe></NFSe></CompNFSe>';
+            . '</infNFSe></NFSe>';
     }
 
     private function createNfseResponseWithReeRepRes(string $vCalcReeRepRes = '500.00'): string
@@ -291,8 +289,8 @@ final class NfseResponseIntegrationTest extends TestCase
         $fedXml = '<fed><pCBS>8.00</pCBS><pAliqEfetCBS>8.00</pAliqEfetCBS></fed>';
 
         return '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
-            . '<NFSe><infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
+            . '<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">'
+            . '<infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
             . '<chNFSe>12345678901234567890123456789012345678901234</chNFSe>'
             . '<nNFSe>123</nNFSe><cVerif>ABC123</cVerif><serie>1</serie>'
             . '<dhEmi>2026-06-15T10:00:00-03:00</dhEmi>'
@@ -314,7 +312,7 @@ final class NfseResponseIntegrationTest extends TestCase
             . '<gCBS><vCBS>100.00</vCBS></gCBS>'
             . '</totCIBS>'
             . '</IBSCBS>'
-            . '</infNFSe></NFSe></CompNFSe>';
+            . '</infNFSe></NFSe>';
     }
 
     private function createNfseResponseCustom(
@@ -333,8 +331,8 @@ final class NfseResponseIntegrationTest extends TestCase
             . '<pAliqEfetCBS>8.00</pAliqEfetCBS></fed>';
 
         return '<?xml version="1.0" encoding="UTF-8"?>'
-            . '<CompNFSe xmlns="http://www.sped.fazenda.gov.br/nfse">'
-            . '<NFSe><infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
+            . '<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">'
+            . '<infNFSe Id="NFSe12345678901234567890123456789012345678901234">'
             . '<chNFSe>12345678901234567890123456789012345678901234</chNFSe>'
             . '<nNFSe>123</nNFSe><cVerif>ABC123</cVerif><serie>1</serie>'
             . '<dhEmi>2026-06-15T10:00:00-03:00</dhEmi>'
@@ -355,7 +353,7 @@ final class NfseResponseIntegrationTest extends TestCase
             . '<gCBS><vCBS>100.00</vCBS></gCBS>'
             . '</totCIBS>'
             . '</IBSCBS>'
-            . '</infNFSe></NFSe></CompNFSe>';
+            . '</infNFSe></NFSe>';
     }
 
     private function buildInfNfse(string $serie, string $vServ): string
@@ -364,7 +362,8 @@ final class NfseResponseIntegrationTest extends TestCase
         $munXml = '<mun><pIBSMun>5.00</pIBSMun><pAliqEfetMun>5.00</pAliqEfetMun></mun>';
         $fedXml = '<fed><pCBS>8.00</pCBS><pAliqEfetCBS>8.00</pAliqEfetCBS></fed>';
 
-        return '<NFSe><infNFSe Id="NFSe' . $serie . '1234567890123456789012345678901234567890123">'
+        return '<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">'
+            . '<infNFSe Id="NFSe' . $serie . '1234567890123456789012345678901234567890123">'
             . '<chNFSe>' . $serie . '1234567890123456789012345678901234567890123</chNFSe>'
             . '<nNFSe>12' . $serie . '</nNFSe>'
             . '<cVerif>ABC' . $serie . '23</cVerif>'
