@@ -7,12 +7,12 @@
 [![Packagist](https://img.shields.io/packagist/v/marcelabeh/emissor-nfse-nacional.svg)](https://packagist.org/packages/marcelabeh/emissor-nfse-nacional)
 [![PHP Version](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php)](https://www.php.net/)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-brightgreen)](https://phpstan.org/)
-[![Tests](https://img.shields.io/badge/tests-686%20passing-brightgreen)](https://phpunit.de/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://phpunit.de/)
 [![License](https://img.shields.io/badge/license-LGPL--3.0-blue.svg)](LICENSE)
 
 **Biblioteca PHP para integração com NFSe Nacional** - Pacote Composer reutilizável para emissão, consulta e cancelamento de Notas Fiscais de Serviço Eletrônicas no padrão nacional.
 
-**Clean Architecture** • **SOLID** • **PSR-12** • **PHP 8.3+** • **PHPStan Level 8**
+**Clean Architecture** • **SOLID** • **PSR-12** • **PSR-3 (logging)** • **PHP 8.3+** • **PHPStan Level 8**
 
 ---
 
@@ -30,13 +30,13 @@ use MarcelaBeh\EmissorNfseNacional\Presentation\Factory\ConfigFactory;
 use NFePHP\Common\Certificate;
 
 // 1. Carregar certificado
-$certificado = Certificate::loadPfx($caminhoCertificado, $senha);
+$certificado = Certificate::readPfx(file_get_contents($caminhoCertificado), $senha);
 
 // 2. Criar configuração
 $config = ConfigFactory::createHomologacao('codigo-ibge-municipio');
 
-// 3. Criar facade
-$nfse = NfseNacionalFacade::create((array)$config, $certificado);
+// 3. Criar facade (aceita Configuration|array — sem cast)
+$nfse = NfseNacionalFacade::create($config, $certificado);
 
 // 4. Emitir DPS
 $response = $nfse->emitirDps($dpsRequest);
@@ -61,7 +61,7 @@ $response = $nfse->emitirDps($dpsRequest);
 ## 🔧 Qualidade de Código
 
 ```bash
-composer test    # PHPUnit (686 testes, 1662 assertions)
+composer test    # PHPUnit
 composer cs      # PHP-CS-Fixer (dry-run)
 composer cs:fix  # PHP-CS-Fixer (aplicar)
 composer stan    # PHPStan nível 8
@@ -69,12 +69,11 @@ composer check   # Tudo junto
 ```
 
 **Métricas:**
-- ✅ **686 testes** unitários e de integração
+- ✅ Suíte completa de testes unitários e de integração
 - ✅ **PHPStan nível 8** (máximo rigor) - 0 erros
-- ✅ **Clean Architecture** - 9.5/10
-- ✅ **SOLID completo** - 9/10
-- ✅ **PSR-12** - Code style padronizado
-- ✅ **100% compliance** com especificações NFSe Nacional v1.00 e v1.01
+- ✅ **Clean Architecture** com SOLID
+- ✅ **PSR-12** (estilo) e **PSR-3** (logging)
+- ✅ Conformidade com os schemas NFSe Nacional v1.00 e v1.01
 
 ## 📁 Estrutura
 
@@ -100,7 +99,7 @@ src/
 ## 🔄 Fluxo de Uso
 
 ```
-1. Carregar certificado → Certificate::loadPfx()
+1. Carregar certificado → Certificate::readPfx()
 2. Criar configuração → ConfigFactory::createHomologacao() ou createProducao()
 3. Instanciar facade → NfseNacionalFacade::create()
 4. Montar request → DpsRequest / EventoRequest
@@ -116,8 +115,6 @@ src/
 - `consultarDpsPorChave(string)` → `array`
 - `cancelar(EventoRequest)` → `EventoResponse`
 - `consultarEventos(string)` → `array`
-- `consultarDanfse(string)` → `string|array`
-- `consultarDanfseNfse(string)` → `string|array`
 
 ## ⚠️ Avisos Importantes
 
@@ -132,12 +129,20 @@ O XML pode vir em ISO-8859-1. Use o segundo parâmetro se necessário:
 $nfse->consultarPorChave('CHAVE', false);
 ```
 
-## 🐛 FAQ - Erro E999
+## 🐛 Erros da SEFIN
 
-O erro E999 indica falha não catalogada pela Receita. Causas comuns:
-- CNPJ/CPF do prestador não cadastrado/habilitado na NFSe Nacional
-- Erros de servidor (500)
-- Problemas no ambiente de homologação (comum)
+Quando a emissão/evento é rejeitado, a SEFIN retorna os erros estruturados. A resposta os expõe:
+
+```php
+$response->mensagem;  // primeiro erro, ex.: "E0617 - Não é permitido informar alíquota..."
+$response->erros;     // lista completa: [['codigo' => 'E0617', 'descricao' => '...'], ...]
+$response->dados;     // payload cru da SEFIN
+```
+
+Os códigos (`E0617`, `E1860`, ...) e suas descrições vêm da própria SEFIN. Causas comuns de rejeição:
+- CNPJ/CPF do prestador não habilitado na NFS-e Nacional
+- Dados fiscais inconsistentes com o município/regime
+- Indisponibilidade do ambiente de homologação
 
 ## 🤝 Créditos e Agradecimentos
 
@@ -157,7 +162,6 @@ Este projeto é uma **reestruturação completa** com Clean Architecture do proj
 ### 👩‍💻 Manutenção Atual
 - **Marcela Beatriz** ([@marcelabeh](https://github.com/marcelabeh))
 - Arquitetura: Clean Architecture + SOLID + DDD
-- Cobertura de testes: 686 testes
 - Análise estática: PHPStan level 8
 
 ## 📜 Licença

@@ -30,12 +30,6 @@ final class ChaveAcessoTest extends TestCase
         new ChaveAcesso('1234567890');
     }
 
-    public function test_get_id(): void
-    {
-        $chave = new ChaveAcesso(self::VALID_CHAVE);
-        $this->assertSame('DPS' . self::VALID_CHAVE, $chave->getId());
-    }
-
     public function test_formatada(): void
     {
         $chave = new ChaveAcesso('12345678901234567890123456789012345678901234567890');

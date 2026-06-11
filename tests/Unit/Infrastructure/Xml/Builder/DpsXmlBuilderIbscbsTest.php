@@ -489,7 +489,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             tomador: new Tomador(
                 documento: new Cnpj('33444555000181'),
                 razaoSocial: 'Tomador Ltda',
-                nomeFantasia: null,
                 telefone: null,
                 email: null,
                 endereco: $endereco,
@@ -560,7 +559,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             tomador: new Tomador(
                 documento: new Cnpj('33444555000181'),
                 razaoSocial: 'Tomador Ltda',
-                nomeFantasia: null,
                 telefone: null,
                 email: null,
                 endereco: $endereco,
@@ -1135,7 +1133,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             tomador: new Tomador(
                 documento: new Cnpj('33444555000181'),
                 razaoSocial: 'Tomador Ltda',
-                nomeFantasia: null,
                 telefone: null,
                 email: null,
                 endereco: $endereco,
@@ -1192,7 +1189,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             tomador: new Tomador(
                 documento: new Cnpj('33444555000181'),
                 razaoSocial: 'Tomador Ltda',
-                nomeFantasia: null,
                 telefone: null,
                 email: null,
                 endereco: $endereco,

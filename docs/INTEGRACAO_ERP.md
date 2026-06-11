@@ -52,6 +52,7 @@ $request = new DpsRequest(
         email: 'contato@empresa.com',
         logradouro: 'Rua A',
         numero: '100',
+        complemento: null,
         bairro: 'Centro',
         codigoMunicipio: '3550308',
         uf: 'SP',
@@ -62,8 +63,11 @@ $request = new DpsRequest(
         documento: '33444555000181',
         isCnpj: true,
         razaoSocial: 'Cliente Ltda',
+        telefone: null,
+        email: null,
         logradouro: 'Rua B',
         numero: '200',
+        complemento: null,
         bairro: 'Centro',
         codigoMunicipio: '3550308',
         uf: 'SP',
@@ -83,43 +87,55 @@ $response = $nfse->emitirDps($request);
 
 // Response
 // $response->success (bool)
-// $response->chaveAcesso (string)
-// $response->numero (string)
-// $response->codigoVerificacao (string)
-// $response->dataEmissao (string)
+// $response->chaveAcesso (?string)  — chave real da NFS-e autorizada
+// $response->numero (?string)       — nNFSe
+// $response->mensagem (?string)     — 1º erro da SEFIN, quando houver
+// $response->erros (array)          — lista completa: [{codigo, descricao}, ...]
+// $response->dados (?array)         — payload cru da SEFIN
+// $response->xml (?string)          — XML da NFS-e
 ```
 
 ### 2. Cancelar NFSe
 
+O cancelamento usa `EventoRequest` (tipoEvento `101101`); a fachada expõe `cancelar()`.
+
 ```php
-$cancelamento = new CancelamentoRequest(
-    chaveNFSe: '35260611444777000161550010000001231000000001',
-    codigoMotivo: '99', // 99=Outros
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\EventoRequest;
+
+$evento = new EventoRequest(
+    tipoAmbiente: 2,
+    versaoAplicacao: 'ERP_v1.0',
+    dataEvento: '2026-06-11',
+    chaveNfse: '35260611444777000161550010000001231000000001',
+    tipoEvento: '101101',          // 101101 = cancelamento
+    cnpjAutor: '11444777000161',
+    codigoMotivo: '9',             // 9 = Outros (no cancelamento)
     descricaoMotivo: 'Erro na emissão',
+    nSeqEvento: '1',
 );
 
-$response = $nfse->cancelarNfse($cancelamento);
+$response = $nfse->cancelar($evento);  // EventoResponse
 ```
 
 ### 3. Consultar NFSe por Chave
 
 ```php
-$response = $nfse->consultarNfsePorChave('35260611444777000161550010000001231000000001');
-// Retorna dados da NFSe
+$response = $nfse->consultarPorChave('35260611444777000161550010000001231000000001');
+// NfseResponse|null
 ```
 
 ### 4. Consultar DPS por Chave
 
 ```php
-$response = $nfse->consultarDpsPorChave('35260611444777000161550010000001231000000001');
-// Retorna dados da DPS
+$dados = $nfse->consultarDpsPorChave('35260611444777000161550010000001231000000001');
+// array<string, mixed> (não é um objeto Response)
 ```
 
 ### 5. Consultar Eventos
 
 ```php
-$response = $nfse->consultarEventos('35260611444777000161550010000001231000000001');
-// Retorna histórico de eventos (cancelamento, etc)
+$eventos = $nfse->consultarEventos('35260611444777000161550010000001231000000001');
+// array (histórico de eventos). Parâmetros opcionais: ($chave, ?$tipoEvento, ?$sequencial)
 ```
 
 ---
@@ -187,7 +203,7 @@ A biblioteca assinará o XML automaticamente usando o certificado fornecido.
 
 ## 📦 Requisitos
 
-- PHP 8.4+
+- PHP 8.3+
 - Certificado digital A1 (arquivo .pfx ou .p12)
 - Extensões: openssl, curl, dom
 

@@ -10,7 +10,6 @@ final readonly class TomadorRequest
         public ?string $documento,
         public bool $isCnpj,
         public string $razaoSocial,
-        public ?string $nomeFantasia,
         public ?string $telefone,
         public ?string $email,
         public string $logradouro,

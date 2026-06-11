@@ -33,11 +33,6 @@ final readonly class ChaveAcesso
         return $this->chave;
     }
 
-    public function getId(): string
-    {
-        return 'DPS' . $this->chave;
-    }
-
     public function formatada(): string
     {
         return implode(' ', str_split($this->chave, 4));

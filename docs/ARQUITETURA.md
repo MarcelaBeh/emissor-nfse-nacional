@@ -26,7 +26,8 @@ src/
 │   ├── Entity/                 # Entidades de negócio
 │   ├── ValueObject/           # Objetos de valor imutáveis
 │   ├── Enum/                  # Enumerações
-│   └── Contract/              # Interfaces (Ports)
+│   ├── Service/               # Serviços de domínio (ex: DpsIdService)
+│   └── Contract/              # Interfaces (Ports, ex: CstClassTribRepository)
 │
 ├── Application/               # 🟢 Casos de uso
 │   ├── Service/               # Services de aplicação
@@ -43,8 +44,11 @@ src/
 │   │   ├── Builder/           # Construtores de XML
 │   │   ├── Parser/            # Parsers de XML
 │   │   └── Validator/         # Validação XSD
-│   ├── Security/             # Segurança e certificados
-│   │   ├── Contract/          # Interfaces
+│   ├── Security/             # Segurança, certificados e logging
+│   │   ├── Contract/          # Interfaces (LoggerInterface, XmlSignerInterface)
+│   │   ├── NullLogger.php     # Logger no-op (padrão)
+│   │   ├── SanitizedLogger.php
+│   │   ├── SensitiveDataSanitizer.php
 │   │   └── Exception/         # Exceções
 │   ├── Repository/           # Repositórios
 │   └── Config/               # Configuração
@@ -73,7 +77,7 @@ src/
 |--------|--------------|
 | Identidade única | Imutável por valor |
 | Mutável | `readonly` |
-| Ex: `Dps`, `Nfse` | Ex: `Cnpj`, `Cpf`, `Money` |
+| Ex: `Dps`, `Evento`, `Prestador` | Ex: `Cnpj`, `Cpf`, `Money` |
 
 ### Exemplo - Cnpj Value Object
 
@@ -116,35 +120,42 @@ final readonly class Cnpj
 class EmitirDpsService
 {
     public function __construct(
-        private ApiConnector $apiConnector,
-        private DpsXmlBuilder $xmlBuilder,
-        private XmlSigner $xmlSigner,
-        private XsdValidator $xsdValidator,
+        private ApiConnectorInterface $apiConnector,
+        private XmlBuilderInterface $xmlBuilder,
+        private XmlSignerInterface $xmlSigner,
+        private XsdValidatorInterface $xsdValidator,
         private DpsValidator $validator,
         private RequestBuilder $requestBuilder,
         private NfseXmlParser $nfseXmlParser,
         private IbscbsResponseValidator $ibscbsResponseValidator,
+        private ApiEndpoints $apiEndpoints,
+        private LoggerInterface $logger = new NullLogger(),
     ) {}
 
     public function executar(DpsRequest $request): NfseResponse
     {
-        // 1. Validar input
-        $dps = $this->validator->validate($request);
+        // 1. Validar input (void; lança exceção em caso de erro)
+        $this->validator->validate($request);
 
-        // 2. Construir XML
+        // 2. Construir a entidade Dps a partir do request e gerar a chave
+        $dps = $this->criarDpsFromRequest($request);
+        $dps->gerarChaveAcesso();
+
+        // 3. Construir XML
         $xml = $this->xmlBuilder->build($dps);
 
-        // 3. Assinar XML
+        // 4. Validar XSD (ANTES de assinar)
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        // 5. Assinar XML
         $xmlAssinado = $this->xmlSigner->sign($xml, 'infDPS', 'DPS');
 
-        // 4. Validar XSD
-        $this->xsdValidator->validate($xmlAssinado, 'DPS');
+        // 6. Montar payload e enviar para a API
+        $payload = $this->requestBuilder->buildDpsPayload($xmlAssinado);
+        $response = $this->apiConnector->post('nfse', $payload);
 
-        // 5. Enviar para API
-        $response = $this->apiConnector->send($xmlAssinado);
-
-        // 6. Parsear resposta
-        return $this->nfseXmlParser->parse($response);
+        // 7. Processar resposta
+        return $this->processarResposta($response, $dps);
     }
 }
 ```
@@ -174,14 +185,19 @@ class EmitirDpsService
 
 ### Repository Pattern
 
+O contrato (interface) `CstClassTribRepository` vive na camada **Domain**
+(`src/Domain/Contract/CstClassTribRepository.php`). Apenas as **implementações**
+ficam na camada **Infrastructure** (`src/Infrastructure/Repository/`).
+
 ```php
+// src/Domain/Contract/CstClassTribRepository.php (Domain)
 interface CstClassTribRepository
 {
     public function findByCode(string $cClassTrib): ?CstClassTribProperties;
     public function findByCst(string $cst): array;
 }
 
-// Implementações
+// src/Infrastructure/Repository/ (Infrastructure)
 class InMemoryCstClassTribRepository implements CstClassTribRepository { }
 class FileCstClassTribRepository implements CstClassTribRepository { }
 class CachedCstClassTribRepository implements CstClassTribRepository { }
@@ -199,13 +215,17 @@ class CachedCstClassTribRepository implements CstClassTribRepository { }
 class NfseNacionalFacade
 {
     private function __construct(
-        private array $config,
+        private Configuration|array $config,
         private Certificate $certificado,
+        private LoggerInterface $logger = new NullLogger(),
     ) {}
 
-    public static function create(array $config, Certificate $certificado): self
-    {
-        return new self($config, $certificado);
+    public static function create(
+        Configuration|array $config,
+        Certificate $certificado,
+        LoggerInterface $logger = new NullLogger(),
+    ): self {
+        return new self($config, $certificado, $logger);
     }
 
     public function emitirDps(DpsRequest $request): NfseResponse
@@ -213,9 +233,9 @@ class NfseNacionalFacade
         return $this->emitirDpsService->executar($request);
     }
 
-    public function consultarPorChave(string $chave): ?NfseResponse
+    public function consultarPorChave(string $chave, bool $encoding = false): ?NfseResponse
     {
-        return $this->consultarNfseService->consultarPorChave($chave);
+        return $this->consultarNfseService->consultarPorChave($chave, $encoding);
     }
 }
 ```
@@ -226,13 +246,18 @@ class NfseNacionalFacade
 class ServiceFactory
 {
     public function __construct(
-        private array $config,
-        private Certificate $certificate
+        Configuration|array $config,
+        Certificate $certificate,
+        LoggerInterface $logger = new NullLogger(),
     ) {
-        $this->configuration = new Configuration($config);
+        $this->logger = $logger;
+        $this->configuration = $config instanceof Configuration ? $config : new Configuration($config);
         $this->certificateManager = new CertificateManager($certificate);
         $this->xmlSigner = new XmlSigner($this->certificateManager->getCertificate());
         $this->apiConnector = $this->createApiConnector();
+        $this->apiEndpoints = new ApiEndpoints($this->configuration);
+        $this->requestBuilder = new RequestBuilder();
+        $this->xsdValidator = new XsdValidator();
     }
 
     public function createEmitirDpsService(): EmitirDpsService
@@ -241,11 +266,13 @@ class ServiceFactory
             apiConnector: $this->apiConnector,
             xmlBuilder: new DpsXmlBuilder(),
             xmlSigner: $this->xmlSigner,
-            xsdValidator: new XsdValidator(),
-            validator: new DpsValidator(),
-            requestBuilder: new RequestBuilder(),
+            xsdValidator: $this->xsdValidator,
+            validator: new DpsValidator($this->createCstClassTribRepository()),
+            requestBuilder: $this->requestBuilder,
             nfseXmlParser: new NfseXmlParser(),
             ibscbsResponseValidator: new IbscbsResponseValidator(),
+            apiEndpoints: $this->apiEndpoints,
+            logger: $this->logger,
         );
     }
 }
@@ -300,9 +327,7 @@ EmitirDpsService (Application)
 
 ### Externas (vendor)
 
-- `nfephp-org/sped-common` - Componentes NFePHP
-- `tecnickcom/tcpdf` - PDF (opcional)
-- `symfony/var-dumper` - Debug
+- `nfephp-org/sped-common` - Certificado digital e assinatura (NFePHP)
 
 ### Internas (src/)
 

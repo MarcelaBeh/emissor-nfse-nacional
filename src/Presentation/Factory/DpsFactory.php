@@ -46,7 +46,6 @@ class DpsFactory
         $tomador = new Tomador(
             documento: isset($tomadorData['cnpj']) ? new Cnpj($tomadorData['cnpj']) : (isset($tomadorData['cpf']) ? new Cpf($tomadorData['cpf']) : null),
             razaoSocial: $tomadorData['razaoSocial'],
-            nomeFantasia: $tomadorData['nomeFantasia'] ?? null,
             telefone: null,
             email: null,
             endereco: self::createEndereco($tomadorData['endereco']),

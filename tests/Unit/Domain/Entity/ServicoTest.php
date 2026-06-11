@@ -39,7 +39,6 @@ final class ServicoTest extends TestCase
         $this->assertSame('3550308', $servico->getLocalPrestacao()->getCodigo());
         $this->assertSame(1000.00, $servico->getValorTotal()->getValue());
         $this->assertNull($servico->getCodigoNbs());
-        $this->assertNull($servico->getCodigoCnae());
         $this->assertNull($servico->getObra());
         $this->assertSame('1', $servico->getTribISSQN()->value);
         $this->assertSame('1', $servico->getTpRetISSQN()->value);
@@ -79,7 +78,6 @@ final class ServicoTest extends TestCase
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
             codigoNbs: '12345678',
-            codigoCnae: '1234567',
             tribISSQN: TributacaoIssqn::EXPORTACAO,
             tpRetISSQN: TipoRetencaoIssqn::RETIDO_TOMADOR,
             codigoPaisPrestacao: '01058',
@@ -96,7 +94,6 @@ final class ServicoTest extends TestCase
         );
 
         $this->assertSame('12345678', $servico->getCodigoNbs());
-        $this->assertSame('1234567', $servico->getCodigoCnae());
         $this->assertSame('3', $servico->getTribISSQN()->value);
         $this->assertSame('2', $servico->getTpRetISSQN()->value);
         $this->assertSame('01058', $servico->getCodigoPaisPrestacao());

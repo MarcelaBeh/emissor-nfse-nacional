@@ -89,7 +89,6 @@ final class EmitirDpsServiceTest extends TestCase
             documento: '12345678000195',
             isCnpj: true,
             razaoSocial: 'Tomador Teste',
-            nomeFantasia: 'Tomador',
             telefone: '11888888888',
             email: 'tomador@teste.com',
             logradouro: 'Av Tomador',
@@ -265,6 +264,43 @@ final class EmitirDpsServiceTest extends TestCase
         $this->assertFalse($response->success);
         $this->assertStringStartsWith('E0617 - Não é permitido informar alíquota', $response->mensagem);
         $this->assertSame($dadosSefin, $response->dados); // payload cru preservado integralmente
+        $this->assertCount(1, $response->erros);
+        $this->assertSame('E0617', $response->erros[0]['codigo']);
+    }
+
+    public function test_executar_erro_sefin_expoe_lista_completa_de_erros(): void
+    {
+        // A SEFIN pode retornar mais de um erro de uma vez. A 'mensagem' traz o
+        // primeiro (resumo), mas 'erros' deve trazer TODOS, estruturados.
+        $request = $this->createValidDpsRequest();
+        $xml = '<?xml version="1.0"?><DPS></DPS>';
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
+
+        $dadosSefin = [
+            'versaoAplicativo' => 'SefinNacional_1.6.0',
+            'erros' => [
+                ['Codigo' => 'E0617', 'Descricao' => 'Alíquota indevida (não optante).'],
+                ['Codigo' => 'E0625', 'Descricao' => 'Alíquota indevida (Simples Nacional).'],
+            ],
+        ];
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn($xml);
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildDpsPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiConnector->expects($this->once())->method('post')->willReturn([
+            'success' => false,
+            'data' => $dadosSefin,
+        ]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertFalse($response->success);
+        $this->assertSame('E0617 - Alíquota indevida (não optante).', $response->mensagem);
+        $this->assertCount(2, $response->erros);
+        $this->assertSame(['codigo' => 'E0617', 'descricao' => 'Alíquota indevida (não optante).'], $response->erros[0]);
+        $this->assertSame(['codigo' => 'E0625', 'descricao' => 'Alíquota indevida (Simples Nacional).'], $response->erros[1]);
     }
 
     public function test_executar_erro_sefin_sem_erros_usa_fallback(): void

@@ -14,15 +14,18 @@ final readonly class NfseResponse
      *        em sucesso HTTP sem XML, cai para a chave calculada localmente a partir do DPS.
      * @param string|null $numero número da NFS-e (`nNFSe`), extraído da resposta da SEFIN.
      * @param array<string, mixed>|null $dados
+     * @param list<array{codigo: string|null, descricao: string}> $erros lista completa dos erros
+     *        estruturados da SEFIN (a SEFIN pode retornar mais de um, ex.: E0617 + E0625);
+     *        `mensagem` traz apenas o primeiro. Vazia em caso de sucesso.
      */
     public function __construct(
         public bool $success,
         public ?string $chaveAcesso = null,
         public ?string $numero = null,
-        public ?string $codigoVerificacao = null,
         public ?string $mensagem = null,
         public ?array $dados = null,
         public ?string $xml = null,
+        public array $erros = [],
     ) {
     }
 }

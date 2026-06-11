@@ -54,7 +54,6 @@ final class DpsTest extends TestCase
         return new Tomador(
             documento: new Cpf('52998224725'),
             razaoSocial: 'Tomador Silva',
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $this->createEndereco(),

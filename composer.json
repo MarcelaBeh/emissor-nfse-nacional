@@ -40,7 +40,8 @@
         "ext-curl": "*",
         "ext-zlib": "*",
         "ext-openssl": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+        "psr/log": "^3.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^2.1",

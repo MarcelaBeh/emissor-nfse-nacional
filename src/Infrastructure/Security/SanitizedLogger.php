@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Security;
 
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\LoggerInterface;
+use Psr\Log\AbstractLogger;
 
 /**
- * Logger que sanitiza dados sensíveis (CPF, CNPJ, e-mail, chaves) antes de escrever.
- * Injete no lugar de NullLogger quando precisar de rastreabilidade em produção.
+ * Logger PSR-3 que sanitiza dados sensíveis (CPF, CNPJ, e-mail, chaves) antes de
+ * escrever. Estende AbstractLogger: basta implementar log(); os 8 métodos de nível
+ * (info/warning/error/...) são delegados para cá.
+ *
+ * Injete no lugar do NullLogger quando precisar de rastreabilidade em produção
+ * sem vazar dados sensíveis. A escrita real é feita pela Closure $writer injetada.
  */
-final class SanitizedLogger implements LoggerInterface
+final class SanitizedLogger extends AbstractLogger
 {
     private SensitiveDataSanitizer $sanitizer;
 
@@ -19,29 +23,19 @@ final class SanitizedLogger implements LoggerInterface
         $this->sanitizer = new SensitiveDataSanitizer();
     }
 
-    public function info(string $message, mixed ...$context): void
+    /**
+     * @param mixed $level
+     * @param array<array-key, mixed> $context
+     */
+    public function log($level, string|\Stringable $message, array $context = []): void
     {
-        $this->write('INFO', $message, $context);
-    }
+        $levelLabel = is_scalar($level) ? strtoupper((string) $level) : 'LOG';
 
-    public function warning(string $message, mixed ...$context): void
-    {
-        $this->write('WARNING', $message, $context);
-    }
-
-    public function error(string $message, mixed ...$context): void
-    {
-        $this->write('ERROR', $message, $context);
-    }
-
-    /** @param array<mixed> $context */
-    private function write(string $level, string $message, array $context): void
-    {
         $safe = sprintf(
             '[%s] [%s] %s%s',
             date('Y-m-d H:i:s'),
-            $level,
-            $this->sanitizer->sanitize($message),
+            $levelLabel,
+            $this->sanitizer->sanitize((string) $message),
             $context !== [] ? ' ' . json_encode($this->sanitizer->sanitize($context), JSON_UNESCAPED_UNICODE) : '',
         );
 

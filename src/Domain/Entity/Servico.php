@@ -28,7 +28,6 @@ class Servico
         private ?float $aliquotaIss = null,
         private ?CodigoMunicipio $localPrestacao = null,
         private ?string $codigoNbs = null,
-        private ?string $codigoCnae = null,
         private ?Obra $obra = null,
         private TributacaoIssqn $tribISSQN = TributacaoIssqn::OPERACAO_TRIBUTAVEL,
         private TipoRetencaoIssqn $tpRetISSQN = TipoRetencaoIssqn::NAO_RETIDO,
@@ -152,11 +151,6 @@ class Servico
     public function getCodigoNbs(): ?string
     {
         return $this->codigoNbs;
-    }
-
-    public function getCodigoCnae(): ?string
-    {
-        return $this->codigoCnae;
     }
 
     public function getObra(): ?Obra

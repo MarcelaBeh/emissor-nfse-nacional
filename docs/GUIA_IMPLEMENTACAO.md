@@ -45,9 +45,9 @@ Essa ordem garante que:
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
-use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidCnpjException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\InvalidCnpjException;
 
 /**
  * Value Object que representa um CNPJ válido
@@ -157,9 +157,9 @@ final readonly class Cnpj
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
-use emissorNfseNacional\NfseNacional\Domain\Exception\InvalidChaveAcessoException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Exception\InvalidChaveAcessoException;
 
 /**
  * Chave de Acesso da NFSe Nacional (50 caracteres)
@@ -193,11 +193,6 @@ final readonly class ChaveAcesso
         return $this->chave;
     }
     
-    public function getId(): string
-    {
-        return 'DPS' . $this->chave;
-    }
-    
     public function formatada(): string
     {
         // Formata em blocos de 4 dígitos separados por espaço
@@ -218,7 +213,7 @@ final readonly class ChaveAcesso
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\ValueObject;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\ValueObject;
 
 /**
  * Value Object para valores monetários
@@ -240,9 +235,8 @@ final readonly class Money
     
     public static function fromCents(int $cents): self
     {
-        $instance = new self(0);
-        $instance->cents = $cents;
-        return $instance;
+        // Money é readonly: o valor vai pelo construtor, não por mutação posterior.
+        return new self((float) $cents / 100);
     }
     
     public function getValue(): float
@@ -309,26 +303,30 @@ final readonly class Money
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cnpj;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Cpf;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Email;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Telefone;
-use emissorNfseNacional\NfseNacional\Domain\Enum\RegimeTributario;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeEspecialTributacao;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 
 class Prestador
 {
     public function __construct(
-        private Cnpj|Cpf $documento,
+        private Cnpj|Cpf|null $documento,
         private ?string $inscricaoMunicipal,
         private string $razaoSocial,
         private ?Telefone $telefone,
         private ?Email $email,
-        private Endereco $endereco,
+        private ?Endereco $endereco,
         private RegimeTributario $regimeTributario,
+        private RegimeEspecialTributacao $regimeEspecialTributacao = RegimeEspecialTributacao::NENHUM,
         private ?string $nif = null,
         private ?string $caepf = null,
+        private ?string $codigoNaoNif = null,
+        private ?int $regimeApuracaoSimplesNacional = null,
     ) {
         $this->validate();
     }
@@ -385,10 +383,12 @@ class Prestador
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Domain\Entity;
+namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\Money;
-use emissorNfseNacional\NfseNacional\Domain\ValueObject\CodigoMunicipio;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 
 class Servico
 {
@@ -397,14 +397,20 @@ class Servico
     private Money $valorIss;
     
     public function __construct(
+        // Obrigatórios (sem default):
         private string $discriminacao,
         private string $codigoTributacao,
-        private CodigoMunicipio $localPrestacao,
         Money $valorServicos,
-        private float $aliquotaIss,
-        private Money $valorDeducoes,
-        private Money $descontoIncondicionado,
-        private Money $descontoCondicionado,
+        // Opcionais (todos com default null/enum padrão) — apenas alguns mostrados:
+        private ?Money $valorDeducoes = null,
+        private ?Money $descontoIncondicionado = null,
+        private ?Money $descontoCondicionado = null,
+        private ?float $aliquotaIss = null,
+        private ?CodigoMunicipio $localPrestacao = null,
+        private TributacaoIssqn $tribISSQN = TributacaoIssqn::OPERACAO_TRIBUTAVEL,
+        private TipoRetencaoIssqn $tpRetISSQN = TipoRetencaoIssqn::NAO_RETIDO,
+        // ... há ~25 outros params opcionais (codigoNbs, obra, comExterior,
+        // tribFederal, pTotTribFed/Est/Mun/SN, etc.) — ver Servico.php real.
     ) {
         $this->calcularValores($valorServicos);
         $this->validate();
@@ -473,22 +479,26 @@ class Servico
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Infrastructure\Config;
+namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Config;
 
-use emissorNfseNacional\NfseNacional\Domain\Enum\TipoAmbiente;
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\Exception\ConfigException;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Exception\ConfigException;
 
 class Configuration implements Contract\ConfigInterface
 {
     private array $config;
     private array $urls;
     private array $operations;
+    private string $tipoApi;
     
     public function __construct(array $config)
     {
         $this->config = $this->validateConfig($config);
-        $this->loadUrls();
-        $this->loadOperations();
+        $this->tipoApi = $config['tipoApi'] ?? 'sefin';
+        
+        $prefeituras = $this->loadPrefeituras();
+        $this->loadUrls($prefeituras);
+        $this->loadOperations($prefeituras);
     }
     
     private function validateConfig(array $config): array
@@ -501,58 +511,63 @@ class Configuration implements Contract\ConfigInterface
             }
         }
         
-        if (!in_array($config['tpAmb'], [1, 2])) {
+        if (!in_array($config['tpAmb'], [1, 2, '1', '2'], true)) {
             throw new ConfigException('tpAmb deve ser 1 (Produção) ou 2 (Homologação)');
         }
+        
+        $config['tpAmb'] = (int) $config['tpAmb'];
         
         return $config;
     }
     
-    private function loadUrls(): void
+    /** Lê storage/prefeituras.json uma única vez, reusado por loadUrls/loadOperations. */
+    private function loadPrefeituras(): array
     {
         $configFile = __DIR__ . '/../../../storage/prefeituras.json';
-        $json = json_decode(file_get_contents($configFile), true);
+        if (!file_exists($configFile)) {
+            return [];
+        }
         
-        $prefeitura = $this->config['prefeitura'];
+        $content = file_get_contents($configFile);
+        if ($content === false || !json_validate($content)) {
+            throw new ConfigException("Arquivo de configuração inválido: {$configFile}");
+        }
         
-        // URLs padrão
+        return json_decode($content, true);
+    }
+    
+    private function loadUrls(array $prefeituras): void
+    {
+        // URLs padrão (apenas sefin_* e adn_*)
         $this->urls = [
             'sefin_homologacao' => 'https://sefin.producaorestrita.nfse.gov.br/SefinNacional',
             'sefin_producao' => 'https://sefin.nfse.gov.br/sefinnacional',
             'adn_homologacao' => 'https://adn.producaorestrita.nfse.gov.br',
             'adn_producao' => 'https://adn.nfse.gov.br',
-            'nfse_homologacao' => 'https://www.producaorestrita.nfse.gov.br/EmissorNacional',
-            'nfse_producao' => 'https://www.nfse.gov.br/EmissorNacional',
         ];
         
-        // Override com configurações específicas do município
-        if (isset($json[$prefeitura]['urls'])) {
-            $this->urls = array_merge($this->urls, $json[$prefeitura]['urls']);
+        $prefeitura = $this->config['prefeitura'];
+        if (isset($prefeituras[$prefeitura]['urls'])) {
+            $this->urls = array_merge($this->urls, $prefeituras[$prefeitura]['urls']);
         }
     }
     
-    private function loadOperations(): void
+    private function loadOperations(array $prefeituras): void
     {
-        $configFile = __DIR__ . '/../../../storage/prefeituras.json';
-        $json = json_decode(file_get_contents($configFile), true);
-        
-        $prefeitura = $this->config['prefeitura'];
-        
-        // Operations padrão
+        // Operations padrão (não há operações DANFSe)
         $this->operations = [
             'consultar_nfse' => 'nfse/{chave}',
             'consultar_dps' => 'dps/{chave}',
             'consultar_eventos' => 'nfse/{chave}/eventos/{tipoEvento}/{nSequencial}',
-            'consultar_danfse' => 'danfse/{chave}',
-            'consultar_danfse_nfse_certificado' => 'Certificado',
-            'consultar_danfse_nfse_download' => 'Notas/Download/DANFSe/{chave}',
             'emitir_nfse' => 'nfse',
             'cancelar_nfse' => 'nfse/{chave}/eventos',
+            'verificar_dps' => 'dps/{id}',
+            'decisao_judicial_nfse' => 'decisao-judicial/nfse',
         ];
         
-        // Override com operações específicas do município
-        if (isset($json[$prefeitura]['operations'])) {
-            $this->operations = array_merge($this->operations, $json[$prefeitura]['operations']);
+        $prefeitura = $this->config['prefeitura'];
+        if (isset($prefeituras[$prefeitura]['operations'])) {
+            $this->operations = array_merge($this->operations, $prefeituras[$prefeitura]['operations']);
         }
     }
     
@@ -602,19 +617,25 @@ class Configuration implements Contract\ConfigInterface
 
 declare(strict_types=1);
 
-namespace emissorNfseNacional\NfseNacional\Presentation\Factory;
+namespace MarcelaBeh\EmissorNfseNacional\Presentation\Factory;
 
-use emissorNfseNacional\NfseNacional\Application\Service\EmitirDpsService;
-use emissorNfseNacional\NfseNacional\Application\Service\ConsultarNfseService;
-use emissorNfseNacional\NfseNacional\Application\Service\CancelarNfseService;
-use emissorNfseNacional\NfseNacional\Application\Validator\DpsValidator;
-use emissorNfseNacional\NfseNacional\Infrastructure\Config\Configuration;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\ApiConnector;
-use emissorNfseNacional\NfseNacional\Infrastructure\Http\Client\CurlHttpClient;
-use emissorNfseNacional\NfseNacional\Infrastructure\Security\CertificateManager;
-use emissorNfseNacional\NfseNacional\Infrastructure\Security\XmlSigner;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
-use emissorNfseNacional\NfseNacional\Infrastructure\Xml\Validator\XsdValidator;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
+use MarcelaBeh\EmissorNfseNacional\Application\Service\CancelarNfseService;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
+use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Client\CurlHttpClient;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\CertificateManager;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\LoggerInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\NullLogger;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 use NFePHP\Common\Certificate;
 
 class ServiceFactory
@@ -622,25 +643,42 @@ class ServiceFactory
     private Configuration $configuration;
     private CertificateManager $certificateManager;
     private ApiConnector $apiConnector;
+    private ApiEndpoints $apiEndpoints;
+    private RequestBuilder $requestBuilder;
+    private XsdValidator $xsdValidator;
+    private XmlSigner $xmlSigner;
+    private LoggerInterface $logger;
     
-    public function __construct(array $config, Certificate $certificate)
-    {
-        $this->configuration = new Configuration($config);
+    public function __construct(
+        Configuration|array $config,
+        Certificate $certificate,
+        LoggerInterface $logger = new NullLogger(),
+    ) {
+        $this->logger = $logger;
+        $this->configuration = $config instanceof Configuration ? $config : new Configuration($config);
         $this->certificateManager = new CertificateManager($certificate);
+        $this->xmlSigner = new XmlSigner($this->certificateManager->getCertificate());
         $this->apiConnector = $this->createApiConnector();
+        $this->apiEndpoints = new ApiEndpoints($this->configuration);
+        $this->requestBuilder = new RequestBuilder();
+        $this->xsdValidator = new XsdValidator();
     }
     
     private function createApiConnector(): ApiConnector
     {
+        // O certificado vai dentro do CurlHttpClient via CertificateManager:
+        // o cliente HTTP é o único consumidor dos PEMs, lidos pelo cURL a cada request.
         $httpClient = new CurlHttpClient(
-            timeout: 30,
-            connectTimeout: 10
+            timeout: 60,
+            connectTimeout: 10,
+            certificateManager: $this->certificateManager,
+            keyPassword: null,
         );
         
+        // ApiConnector recebe apenas 2 args: a configuração e o httpClient.
         return new ApiConnector(
             $this->configuration,
             $httpClient,
-            $this->certificateManager
         );
     }
     
@@ -649,9 +687,14 @@ class ServiceFactory
         return new EmitirDpsService(
             apiConnector: $this->apiConnector,
             xmlBuilder: new DpsXmlBuilder(),
-            xmlSigner: new XmlSigner($this->certificateManager->getCertificate()),
-            xsdValidator: new XsdValidator(),
-            validator: new DpsValidator(),
+            xmlSigner: $this->xmlSigner,
+            xsdValidator: $this->xsdValidator,
+            validator: new DpsValidator($this->createCstClassTribRepository()),
+            requestBuilder: $this->requestBuilder,
+            nfseXmlParser: new NfseXmlParser(),
+            ibscbsResponseValidator: new IbscbsResponseValidator(),
+            apiEndpoints: $this->apiEndpoints,
+            logger: $this->logger,
         );
     }
     
@@ -659,6 +702,10 @@ class ServiceFactory
     {
         return new ConsultarNfseService(
             apiConnector: $this->apiConnector,
+            apiEndpoints: $this->apiEndpoints,
+            validator: new ConsultaValidator(),
+            nfseXmlParser: new NfseXmlParser(),
+            logger: $this->logger,
         );
     }
     
@@ -666,9 +713,13 @@ class ServiceFactory
     {
         return new CancelarNfseService(
             apiConnector: $this->apiConnector,
-            xmlBuilder: new \emissorNfseNacional\NfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder(),
-            xmlSigner: new XmlSigner($this->certificateManager->getCertificate()),
-            xsdValidator: new XsdValidator(),
+            xmlBuilder: new EventoXmlBuilder(),
+            xmlSigner: $this->xmlSigner,
+            xsdValidator: $this->xsdValidator,
+            validator: new EventoValidator(),
+            requestBuilder: $this->requestBuilder,
+            apiEndpoints: $this->apiEndpoints,
+            logger: $this->logger,
         );
     }
 }
@@ -1004,8 +1055,8 @@ class XsdValidator
 namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
-use emissorNfseNacional\NfseNacional\Presentation\Facade\NfseNacionalFacade;
-use emissorNfseNacional\NfseNacional\Application\DTO\Request\DpsRequest;
+use MarcelaBeh\EmissorNfseNacional\Presentation\Facade\NfseNacionalFacade;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
 use NFePHP\Common\Certificate;
 
 class EmitirDpsTest extends TestCase

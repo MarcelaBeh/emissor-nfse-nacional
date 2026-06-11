@@ -15,6 +15,7 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\SanitizedLogger;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
@@ -147,6 +148,8 @@ final class CancelarNfseServiceTest extends TestCase
 
         $this->assertFalse($response->success);
         $this->assertSame('E1860 - Evento impede o cancelamento.', $response->mensagem);
+        $this->assertCount(1, $response->erros);
+        $this->assertSame(['codigo' => 'E1860', 'descricao' => 'Evento impede o cancelamento.'], $response->erros[0]);
     }
 
     public function test_executar_erro_sefin_vazio_usa_fallback(): void
@@ -187,6 +190,74 @@ final class CancelarNfseServiceTest extends TestCase
         $this->expectExceptionMessage('Dados inválidos: Chave invalida');
 
         $this->service->executar($request);
+    }
+
+    public function test_logger_injetado_sanitiza_dados_sensiveis_no_log(): void
+    {
+        // Prova fim-a-fim do logger seguro: um SanitizedLogger injetado no serviço
+        // (como faz a ServiceFactory) deve mascarar CNPJ/chave antes de escrever.
+        // Sem o wiring de logger, este recurso era inalcançável (código morto).
+        $capturado = '';
+        $logger = new SanitizedLogger(function (string $linha) use (&$capturado): void {
+            $capturado .= $linha;
+        });
+
+        $service = new CancelarNfseService(
+            $this->apiConnector,
+            $this->xmlBuilder,
+            $this->xmlSigner,
+            $this->xsdValidator,
+            $this->validator,
+            $this->requestBuilder,
+            $this->apiEndpoints,
+            $logger,
+        );
+
+        // O validador falha com uma mensagem que contém CNPJ (14 dígitos) cru.
+        $this->validator->expects($this->once())->method('validate')
+            ->willThrowException(new DomainException('CNPJ 12345678000195 inválido'));
+
+        try {
+            $service->executar($this->createValidEventoRequest());
+        } catch (ValidationException) {
+            // esperado — interessa o que foi logado
+        }
+
+        $this->assertStringContainsString('Validação cancelamento falhou', $capturado);
+        $this->assertStringNotContainsString('12345678000195', $capturado); // CNPJ cru não vaza
+        $this->assertStringContainsString('**************', $capturado);     // mascarado (14 *)
+    }
+
+    public function test_aceita_logger_psr3_generico(): void
+    {
+        // Interoperabilidade PSR-3: qualquer Psr\Log\LoggerInterface (Monolog,
+        // Symfony, etc.) pode ser injetado — não só o SanitizedLogger da lib.
+        $this->assertInstanceOf(\Psr\Log\LoggerInterface::class, new SanitizedLogger(fn () => null));
+
+        $psrLogger = $this->createMock(\Psr\Log\LoggerInterface::class);
+        $psrLogger->expects($this->once())
+            ->method('warning')
+            ->with($this->stringContains('Validação cancelamento falhou'), $this->arrayHasKey('msg'));
+
+        $service = new CancelarNfseService(
+            $this->apiConnector,
+            $this->xmlBuilder,
+            $this->xmlSigner,
+            $this->xsdValidator,
+            $this->validator,
+            $this->requestBuilder,
+            $this->apiEndpoints,
+            $psrLogger,
+        );
+
+        $this->validator->expects($this->once())->method('validate')
+            ->willThrowException(new DomainException('erro'));
+
+        try {
+            $service->executar($this->createValidEventoRequest());
+        } catch (ValidationException) {
+            // esperado
+        }
     }
 
     public function test_executar_http_error(): void

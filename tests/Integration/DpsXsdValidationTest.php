@@ -937,7 +937,6 @@ final class DpsXsdValidationTest extends TestCase
             tomador: new Tomador(
                 documento: new Cnpj('33444555000181'),
                 razaoSocial: 'Tomador Ltda',
-                nomeFantasia: null,
                 telefone: null,
                 email: null,
                 endereco: $endereco,

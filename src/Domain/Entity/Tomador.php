@@ -14,7 +14,6 @@ class Tomador
     public function __construct(
         private Cnpj|Cpf|null $documento,
         private string $razaoSocial,
-        private ?string $nomeFantasia,
         private ?Telefone $telefone,
         private ?Email $email,
         private Endereco $endereco,
@@ -66,11 +65,6 @@ class Tomador
     public function getRazaoSocial(): string
     {
         return $this->razaoSocial;
-    }
-
-    public function getNomeFantasia(): ?string
-    {
-        return $this->nomeFantasia;
     }
 
     public function getTelefone(): ?Telefone

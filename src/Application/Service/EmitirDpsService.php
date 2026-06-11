@@ -54,12 +54,12 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\LoggerInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\NullLogger;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract\XmlBuilderInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\Contract\XsdValidatorInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class EmitirDpsService
 {
@@ -101,14 +101,14 @@ class EmitirDpsService
             return $this->processarResposta($response, $dps);
 
         } catch (DomainException $e) {
-            $this->logger->warning('Validação DPS falhou: {msg}', $e->getMessage());
+            $this->logger->warning('Validação DPS falhou: {msg}', ['msg' => $e->getMessage()]);
             throw new ValidationException(
                 "Dados inválidos: {$e->getMessage()}",
                 0,
                 $e
             );
         } catch (HttpException $e) {
-            $this->logger->error('Falha HTTP ao emitir DPS: {msg}', $e->getMessage());
+            $this->logger->error('Falha HTTP ao emitir DPS: {msg}', ['msg' => $e->getMessage()]);
             throw new ServiceException(
                 "Falha ao comunicar com API: {$e->getMessage()}",
                 0,
@@ -135,21 +135,21 @@ class EmitirDpsService
             return $this->processarRespostaDecisaoJudicial($response);
 
         } catch (DomainException $e) {
-            $this->logger->warning('Validação decisão judicial falhou: {msg}', $e->getMessage());
+            $this->logger->warning('Validação decisão judicial falhou: {msg}', ['msg' => $e->getMessage()]);
             throw new ValidationException(
                 "Dados inválidos: {$e->getMessage()}",
                 0,
                 $e
             );
         } catch (HttpException $e) {
-            $this->logger->error('Falha HTTP ao emitir por decisão judicial: {msg}', $e->getMessage());
+            $this->logger->error('Falha HTTP ao emitir por decisão judicial: {msg}', ['msg' => $e->getMessage()]);
             throw new ServiceException(
                 "Falha ao comunicar com API: {$e->getMessage()}",
                 0,
                 $e
             );
         } catch (\RuntimeException $e) {
-            $this->logger->error('Falha ao processar XML para decisão judicial: {msg}', $e->getMessage());
+            $this->logger->error('Falha ao processar XML para decisão judicial: {msg}', ['msg' => $e->getMessage()]);
             throw new ServiceException(
                 "Falha ao processar XML: {$e->getMessage()}",
                 0,
@@ -174,12 +174,11 @@ class EmitirDpsService
     private function processarRespostaDecisaoJudicial(array $response): NfseResponse
     {
         if (!$response['success']) {
-            $data = $response['data'] ?? [];
-            $erros = $data['erros'] ?? $data['erro'] ?? [['descricao' => 'Erro desconhecido']];
-
             return new NfseResponse(
                 success: false,
-                mensagem: $erros[0]['descricao'] ?? 'Falha na emissão por decisão judicial',
+                mensagem: $this->extrairMensagemErro($response['data'] ?? null, 'Falha na emissão por decisão judicial'),
+                dados: is_array($response['data'] ?? null) ? $response['data'] : null,
+                erros: $this->extrairErros($response['data'] ?? null),
             );
         }
 
@@ -268,7 +267,6 @@ class EmitirDpsService
             $tomador = new Tomador(
                 documento: $documentoTomador,
                 razaoSocial: $request->tomador->razaoSocial,
-                nomeFantasia: $request->tomador->nomeFantasia,
                 telefone: $request->tomador->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($request->tomador->telefone) : null,
                 email: $request->tomador->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($request->tomador->email) : null,
                 endereco: $this->criarEndereco(
@@ -367,7 +365,6 @@ class EmitirDpsService
             aliquotaIss: $request->servico->aliquotaIss,
             localPrestacao: $request->servico->codigoMunicipioPrestacao !== null ? new CodigoMunicipio($request->servico->codigoMunicipioPrestacao) : null,
             codigoNbs: $request->servico->codigoNbs,
-            codigoCnae: $request->servico->codigoCnae,
             obra: $obra,
             tribISSQN: $request->servico->tribISSQN !== null ? TributacaoIssqn::from($request->servico->tribISSQN) : TributacaoIssqn::OPERACAO_TRIBUTAVEL,
             tpRetISSQN: $request->servico->tpRetISSQN !== null ? TipoRetencaoIssqn::from($request->servico->tpRetISSQN) : TipoRetencaoIssqn::NAO_RETIDO,
@@ -792,6 +789,7 @@ class EmitirDpsService
                 success: false,
                 mensagem: $this->extrairMensagemErro($response['data'] ?? null, 'Erro ao emitir DPS'),
                 dados: is_array($response['data']) ? $response['data'] : null,
+                erros: $this->extrairErros($response['data'] ?? null),
             );
         }
 

@@ -127,7 +127,6 @@ final class DpsIdServiceTest extends TestCase
         return new Tomador(
             documento: new Cnpj('33444555000181'),
             razaoSocial: 'Tomador Ltda',
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $this->createEndereco(),

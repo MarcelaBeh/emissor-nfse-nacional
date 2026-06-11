@@ -11,6 +11,21 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.6] - 2026-06-11
+
+### Added
+- `NfseResponse::erros` e `EventoResponse::erros`: lista completa dos erros da SEFIN (`[{codigo, descricao}, ...]`), já que ela pode retornar mais de um por vez; `mensagem` segue com o primeiro
+- Logger **PSR-3** injetável via `NfseNacionalFacade::create()` e `ServiceFactory` (`Psr\Log\LoggerInterface` opcional, padrão `Psr\Log\NullLogger`) — aceita Monolog/Symfony/etc. Inclui `SanitizedLogger` (PSR-3) que mascara CPF/CNPJ/chave/e-mail antes de escrever
+
+### Fixed
+- `xItemPed`: limite corrigido de 255 para 60 caracteres (`TSNumeroEndereco`) e validação do teto de 99 itens (`maxOccurs`)
+- Endereço de obra e de evento: `xs:choice` CEP|endExt passa a ser exigida e o endereço no exterior é validado
+
+### Removed (breaking)
+- `NfseResponse::codigoVerificacao`, `ServicoRequest::codigoCnae` e `TomadorRequest::nomeFantasia`: campos sem correspondência no XSD desta API
+
+---
+
 ## [v2.2.5] - 2026-06-11
 
 ### Fixed
@@ -230,7 +245,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.5...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.6...HEAD
+[v2.2.6]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.5...v2.2.6
 [v2.2.5]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.4...v2.2.5
 [v2.2.4]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.3...v2.2.4
 [v2.2.3]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.2...v2.2.3

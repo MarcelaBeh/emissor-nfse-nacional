@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "43451801e7db088d73fd2d40b2a049b7",
+    "content-hash": "383d2b7c4e157662c317c17aeab3ec07",
     "packages": [
         {
             "name": "nfephp-org/sped-common",

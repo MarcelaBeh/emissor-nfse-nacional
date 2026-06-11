@@ -242,9 +242,6 @@ class DpsValidator
             $errors[] = 'xNome do tomador deve ter no máximo 300 caracteres (TSNomeRazaoSocial)';
         }
 
-        if ($t->nomeFantasia !== null && (strlen($t->nomeFantasia) < 1 || strlen($t->nomeFantasia) > 150)) {
-            $errors[] = 'xFant do tomador deve ter 1 a 150 caracteres (TSNomeFantasia)';
-        }
 
         $idCount = 0;
         if ($t->documento !== null) {
@@ -583,9 +580,31 @@ class DpsValidator
 
         if ($hasEnd) {
             $e = $o->endereco;
+
+            // TCEnderObraEvento abre com xs:choice obrigatória CEP|endExt (exatamente um).
+            if ($e->cep !== null && $e->endExt !== null) {
+                $errors[] = 'CEP e endExt são mutuamente exclusivos no endereço da obra (choice)';
+            }
+            if ($e->cep === null && $e->endExt === null) {
+                $errors[] = 'É obrigatório informar CEP ou endExt no endereço da obra (choice)';
+            }
+
             if ($e->cep !== null && !preg_match('/^[0-9]{8}$/', $e->cep)) {
                 $errors[] = 'CEP do endereço da obra deve ter 8 dígitos numéricos (TSCEP)';
             }
+
+            if ($e->endExt !== null) {
+                if (strlen($e->endExt->cEndPost) < 1 || strlen($e->endExt->cEndPost) > 11) {
+                    $errors[] = 'cEndPost do endExt da obra deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
+                }
+                if (strlen($e->endExt->xCidade) < 1 || strlen($e->endExt->xCidade) > 60) {
+                    $errors[] = 'xCidade do endExt da obra deve ter 1 a 60 caracteres (TSCidade)';
+                }
+                if (strlen($e->endExt->xEstProvReg) < 1 || strlen($e->endExt->xEstProvReg) > 60) {
+                    $errors[] = 'xEstProvReg do endExt da obra deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
+                }
+            }
+
             if (empty($e->xLgr)) {
                 $errors[] = 'xLgr é obrigatório no endereço da obra (TSLogradouro)';
             } elseif (strlen($e->xLgr) > 255) {
@@ -710,6 +729,29 @@ class DpsValidator
 
         if ($hasEnd) {
             $e = $ae->endereco;
+
+            // TCEnderecoSimples abre com xs:choice obrigatória CEP|endExt (exatamente um).
+            // O exterior é determinado por codigoPais (vide EmitirDpsService::criarAtvEvento).
+            $ehExterior = $e->codigoPais !== null;
+            if ($e->cep !== null && $ehExterior) {
+                $errors[] = 'CEP e endExt são mutuamente exclusivos no endereço do evento (choice)';
+            }
+            if ($e->cep === null && !$ehExterior) {
+                $errors[] = 'É obrigatório informar CEP ou endExt no endereço do evento (choice)';
+            }
+
+            if ($ehExterior) {
+                if ($e->codigoPostalExterior === null || strlen($e->codigoPostalExterior) < 1 || strlen($e->codigoPostalExterior) > 11) {
+                    $errors[] = 'cEndPost do endExt do evento deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
+                }
+                if ($e->nomeCidadeExterior === null || strlen($e->nomeCidadeExterior) < 1 || strlen($e->nomeCidadeExterior) > 60) {
+                    $errors[] = 'xCidade do endExt do evento deve ter 1 a 60 caracteres (TSCidade)';
+                }
+                if ($e->estadoProvinciaExterior === null || strlen($e->estadoProvinciaExterior) < 1 || strlen($e->estadoProvinciaExterior) > 60) {
+                    $errors[] = 'xEstProvReg do endExt do evento deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
+                }
+            }
+
             if ($e->cep !== null && !preg_match('/^[0-9]{8}$/', $e->cep)) {
                 $errors[] = 'CEP do endereço do evento deve ter 8 dígitos numéricos (TSCEP)';
             }
@@ -755,9 +797,12 @@ class DpsValidator
         }
 
         if ($ic->itensPedido !== null) {
+            if (count($ic->itensPedido) > 99) {
+                $errors[] = 'gItemPed deve conter no máximo 99 itens (xItemPed maxOccurs=99)';
+            }
             foreach ($ic->itensPedido as $i => $item) {
-                if (strlen($item) > 255) {
-                    $errors[] = "gItemPed #{$i} deve ter no máximo 255 caracteres (TSNumeroEndereco)";
+                if (strlen($item) < 1 || strlen($item) > 60) {
+                    $errors[] = "xItemPed #{$i} deve ter 1 a 60 caracteres (TSNumeroEndereco)";
                 }
             }
         }

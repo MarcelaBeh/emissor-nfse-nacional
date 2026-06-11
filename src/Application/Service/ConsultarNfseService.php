@@ -12,9 +12,9 @@ use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\LoggerInterface;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\NullLogger;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class ConsultarNfseService
 {
@@ -60,7 +60,7 @@ class ConsultarNfseService
             );
 
         } catch (HttpException $e) {
-            $this->logger->error('Falha HTTP ao consultar NFSe: {msg}', $e->getMessage());
+            $this->logger->error('Falha HTTP ao consultar NFSe: {msg}', ['msg' => $e->getMessage()]);
             throw new ServiceException(
                 "Falha ao consultar NFSe: {$e->getMessage()}",
                 0,
@@ -93,7 +93,7 @@ class ConsultarNfseService
             return $data ?? [];
 
         } catch (HttpException $e) {
-            $this->logger->error('Falha HTTP ao consultar DPS: {msg}', $e->getMessage());
+            $this->logger->error('Falha HTTP ao consultar DPS: {msg}', ['msg' => $e->getMessage()]);
             throw new ServiceException(
                 "Falha ao consultar DPS: {$e->getMessage()}",
                 0,
@@ -138,7 +138,7 @@ class ConsultarNfseService
             return is_string($data) ? json_decode($data, true) ?? [] : $data ?? [];
 
         } catch (HttpException $e) {
-            $this->logger->error('Falha HTTP ao consultar eventos: {msg}', $e->getMessage());
+            $this->logger->error('Falha HTTP ao consultar eventos: {msg}', ['msg' => $e->getMessage()]);
             throw new ServiceException(
                 "Falha ao consultar eventos: {$e->getMessage()}",
                 0,

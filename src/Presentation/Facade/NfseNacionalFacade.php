@@ -18,6 +18,8 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\Certificate
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiringException;
 use MarcelaBeh\EmissorNfseNacional\Presentation\Factory\ServiceFactory;
 use NFePHP\Common\Certificate;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class NfseNacionalFacade
 {
@@ -29,6 +31,7 @@ class NfseNacionalFacade
         /** @var Configuration|array<string, mixed> */
         private Configuration|array $config,
         private Certificate $certificado,
+        private LoggerInterface $logger = new NullLogger(),
     ) {
         $this->inicializarServicos();
     }
@@ -36,12 +39,17 @@ class NfseNacionalFacade
     /**
      * @param Configuration|array<string, mixed> $config aceita o array cru ou um objeto
      *        Configuration (ex.: produzido por ConfigFactory).
+     * @param LoggerInterface $logger logger dos serviços. Padrão: NullLogger (sem saída). Para
+     *        rastreabilidade em produção sem vazar dados sensíveis, passe um SanitizedLogger.
      * @throws CertificateExpiredException se o certificado estiver vencido
      * @throws CertificateExpiringException se o certificado vencer em menos de 30 dias
      */
-    public static function create(Configuration|array $config, Certificate $certificado): self
-    {
-        return new self($config, $certificado);
+    public static function create(
+        Configuration|array $config,
+        Certificate $certificado,
+        LoggerInterface $logger = new NullLogger(),
+    ): self {
+        return new self($config, $certificado, $logger);
     }
 
     /**
@@ -126,7 +134,7 @@ class NfseNacionalFacade
 
     private function inicializarServicos(): void
     {
-        $factory = new ServiceFactory($this->config, $this->certificado);
+        $factory = new ServiceFactory($this->config, $this->certificado, $this->logger);
 
         $this->emitirDpsService = $factory->createEmitirDpsService();
         $this->consultarNfseService = $factory->createConsultarNfseService();

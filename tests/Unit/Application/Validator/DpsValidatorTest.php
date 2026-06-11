@@ -175,7 +175,6 @@ final class DpsValidatorTest extends TestCase
                 documento: '33444555000181',
                 isCnpj: true,
                 razaoSocial: 'Tomador Exterior',
-                nomeFantasia: null,
                 telefone: null,
                 email: null,
                 logradouro: 'Main Street',
@@ -213,7 +212,6 @@ final class DpsValidatorTest extends TestCase
                 documento: '33444555000181',
                 isCnpj: true,
                 razaoSocial: 'Tomador Exterior',
-                nomeFantasia: null,
                 telefone: null,
                 email: null,
                 logradouro: 'Main Street',
@@ -1244,7 +1242,50 @@ final class DpsValidatorTest extends TestCase
         );
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('gItemPed');
+        $this->expectExceptionMessage('xItemPed');
+        $this->validator->validate($request);
+    }
+
+    public function test_info_compl_item_pedido_61_chars_viola_tsnumeroendereco(): void
+    {
+        // TSNumeroEndereco tem maxLength=60. 61 chars antes passava (limite errado de 255).
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                tribISSQN: '1',
+                tpRetISSQN: '1',
+                infoCompl: new \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\InfoComplRequest(
+                    itensPedido: [str_repeat('x', 61)],
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('xItemPed #0 deve ter 1 a 60 caracteres');
+        $this->validator->validate($request);
+    }
+
+    public function test_info_compl_mais_de_99_itens_pedido_viola_maxoccurs(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                tribISSQN: '1',
+                tpRetISSQN: '1',
+                infoCompl: new \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\InfoComplRequest(
+                    itensPedido: array_fill(0, 100, 'item'),
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('no máximo 99 itens');
         $this->validator->validate($request);
     }
 
@@ -1997,7 +2038,6 @@ final class DpsValidatorTest extends TestCase
                 documento: '33444555000181',
                 isCnpj: true,
                 razaoSocial: $tomadorRazaoSocial,
-                nomeFantasia: null,
                 telefone: null,
                 email: null,
                 logradouro: 'Rua B',

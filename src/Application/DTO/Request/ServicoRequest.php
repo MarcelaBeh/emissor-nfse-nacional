@@ -16,7 +16,6 @@ final readonly class ServicoRequest
         public ?float $aliquotaIss = null,
         public ?string $codigoMunicipioPrestacao = null,
         public ?string $codigoNbs = null,
-        public ?string $codigoCnae = null,
         public ?ObraRequest $obra = null,
         public ?string $tribISSQN = null,
         public ?string $tpRetISSQN = null,

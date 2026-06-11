@@ -36,7 +36,6 @@ final class TomadorTest extends TestCase
         $tomador = new Tomador(
             documento: $cnpj,
             razaoSocial: 'Tomador Ltda',
-            nomeFantasia: 'Tomador Fantasia',
             telefone: null,
             email: null,
             endereco: $end,
@@ -47,7 +46,6 @@ final class TomadorTest extends TestCase
         $this->assertSame($cnpj, $tomador->getCnpj());
         $this->assertNull($tomador->getCpf());
         $this->assertSame('Tomador Ltda', $tomador->getRazaoSocial());
-        $this->assertSame('Tomador Fantasia', $tomador->getNomeFantasia());
         $this->assertNull($tomador->getTelefone());
         $this->assertNull($tomador->getEmail());
         $this->assertSame($end, $tomador->getEndereco());
@@ -64,7 +62,6 @@ final class TomadorTest extends TestCase
         $tomador = new Tomador(
             documento: $cpf,
             razaoSocial: 'Fulano Tomador',
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $end,
@@ -82,7 +79,6 @@ final class TomadorTest extends TestCase
         $tomador = new Tomador(
             documento: null,
             razaoSocial: 'Tomador sem Doc',
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $end,
@@ -99,7 +95,6 @@ final class TomadorTest extends TestCase
         $tomador = new Tomador(
             documento: null,
             razaoSocial: 'Tomador NIF',
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $end,
@@ -117,7 +112,6 @@ final class TomadorTest extends TestCase
         $tomador = new Tomador(
             documento: null,
             razaoSocial: 'Tomador cNaoNIF',
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $end,
@@ -137,7 +131,6 @@ final class TomadorTest extends TestCase
         $tomador = new Tomador(
             documento: null,
             razaoSocial: 'Tomador Contato',
-            nomeFantasia: null,
             telefone: $telefone,
             email: $email,
             endereco: $end,
@@ -155,7 +148,6 @@ final class TomadorTest extends TestCase
         new Tomador(
             documento: null,
             razaoSocial: '',
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $this->createEnderecoNacional(),
@@ -170,7 +162,6 @@ final class TomadorTest extends TestCase
         new Tomador(
             documento: null,
             razaoSocial: str_repeat('A', 151),
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $this->createEnderecoNacional(),
@@ -195,7 +186,6 @@ final class TomadorTest extends TestCase
         $tomador = new Tomador(
             documento: null,
             razaoSocial: 'Tomador Exterior',
-            nomeFantasia: null,
             telefone: null,
             email: null,
             endereco: $end,
@@ -216,7 +206,6 @@ final class TomadorTest extends TestCase
         $tomador = new Tomador(
             documento: $cnpj,
             razaoSocial: 'Tomador Completo Ltda',
-            nomeFantasia: 'Fantasia Completa',
             telefone: $telefone,
             email: $email,
             endereco: $end,
@@ -228,7 +217,6 @@ final class TomadorTest extends TestCase
 
         $this->assertSame($cnpj, $tomador->getCnpj());
         $this->assertSame('Tomador Completo Ltda', $tomador->getRazaoSocial());
-        $this->assertSame('Fantasia Completa', $tomador->getNomeFantasia());
         $this->assertSame($telefone, $tomador->getTelefone());
         $this->assertSame($email, $tomador->getEmail());
         $this->assertSame($end, $tomador->getEndereco());

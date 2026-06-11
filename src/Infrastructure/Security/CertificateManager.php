@@ -93,15 +93,6 @@ class CertificateManager implements Contract\CertificateManagerInterface
         return $path;
     }
 
-    #[\Override]
-    /**
-     * @param array<string, string> $files
-     */
-    public function cleanTemporaryFiles(array $files): void
-    {
-        $this->removeFiles(array_values($files));
-    }
-
     /**
      * @param list<string> $files
      */

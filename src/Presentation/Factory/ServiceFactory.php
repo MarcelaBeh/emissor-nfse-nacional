@@ -26,6 +26,8 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
 use NFePHP\Common\Certificate;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class ServiceFactory
 {
@@ -36,12 +38,19 @@ class ServiceFactory
     private RequestBuilder $requestBuilder;
     private XsdValidator $xsdValidator;
     private XmlSigner $xmlSigner;
+    private LoggerInterface $logger;
 
     /**
      * @param Configuration|array<string, mixed> $config
+     * @param LoggerInterface $logger logger injetado nos serviços. Padrão: NullLogger (sem saída).
+     *        Para rastreabilidade em produção sem vazar dados sensíveis, passe um SanitizedLogger.
      */
-    public function __construct(Configuration|array $config, Certificate $certificate)
-    {
+    public function __construct(
+        Configuration|array $config,
+        Certificate $certificate,
+        LoggerInterface $logger = new NullLogger(),
+    ) {
+        $this->logger = $logger;
         $this->configuration = $config instanceof Configuration ? $config : new Configuration($config);
         $this->certificateManager = new CertificateManager($certificate);
         $this->xmlSigner = new XmlSigner($this->certificateManager->getCertificate());
@@ -82,6 +91,7 @@ class ServiceFactory
             nfseXmlParser: new NfseXmlParser(),
             ibscbsResponseValidator: new IbscbsResponseValidator(),
             apiEndpoints: $this->apiEndpoints,
+            logger: $this->logger,
         );
     }
 
@@ -105,6 +115,7 @@ class ServiceFactory
             apiEndpoints: $this->apiEndpoints,
             validator: new ConsultaValidator(),
             nfseXmlParser: new NfseXmlParser(),
+            logger: $this->logger,
         );
     }
 
@@ -118,6 +129,7 @@ class ServiceFactory
             validator: new EventoValidator(),
             requestBuilder: $this->requestBuilder,
             apiEndpoints: $this->apiEndpoints,
+            logger: $this->logger,
         );
     }
 }

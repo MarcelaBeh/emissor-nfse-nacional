@@ -11,8 +11,4 @@ interface CertificateManagerInterface
      * @return array{private: string, public: string, cert: string}
      */
     public function saveTemporaryFiles(): array;
-    /**
-     * @param array<string, string> $files
-     */
-    public function cleanTemporaryFiles(array $files): void;
 }
