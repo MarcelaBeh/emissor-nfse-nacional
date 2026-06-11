@@ -206,7 +206,10 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $this->addChild($node, 'xNome', $pessoa->getRazaoSocial(), true);
 
-        $this->buildEndereco($node, $pessoa->getEndereco());
+        // <end> é opcional (TCInfoPessoa/end, minOccurs=0): omite quando não informado.
+        if ($pessoa->getEndereco() !== null) {
+            $this->buildEndereco($node, $pessoa->getEndereco());
+        }
 
         if ($pessoa->getTelefone()) {
             $this->addChild($node, 'fone', $pessoa->getTelefone()->getNumero(), false);
@@ -498,11 +501,20 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             if ($tribFed->getPisCofinsCst() !== null) {
                 $this->addChild($pisNode, 'CST', $tribFed->getPisCofinsCst(), true);
             }
+            if ($tribFed->getPisCofinsBaseCalculo() !== null) {
+                $this->addChild($pisNode, 'vBCPisCofins', number_format((float) $tribFed->getPisCofinsBaseCalculo(), 2, '.', ''), false);
+            }
             if ($tribFed->getPisCofinsAliquotaPis() !== null) {
                 $this->addChild($pisNode, 'pAliqPis', number_format($tribFed->getPisCofinsAliquotaPis(), 2, '.', ''), false);
             }
             if ($tribFed->getPisCofinsAliquotaCofins() !== null) {
                 $this->addChild($pisNode, 'pAliqCofins', number_format($tribFed->getPisCofinsAliquotaCofins(), 2, '.', ''), false);
+            }
+            if ($tribFed->getValorPis() !== null) {
+                $this->addChild($pisNode, 'vPis', number_format((float) $tribFed->getValorPis(), 2, '.', ''), false);
+            }
+            if ($tribFed->getValorCofins() !== null) {
+                $this->addChild($pisNode, 'vCofins', number_format((float) $tribFed->getValorCofins(), 2, '.', ''), false);
             }
             if ($tribFed->getPisCofinsTipo() !== null) {
                 $this->addChild($pisNode, 'tpRetPisCofins', $tribFed->getPisCofinsTipo(), true);
@@ -604,12 +616,15 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->addChild($pt, 'pTotTribEst', $servico->getPTotTribEst() !== null ? number_format($servico->getPTotTribEst(), 2, '.', '') : '0.00', true);
             $this->addChild($pt, 'pTotTribMun', $servico->getPTotTribMun() !== null ? number_format($servico->getPTotTribMun(), 2, '.', '') : '0.00', true);
         } else {
-            // default: vTotTrib
+            // default: vTotTrib (valores monetários aproximados — Lei 12.741/2012).
+            // Usa os valores informados; na ausência, federal/estadual ficam em 0.00 e o
+            // municipal recai sobre o ISS calculado (mantém o comportamento legado).
             $vt = $this->dom->createElement('vTotTrib');
             $tt->appendChild($vt);
-            $this->addChild($vt, 'vTotTribFed', '0.00', true);
-            $this->addChild($vt, 'vTotTribEst', '0.00', true);
-            $this->addChild($vt, 'vTotTribMun', number_format($servico->getValorIss()->getValue(), 2, '.', ''), true);
+            $vTotTribMun = $servico->getVTotTribMun() ?? $servico->getValorIss()->getValue();
+            $this->addChild($vt, 'vTotTribFed', number_format($servico->getVTotTribFed() ?? 0.0, 2, '.', ''), true);
+            $this->addChild($vt, 'vTotTribEst', number_format($servico->getVTotTribEst() ?? 0.0, 2, '.', ''), true);
+            $this->addChild($vt, 'vTotTribMun', number_format($vTotTribMun, 2, '.', ''), true);
         }
     }
 

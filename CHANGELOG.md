@@ -11,6 +11,24 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.7] - 2026-06-11
+
+Ajustes de leiaute confirmados pela **NT-007 SE/CGNFS-e v1.0**.
+
+### Added
+- `TribFederalRequest`/`TribFederal`: campos `vBCPisCofins`, `vPis` e `vCofins` (débito próprio de PIS/COFINS; retenções seguem em `vRetCSLL`)
+- `ServicoRequest`: campos `vTotTribFed`, `vTotTribEst` e `vTotTribMun` (totais aproximados, Lei 12.741/2012)
+- Validação do domínio oficial do `CST` de PIS/COFINS (`TSTipoCST`)
+
+### Fixed
+- `vTotTrib`: builder ignorava os totais informados e emitia `0.00`; agora usa os valores de `ServicoRequest`
+- Endereço de tomador/intermediário: `xLgr`/`nro`/`xBairro` exigidos quando há endereço, evitando tags vazias rejeitadas pelo XSD
+
+### Changed
+- Endereço de tomador e intermediário agora opcional (`TCInfoPessoa/end` é `minOccurs=0`): `?Endereco` nas entidades e `?string` nos Requests. Retrocompatível; omite `<end>` quando ausente. Permite consumidor final (CPF) sem endereço
+
+---
+
 ## [v2.2.6] - 2026-06-11
 
 ### Added
@@ -245,7 +263,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.6...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.7...HEAD
+[v2.2.7]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.6...v2.2.7
 [v2.2.6]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.5...v2.2.6
 [v2.2.5]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.4...v2.2.5
 [v2.2.4]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.3...v2.2.4

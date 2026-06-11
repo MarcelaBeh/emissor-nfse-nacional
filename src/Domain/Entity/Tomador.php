@@ -16,7 +16,7 @@ class Tomador
         private string $razaoSocial,
         private ?Telefone $telefone,
         private ?Email $email,
-        private Endereco $endereco,
+        private ?Endereco $endereco,
         private ?string $nif = null,
         private ?string $inscricaoMunicipal = null,
         private ?string $codigoNaoNif = null,
@@ -77,7 +77,7 @@ class Tomador
         return $this->email;
     }
 
-    public function getEndereco(): Endereco
+    public function getEndereco(): ?Endereco
     {
         return $this->endereco;
     }

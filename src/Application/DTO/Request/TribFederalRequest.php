@@ -14,6 +14,9 @@ final readonly class TribFederalRequest
         public ?string $valorRetidoCP = null,
         public ?string $valorRetidoIRRF = null,
         public ?string $valorRetidoCSLL = null,
+        public ?string $pisCofinsBaseCalculo = null,
+        public ?string $valorPis = null,
+        public ?string $valorCofins = null,
     ) {
     }
 }

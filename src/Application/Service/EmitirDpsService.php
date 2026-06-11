@@ -269,7 +269,7 @@ class EmitirDpsService
                 razaoSocial: $request->tomador->razaoSocial,
                 telefone: $request->tomador->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($request->tomador->telefone) : null,
                 email: $request->tomador->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($request->tomador->email) : null,
-                endereco: $this->criarEndereco(
+                endereco: $this->criarEnderecoPessoa(
                     $request->tomador->logradouro,
                     $request->tomador->numero,
                     $request->tomador->complemento,
@@ -305,7 +305,7 @@ class EmitirDpsService
                 inscricaoMunicipal: $i->inscricaoMunicipal,
                 telefone: $i->telefone ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Telefone($i->telefone) : null,
                 email: $i->email ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Email($i->email) : null,
-                endereco: $this->criarEndereco(
+                endereco: $this->criarEnderecoPessoa(
                     $i->logradouro,
                     $i->numero,
                     $i->complemento,
@@ -389,6 +389,9 @@ class EmitirDpsService
             pTotTribMun: $request->servico->pTotTribMun,
             indTotTrib: $request->servico->indTotTrib,
             pTotTribSN: $request->servico->pTotTribSN,
+            vTotTribFed: $request->servico->vTotTribFed,
+            vTotTribEst: $request->servico->vTotTribEst,
+            vTotTribMun: $request->servico->vTotTribMun,
         );
 
         $substituicao = null;
@@ -748,6 +751,50 @@ class EmitirDpsService
             valorRetidoCP: $req->valorRetidoCP,
             valorRetidoIRRF: $req->valorRetidoIRRF,
             valorRetidoCSLL: $req->valorRetidoCSLL,
+            pisCofinsBaseCalculo: $req->pisCofinsBaseCalculo,
+            valorPis: $req->valorPis,
+            valorCofins: $req->valorCofins,
+        );
+    }
+
+    /**
+     * Constrói o Endereco de tomador/intermediário apenas quando algum dado de endereço
+     * foi informado. O grupo <end> é opcional no XSD (TCInfoPessoa/end, minOccurs=0); na
+     * ausência total de dados retorna null para que o builder omita o grupo.
+     */
+    private function criarEnderecoPessoa(
+        ?string $logradouro,
+        ?string $numero,
+        ?string $complemento,
+        ?string $bairro,
+        ?string $codigoMunicipio,
+        ?string $uf,
+        ?string $cep,
+        ?string $codigoPais = null,
+        ?string $codigoPostalExterior = null,
+        ?string $nomeCidadeExterior = null,
+        ?string $estadoProvinciaExterior = null,
+    ): ?Endereco {
+        $temEndereco = ($logradouro !== null && $logradouro !== '')
+            || ($cep !== null && $cep !== '')
+            || ($codigoPais !== null && $codigoPais !== '');
+
+        if (!$temEndereco) {
+            return null;
+        }
+
+        return new Endereco(
+            logradouro: $logradouro ?? '',
+            numero: $numero ?? '',
+            complemento: $complemento,
+            bairro: $bairro ?? '',
+            codigoMunicipio: new CodigoMunicipio($codigoMunicipio ?? '0000000'),
+            uf: $uf ?? '',
+            cep: new Cep($cep ?? '00000000'),
+            codigoPais: $codigoPais,
+            codigoPostalExterior: $codigoPostalExterior,
+            nomeCidadeExterior: $nomeCidadeExterior,
+            estadoProvinciaExterior: $estadoProvinciaExterior,
         );
     }
 

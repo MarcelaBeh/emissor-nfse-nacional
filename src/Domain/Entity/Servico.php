@@ -52,6 +52,9 @@ class Servico
         private ?float $pTotTribMun = null,
         private ?string $indTotTrib = null,
         private ?float $pTotTribSN = null,
+        private ?float $vTotTribFed = null,
+        private ?float $vTotTribEst = null,
+        private ?float $vTotTribMun = null,
     ) {
         $this->calcularValores($valorServicos);
         $this->validate();
@@ -272,5 +275,20 @@ class Servico
     public function getPTotTribSN(): ?float
     {
         return $this->pTotTribSN;
+    }
+
+    public function getVTotTribFed(): ?float
+    {
+        return $this->vTotTribFed;
+    }
+
+    public function getVTotTribEst(): ?float
+    {
+        return $this->vTotTribEst;
+    }
+
+    public function getVTotTribMun(): ?float
+    {
+        return $this->vTotTribMun;
     }
 }

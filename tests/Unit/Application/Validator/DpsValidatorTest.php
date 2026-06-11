@@ -1990,6 +1990,96 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
+    public function test_tomador_sem_endereco_passa(): void
+    {
+        $request = $this->createValidDpsRequest(
+            tomador: new TomadorRequest(
+                documento: '52998224725',
+                isCnpj: false,
+                razaoSocial: 'Consumidor Final',
+                telefone: null,
+                email: null,
+                logradouro: null,
+                numero: null,
+                complemento: null,
+                bairro: null,
+                codigoMunicipio: null,
+                uf: null,
+                cep: null,
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_tomador_com_endereco_parcial_sem_numero_falha(): void
+    {
+        $request = $this->createValidDpsRequest(
+            tomador: new TomadorRequest(
+                documento: '52998224725',
+                isCnpj: false,
+                razaoSocial: 'Tomador',
+                telefone: null,
+                email: null,
+                logradouro: 'Rua B',
+                numero: null,
+                complemento: null,
+                bairro: 'Centro',
+                codigoMunicipio: '3550308',
+                uf: 'SP',
+                cep: '02002002',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('nro do tomador é obrigatório quando há endereço');
+        $this->validator->validate($request);
+    }
+
+    public function test_cst_piscofins_invalido_falha(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: $this->servicoComCstPisCofins('57'),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('CST do PIS/COFINS inválido');
+        $this->validator->validate($request);
+    }
+
+    public function test_cst_piscofins_valido_passa(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: $this->servicoComCstPisCofins('06'),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    private function servicoComCstPisCofins(string $cst): ServicoRequest
+    {
+        return new ServicoRequest(
+            discriminacao: 'Serviço de teste',
+            codigoTributacao: '010101',
+            codigoMunicipioPrestacao: '3550308',
+            valorServicos: 1000.0,
+            valorDeducoes: 0,
+            descontoIncondicionado: 0,
+            descontoCondicionado: 0,
+            aliquotaIss: 5.0,
+            codigoNbs: '123456789',
+            totTribTipo: 'vTotTrib',
+            tribISSQN: '1',
+            tpRetISSQN: '1',
+            tribFederal: new TribFederalRequest(
+                pisCofinsCst: $cst,
+                pisCofinsTipo: '0',
+            ),
+        );
+    }
+
     private function createValidDpsRequest(
         int $tipoAmbiente = 1,
         string $dataEmissao = '2026-06-15T10:00:00-03:00',
@@ -2008,6 +2098,7 @@ final class DpsValidatorTest extends TestCase
         ?IbsCbsRequest $ibscbs = null,
         ?ObraRequest $obra = null,
         ?ServicoRequest $servico = null,
+        ?TomadorRequest $tomador = null,
     ): DpsRequest {
         return new DpsRequest(
             tipoAmbiente: $tipoAmbiente,
@@ -2034,7 +2125,7 @@ final class DpsValidatorTest extends TestCase
                 cep: '01001001',
                 regimeTributario: RegimeTributario::SIMPLES_NACIONAL->value,
             ),
-            tomador: new TomadorRequest(
+            tomador: $tomador ?? new TomadorRequest(
                 documento: '33444555000181',
                 isCnpj: true,
                 razaoSocial: $tomadorRazaoSocial,

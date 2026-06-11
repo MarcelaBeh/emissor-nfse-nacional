@@ -17,7 +17,7 @@ class Intermediario
         private ?string $inscricaoMunicipal,
         private ?Telefone $telefone,
         private ?Email $email,
-        private Endereco $endereco,
+        private ?Endereco $endereco,
         private ?string $nif = null,
         private ?string $codigoNaoNif = null,
         private ?string $caepf = null,
@@ -82,7 +82,7 @@ class Intermediario
         return $this->email;
     }
 
-    public function getEndereco(): Endereco
+    public function getEndereco(): ?Endereco
     {
         return $this->endereco;
     }

@@ -20,6 +20,23 @@ final class TribFederalTest extends TestCase
         $this->assertNull($tf->getValorRetidoCP());
         $this->assertNull($tf->getValorRetidoIRRF());
         $this->assertNull($tf->getValorRetidoCSLL());
+        $this->assertNull($tf->getPisCofinsBaseCalculo());
+        $this->assertNull($tf->getValorPis());
+        $this->assertNull($tf->getValorCofins());
+    }
+
+    public function test_create_with_pis_cofins_debito_proprio(): void
+    {
+        $tf = new TribFederal(
+            pisCofinsCst: '01',
+            pisCofinsBaseCalculo: '1000.00',
+            valorPis: '16.50',
+            valorCofins: '76.00',
+        );
+
+        $this->assertSame('1000.00', $tf->getPisCofinsBaseCalculo());
+        $this->assertSame('16.50', $tf->getValorPis());
+        $this->assertSame('76.00', $tf->getValorCofins());
     }
 
     public function test_create_with_pis_cofins(): void

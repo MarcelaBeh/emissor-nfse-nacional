@@ -41,6 +41,9 @@ final readonly class ServicoRequest
         public ?float $pTotTribSN = null,
         public ?float $percentualDeducao = null,
         public ?float $valorDeducaoPadrao = null,
+        public ?float $vTotTribFed = null,
+        public ?float $vTotTribEst = null,
+        public ?float $vTotTribMun = null,
     ) {
     }
 }

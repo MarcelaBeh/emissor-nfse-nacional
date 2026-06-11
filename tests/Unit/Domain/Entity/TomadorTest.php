@@ -196,6 +196,20 @@ final class TomadorTest extends TestCase
         $this->assertSame('New York', $tomador->getEndereco()->getNomeCidadeExterior());
     }
 
+    public function test_create_without_endereco(): void
+    {
+        $tomador = new Tomador(
+            documento: new Cpf('52998224725'),
+            razaoSocial: 'Consumidor Final',
+            telefone: null,
+            email: null,
+            endereco: null,
+        );
+
+        $this->assertNull($tomador->getEndereco());
+        $this->assertSame('Consumidor Final', $tomador->getRazaoSocial());
+    }
+
     public function test_create_with_all_fields(): void
     {
         $cnpj = new Cnpj('11444777000161');
