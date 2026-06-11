@@ -11,6 +11,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.3] - 2026-06-10
+
+### Fixed
+- Erro de emissão retornava sempre `"Erro ao emitir DPS"` genérico; agora extrai `Codigo`+`Descricao` de `erros[]` da SEFIN (`SefinNacional_1.6.0`). O payload cru segue em `dados`
+
+---
+
 ## [v2.2.2] - 2026-06-10
 
 ### Fixed
@@ -23,7 +30,6 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - `Nif` (VO): limite 20 → 40 caracteres (`TSNIF`)
 - Eventos: `xMotivo` exigido nas rejeições quando `cMotivo=9` (AnexoIV E1944/E1949/E1954)
 - Schema: pattern do `serie` mantido sem âncoras `^`/`$` (literais em XSD rejeitam toda série)
-- Erro de emissão retornava sempre `"Erro ao emitir DPS"` genérico; agora extrai `Codigo`+`Descricao` de `erros[]` da SEFIN (o payload cru segue em `dados`)
 
 ### Changed
 - `Configuration::getVersion()` deriva a versão da tag git/Packagist (`composer-runtime-api`)
@@ -206,7 +212,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.2...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.3...HEAD
+[v2.2.3]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.2...v2.2.3
 [v2.2.2]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.1...v2.2.2
 [v2.2.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.0...v2.2.1
 [v2.2.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.1.1...v2.2.0
