@@ -11,6 +11,20 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.8] - 2026-06-12
+
+Falsos positivos do validador IBS/CBS que rejeitavam NFS-e válidas (aceitas pela SEFIN com `cStat=100`).
+
+### Fixed
+- Campos escalares da resposta voltam `0.00` por padrão da SEFIN: `vCalcReeRepRes` (E1531/E1533), `pRedutor` (E1522/E1523), `pRedAliq*` (E1541/E1546/E1551) e `vDif*` (E1566/E1570/E1580) passam a considerar "informado" só quando `> 0`
+- `hasReducaoIBS()/hasReducaoCBS()`: `pRedIBS/pRedCBS = 0.0` (97 dos 156 códigos) era lido como "possui redução", exigindo `pRedAliq*` que a SEFIN não envia. Agora redução só existe com percentual `> 0`
+- Destinatário no exterior (`indDest=1`) escapava à validação de endereço; agora valida o ramo `endExt` do `TCEndereco` (`cPais`/`cEndPost`/`xCidade`/`xEstProvReg`) e rejeita nacional+exterior simultâneos
+
+### Changed
+- `gDif` com `pDifUF=pDifMun=pDifCBS=0` agora é rejeitado (grupo vazio deve ser omitido)
+
+---
+
 ## [v2.2.7] - 2026-06-11
 
 Ajustes de leiaute confirmados pela **NT-007 SE/CGNFS-e v1.0**.

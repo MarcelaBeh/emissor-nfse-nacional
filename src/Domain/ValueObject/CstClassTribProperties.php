@@ -60,11 +60,11 @@ final readonly class CstClassTribProperties
 
     public function hasReducaoIBS(): bool
     {
-        return $this->pRedIBS !== null;
+        return $this->pRedIBS !== null && $this->pRedIBS > 0.0;
     }
 
     public function hasReducaoCBS(): bool
     {
-        return $this->pRedCBS !== null;
+        return $this->pRedCBS !== null && $this->pRedCBS > 0.0;
     }
 }

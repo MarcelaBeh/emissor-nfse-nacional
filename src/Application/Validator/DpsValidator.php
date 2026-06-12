@@ -1252,15 +1252,24 @@ class DpsValidator
             $errors[] = 'cNaoNIF do destinatário inválido (TSCodNaoNIF)';
         }
 
+        $destEhExterior = $dest->codigoPais !== null
+            || $dest->codigoPostalExterior !== null
+            || $dest->nomeCidadeExterior !== null
+            || $dest->estadoProvinciaExterior !== null;
+
+        $temEnderecoNac = $dest->codigoMunicipio !== null
+            || $dest->uf !== null
+            || $dest->cep !== null;
+
         $temEnderecoDest = $dest->logradouro !== null
             || $dest->numero !== null
             || $dest->complemento !== null
             || $dest->bairro !== null
-            || $dest->codigoMunicipio !== null
-            || $dest->uf !== null
-            || $dest->cep !== null;
+            || $temEnderecoNac
+            || $destEhExterior;
 
         if ($temEnderecoDest) {
+            // Comuns ao TCEndereco (válidos para endNac e endExt).
             if ($dest->logradouro === null || strlen($dest->logradouro) < 1 || strlen($dest->logradouro) > 255) {
                 $errors[] = 'xLgr do destinatário é obrigatório quando o endereço é informado e deve ter 1 a 255 caracteres (TSLogradouro)';
             }
@@ -1273,14 +1282,34 @@ class DpsValidator
             if ($dest->bairro === null || strlen($dest->bairro) < 1 || strlen($dest->bairro) > 60) {
                 $errors[] = 'xBairro do destinatário é obrigatório quando o endereço é informado e deve ter 1 a 60 caracteres (TSBairro)';
             }
-            if ($dest->codigoMunicipio === null || !preg_match('/^[0-9]{7}$/', $dest->codigoMunicipio)) {
-                $errors[] = 'cMun do destinatário é obrigatório no endNac e deve ter 7 dígitos numéricos (TSCodMunIBGE)';
-            }
-            if ($dest->cep === null || !preg_match('/^[0-9]{8}$/', $dest->cep)) {
-                $errors[] = 'CEP do destinatário é obrigatório no endNac e deve ter 8 dígitos numéricos (TSCEP)';
-            }
-            if ($dest->uf !== null && !in_array($dest->uf, self::UFS, true)) {
-                $errors[] = 'UF do destinatário inválida (TSUF)';
+
+            if ($destEhExterior) {
+                if ($temEnderecoNac) {
+                    $errors[] = 'Destinatário: endereço nacional (cMun/CEP/UF) e exterior são mutuamente exclusivos (TCEndereco choice)';
+                }
+                if ($dest->codigoPais === null || !preg_match('/^[A-Z]{2}$/', $dest->codigoPais)) {
+                    $errors[] = 'cPais do destinatário é obrigatório no endExt e deve ter 2 letras maiúsculas (TSCodPaisISO)';
+                }
+                if ($dest->codigoPostalExterior === null || strlen($dest->codigoPostalExterior) < 1 || strlen($dest->codigoPostalExterior) > 11) {
+                    $errors[] = 'cEndPost do destinatário é obrigatório no endExt e deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
+                }
+                if ($dest->nomeCidadeExterior === null || strlen($dest->nomeCidadeExterior) < 1 || strlen($dest->nomeCidadeExterior) > 60) {
+                    $errors[] = 'xCidade do destinatário é obrigatório no endExt e deve ter 1 a 60 caracteres (TSCidade)';
+                }
+                if ($dest->estadoProvinciaExterior === null || strlen($dest->estadoProvinciaExterior) < 1 || strlen($dest->estadoProvinciaExterior) > 60) {
+                    $errors[] = 'xEstProvReg do destinatário é obrigatório no endExt e deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
+                }
+            } else {
+                // Ramo endNac (TCEnderNac): cMun + CEP obrigatórios.
+                if ($dest->codigoMunicipio === null || !preg_match('/^[0-9]{7}$/', $dest->codigoMunicipio)) {
+                    $errors[] = 'cMun do destinatário é obrigatório no endNac e deve ter 7 dígitos numéricos (TSCodMunIBGE)';
+                }
+                if ($dest->cep === null || !preg_match('/^[0-9]{8}$/', $dest->cep)) {
+                    $errors[] = 'CEP do destinatário é obrigatório no endNac e deve ter 8 dígitos numéricos (TSCEP)';
+                }
+                if ($dest->uf !== null && !in_array($dest->uf, self::UFS, true)) {
+                    $errors[] = 'UF do destinatário inválida (TSUF)';
+                }
             }
         }
         if ($dest->fone !== null && !preg_match('/^[0-9]{6,20}$/', $dest->fone)) {
@@ -1556,6 +1585,10 @@ class DpsValidator
         }
         if ($dif->pDifCBS < 0 || $dif->pDifCBS > 100) {
             $errors[] = 'pDifCBS deve estar entre 0 e 100 (TSDec3V2)';
+        }
+
+        if ($dif->pDifUF <= 0 && $dif->pDifMun <= 0 && $dif->pDifCBS <= 0) {
+            $errors[] = 'gDif informado mas todos os percentuais (pDifUF/pDifMun/pDifCBS) são zero — omita o grupo de diferimento';
         }
     }
 

@@ -525,6 +525,73 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
+    public function test_ibscbs_dest_terceiro_exterior_completo_passa(): void
+    {
+        // Destinatário terceiro (indDest=1) no exterior: ramo endExt do TCEndereco.
+        $request = $this->createValidDpsRequestWithIbscbs(
+            indDest: '1',
+            dest: new IbsCbsDestRequest(
+                xNome: 'Acme Inc.',
+                nif: 'US-987654',
+                logradouro: '5th Avenue',
+                numero: '100',
+                bairro: 'Manhattan',
+                codigoPais: 'US',
+                codigoPostalExterior: '10001',
+                nomeCidadeExterior: 'New York',
+                estadoProvinciaExterior: 'NY',
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_ibscbs_dest_terceiro_exterior_incompleto_throws(): void
+    {
+        // Exterior sem xCidade/xEstProvReg: antes escapava toda validação de endereço; agora falha.
+        $request = $this->createValidDpsRequestWithIbscbs(
+            indDest: '1',
+            dest: new IbsCbsDestRequest(
+                xNome: 'Acme Inc.',
+                nif: 'US-987654',
+                logradouro: '5th Avenue',
+                numero: '100',
+                bairro: 'Manhattan',
+                codigoPais: 'US',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('endExt');
+        $this->validator->validate($request);
+    }
+
+    public function test_ibscbs_dest_exterior_e_nacional_mutuamente_exclusivos_throws(): void
+    {
+        // codigoPais + cMun/CEP simultâneos violam o choice endNac|endExt do TCEndereco.
+        $request = $this->createValidDpsRequestWithIbscbs(
+            indDest: '1',
+            dest: new IbsCbsDestRequest(
+                xNome: 'Acme Inc.',
+                nif: 'US-987654',
+                logradouro: '5th Avenue',
+                numero: '100',
+                bairro: 'Manhattan',
+                codigoMunicipio: '3550308',
+                cep: '01310100',
+                codigoPais: 'US',
+                codigoPostalExterior: '10001',
+                nomeCidadeExterior: 'New York',
+                estadoProvinciaExterior: 'NY',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('mutuamente exclusivos');
+        $this->validator->validate($request);
+    }
+
     public function test_ibscbs_with_diferimento_passes(): void
     {
         $request = $this->createValidDpsRequestWithIbscbs(
@@ -538,6 +605,22 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
 
         $this->expectNotToPerformAssertions();
+    }
+
+    public function test_ibscbs_diferimento_todos_zero_throws(): void
+    {
+        // gDif com todos pDif* = 0 é semanticamente vazio: deve ser omitido, não enviado zerado.
+        $request = $this->createValidDpsRequestWithIbscbs(
+            diferimento: new IbsCbsDiferimentoRequest(
+                pDifUF: 0.0,
+                pDifMun: 0.0,
+                pDifCBS: 0.0,
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('todos os percentuais');
+        $this->validator->validate($request);
     }
 
     public function test_ibscbs_with_all_optional_fields_passes(): void

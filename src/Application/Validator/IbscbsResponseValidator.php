@@ -54,11 +54,13 @@ final class IbscbsResponseValidator
         $tpEnteGov = $ibsData['tpEnteGov'] ?? null;
         $pRedutor = $nfseIbscbs['pRedutor'] ?? null;
 
+        $hasPRedutor = $pRedutor !== null && (float) $pRedutor > 0.0;
+
         if ($tpEnteGov === null || $tpEnteGov === '') {
-            if ($pRedutor !== null) {
+            if ($hasPRedutor) {
                 $this->addError('E1522: pRedutor não deve ser informado quando tpEnteGov não foi informado na DPS');
             }
-        } elseif ($pRedutor === null) {
+        } elseif (!$hasPRedutor) {
             $this->addError('E1523: pRedutor deve ser informado quando tpEnteGov foi informado na DPS');
         }
     }
@@ -97,9 +99,9 @@ final class IbscbsResponseValidator
         $pRedAliqMun = $nfseIbscbs['valores']['mun']['pRedAliqMun'] ?? null;
         $pRedAliqCBS = $nfseIbscbs['valores']['fed']['pRedAliqCBS'] ?? null;
 
-        $hasPRedAliqUF = $pRedAliqUF !== null;
-        $hasPRedAliqMun = $pRedAliqMun !== null;
-        $hasPRedAliqCBS = $pRedAliqCBS !== null;
+        $hasPRedAliqUF = $pRedAliqUF !== null && (float) $pRedAliqUF > 0.0;
+        $hasPRedAliqMun = $pRedAliqMun !== null && (float) $pRedAliqMun > 0.0;
+        $hasPRedAliqCBS = $pRedAliqCBS !== null && (float) $pRedAliqCBS > 0.0;
 
         if (!$hasRedIBS && $hasPRedAliqUF) {
             $this->addError('E1540: pRedAliqUF não deve ser informado para o cClassTrib indicado (código não possui redução de alíquota IBS)');
@@ -183,9 +185,13 @@ final class IbscbsResponseValidator
         $hasPDifMun = $pDifMun !== null && $pDifMun > 0;
         $hasPDifCBS = $pDifCBS !== null && $pDifCBS > 0;
 
-        $hasVDifUF = $gIbsUfTot !== null && ($gIbsUfTot['vDifUF'] ?? null) !== null;
-        $hasVDifMun = $gIbsMunTot !== null && ($gIbsMunTot['vDifMun'] ?? null) !== null;
-        $hasVDifCBS = $gCbs !== null && ($gCbs['vDifCBS'] ?? null) !== null;
+        $vDifUF = $gIbsUfTot !== null ? ($gIbsUfTot['vDifUF'] ?? null) : null;
+        $vDifMun = $gIbsMunTot !== null ? ($gIbsMunTot['vDifMun'] ?? null) : null;
+        $vDifCBS = $gCbs !== null ? ($gCbs['vDifCBS'] ?? null) : null;
+
+        $hasVDifUF = $vDifUF !== null && (float) $vDifUF > 0.0;
+        $hasVDifMun = $vDifMun !== null && (float) $vDifMun > 0.0;
+        $hasVDifCBS = $vDifCBS !== null && (float) $vDifCBS > 0.0;
 
         if (!$hasPDifUF && $hasVDifUF) {
             $this->addError('E1565: vDifUF não deve ser informado quando pDifUF não foi informado na DPS');
@@ -241,7 +247,7 @@ final class IbscbsResponseValidator
     private function validateVCalcReeRepRes(array $ibsData, array $nfseIbscbs): void
     {
         $vCalcReeRepRes = $nfseIbscbs['valores']['vCalcReeRepRes'] ?? null;
-        $hasVCalc = $vCalcReeRepRes !== null;
+        $hasVCalc = $vCalcReeRepRes !== null && (float) $vCalcReeRepRes > 0.0;
 
         $hasRefNFSe = isset($ibsData['refNFSeList'])
             && is_array($ibsData['refNFSeList'])

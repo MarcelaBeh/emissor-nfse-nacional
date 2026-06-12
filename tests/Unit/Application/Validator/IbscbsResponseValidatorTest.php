@@ -6,6 +6,7 @@ namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Application\Validator;
 
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\FileCstClassTribRepository;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\InMemoryCstClassTribRepository;
 use PHPUnit\Framework\TestCase;
 
@@ -546,6 +547,70 @@ final class IbscbsResponseValidatorTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('E1531');
         $this->validator->validate($ibsData, $nfse);
+    }
+
+    public function test_v_calc_ree_rep_res_zero_sem_g_ref_nfse_passes(): void
+    {
+        // A SEFIN devolve vCalcReeRepRes=0.00 por padrão mesmo sem gRefNFSe na DPS.
+        // Zero não é "informado" — não deve disparar E1531 (falso positivo).
+        $ibsData = ['refNFSeList' => null];
+        $nfse = $this->makeNfse(vCalcReeRepRes: '0.00');
+        $this->validator->validate($ibsData, $nfse);
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_v_calc_ree_rep_res_zero_com_g_ref_nfse_throws(): void
+    {
+        // Com gRefNFSe na DPS, espera-se vCalcReeRepRes > 0; zero equivale a ausente → E1533.
+        $ibsData = ['refNFSeList' => ['12345678901234567890123456789012345678901234567890']];
+        $nfse = $this->makeNfse(vCalcReeRepRes: '0.00');
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1533');
+        $this->validator->validate($ibsData, $nfse);
+    }
+
+    // --- Regressão: emissão real (cClassTrib=010002, SEFIN cStat=100) ---
+
+    public function test_emissao_real_cclasstrib_sem_reducao_e_vcalc_zero_passes(): void
+    {
+        // Reproduz a NFS-e real que a SEFIN aceitou (cStat=100) mas a lib rejeitava:
+        // - cClassTrib=010002 tem pRedIBS/pRedCBS=0.0 na tabela oficial (SEM redução) → SEFIN não retorna pRedAliq*
+        // - DPS sem gRefNFSe, mas SEFIN devolve vCalcReeRepRes=0.00 por padrão
+        // - DPS sem tpEnteGov, sem cCredPres, sem diferimento
+        $validator = new IbscbsResponseValidator(
+            new FileCstClassTribRepository(__DIR__ . '/../../../../storage/cClassTrib.json'),
+        );
+
+        $ibsData = [
+            'cClassTrib' => '010002',
+            'tpEnteGov' => null,
+            'cCredPres' => null,
+            'refNFSeList' => null,
+            'vServ' => '1.00',
+        ];
+
+        $nfse = [
+            'pRedutor' => null,
+            'valores' => [
+                'vBC' => '0.95',
+                'vCalcReeRepRes' => '0.00',
+                'uf' => ['pIBSUF' => '0.00', 'pAliqEfetUF' => '0.00'],
+                'mun' => ['pIBSMun' => '0.00', 'pAliqEfetMun' => '0.00'],
+                'fed' => ['pCBS' => '0.00', 'pAliqEfetCBS' => '0.00'],
+            ],
+            'totCIBS' => [
+                'vTotNF' => '0.96',
+                'gIBS' => [
+                    'vIBSTot' => '0.00',
+                    'gIBSUFTot' => ['vIBSUF' => '0.00'],
+                    'gIBSMunTot' => ['vIBSMun' => '0.00'],
+                ],
+                'gCBS' => ['vCBS' => '0.00'],
+            ],
+        ];
+
+        $validator->validate($ibsData, $nfse);
+        $this->expectNotToPerformAssertions();
     }
 
     private function makeNfse(
