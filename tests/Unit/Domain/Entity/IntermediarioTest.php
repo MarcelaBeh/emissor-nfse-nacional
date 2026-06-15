@@ -24,7 +24,6 @@ final class IntermediarioTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
     }
@@ -124,7 +123,6 @@ final class IntermediarioTest extends TestCase
             complemento: null,
             bairro: 'Downtown',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('00000000'),
             codigoPais: '049',
             codigoPostalExterior: '10001',

@@ -20,6 +20,9 @@ class IbsCbsDest
         private ?string $fone = null,
         private ?string $email = null,
     ) {
+        if (trim($this->xNome) === '') {
+            throw new \InvalidArgumentException('xNome do destinatário é obrigatório');
+        }
     }
 
     public function getCnpj(): ?Cnpj

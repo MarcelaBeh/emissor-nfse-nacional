@@ -11,6 +11,25 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.3.0] - 2026-06-15
+
+### Fixed
+- Benefício municipal (`vRedBCBM`/`pRedBCBM`) agora reduz a `baseCalculo` do ISSQN (XSD: `vBC = vServ - descIncond - deduções - BM`). Antes era ignorado no cálculo, inflando o ISS quando `aliquotaIss != null`.
+- `totTrib`: removida a presunção de valores. O builder não preenche mais `vTotTrib` com `0.00`/ISS quando o cliente nada informa; campo obrigatório ausente lança exceção.
+- `comExterior`: removidos os defaults presumidos (`mdPrestacao`/`tpMoeda`/`mecAFComexP` etc.) na conversão DTO→entidade — campo obrigatório ausente lança exceção em vez de inventar valor.
+- `atvEvento`: removidos os defaults presumidos (`xNome=''`, datas=`now`, endExt vazio) — campos obrigatórios vêm do cliente ou geram erro.
+- `docDedRed` (DTO→entidade): removidos os defaults presumidos (`tipoDocumento='nDoc'`, `tpDedRed='99'`, data=`now`, valores=`0.00`) — campos obrigatórios vêm do cliente ou geram erro.
+- `xNome` de destinatário (`IbsCbsDest`) e fornecedor (`IbsCbsFornecedor`) é rejeitado se vazio na construção da entidade (obrigatório no XSD), em vez de aceitar string vazia presumida.
+- Builder `piscofins`: deixa de emitir o grupo sem `CST` (obrigatório, `TCTribOutrosPisCofins`); lança exceção em vez de gerar XML inválido.
+
+### Added
+- Validação: benefício municipal (`vRedBCBM`) não pode exceder `vServ` (evita base de cálculo negativa).
+- Validação: `totTrib` é obrigatório (`TCTribTotal`) e, no modo `vTotTrib`, exige `vTotTribFed`/`vTotTribEst`/`vTotTribMun`.
+- Validação: `comExterior` exige `mecAFComexP`/`mecAFComexT`/`movTempBens`/`mdic` (todos `minOccurs=1` no XSD).
+- Validação: `docRef` é obrigatório quando a NFS-e é emitida pelo Tomador ou Intermediário (`tpEmit=2`/`3`), conforme documentação do XSD.
+
+---
+
 ## [v2.2.9] - 2026-06-15
 
 ### ⚠️ BREAKING CHANGES
@@ -292,7 +311,8 @@ Ajustes de leiaute confirmados pela **NT-007 SE/CGNFS-e v1.0**.
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.9...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.0...HEAD
+[v2.3.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.9...v2.3.0
 [v2.2.9]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.8...v2.2.9
 [v2.2.8]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.7...v2.2.8
 [v2.2.7]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.6...v2.2.7

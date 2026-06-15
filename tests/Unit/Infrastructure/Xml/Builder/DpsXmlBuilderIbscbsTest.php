@@ -93,7 +93,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             complemento: null,
             bairro: 'Jardim',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
         $dest = new IbsCbsDest(
@@ -244,7 +243,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             complemento: 'Sala 10',
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
         $dest = new IbsCbsDest(
@@ -453,7 +451,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
         $servico = new Servico(
@@ -464,6 +461,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             obra: $obra,
         );
@@ -522,7 +521,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
         $servico = new Servico(
@@ -533,6 +531,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             obra: $obra,
         );
@@ -587,6 +587,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             codigoPaisPrestacao: 'US',
         );
@@ -609,6 +611,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             codigoTributacaoMunicipal: '123',
         );
@@ -631,6 +635,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             codigoInternoContribuinte: 'INT001',
         );
@@ -653,6 +659,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             valorRecebido: 800.00,
         );
@@ -686,6 +694,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             comExterior: $comExterior,
         );
@@ -720,6 +730,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             atvEvento: $atvEvento,
         );
@@ -752,6 +764,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             infoCompl: $infoCompl,
         );
@@ -789,6 +803,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             documentosDeducao: [$doc],
         );
@@ -820,6 +836,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             exigSusp: $exigSusp,
         );
@@ -845,6 +863,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             beneficioMunicipal: $bm,
         );
@@ -877,6 +897,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '12345678',
             tribFederal: $tribFed,
         );
@@ -907,6 +929,9 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             aliquotaIss: 5.0,
             codigoNbs: '12345678',
             totTribTipo: 'vTotTrib',
+            vTotTribFed: 100.00,
+            vTotTribEst: 0.00,
+            vTotTribMun: 50.00,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
         $dps->gerarChaveAcesso();
@@ -1032,7 +1057,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
         $intermediario = new Intermediario(
@@ -1091,7 +1115,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
 
@@ -1128,6 +1151,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
                 descontoIncondicionado: new Money(0),
                 descontoCondicionado: new Money(0),
                 aliquotaIss: 5.0,
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 codigoNbs: '12345678',
             ),
             ibscbs: $ibscbs,
@@ -1146,7 +1171,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
 
@@ -1183,6 +1207,8 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
                 descontoIncondicionado: new Money(0),
                 descontoCondicionado: new Money(0),
                 aliquotaIss: 5.0,
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
             ),
         );
     }

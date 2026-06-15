@@ -54,4 +54,16 @@ final class IbsCbsFornecedorTest extends TestCase
 
         $this->assertSame('0', $f->getCodigoNaoNif());
     }
+
+    public function test_xnome_vazio_throws(): void
+    {
+        // xNome é obrigatório quando o grupo fornecedor é informado — sem presunção.
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('xNome do fornecedor é obrigatório');
+
+        new IbsCbsFornecedor(
+            cnpj: new Cnpj('11444777000161'),
+            xNome: '',
+        );
+    }
 }

@@ -233,10 +233,12 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
             $this->addChild($extNode, 'xCidade', $endereco->getNomeCidadeExterior(), true);
             $this->addChild($extNode, 'xEstProvReg', $endereco->getEstadoProvinciaExterior(), true);
         } else {
+            $cMun = $endereco->getCodigoMunicipio();
+            $cep = $endereco->getCep();
             $nacNode = $this->dom->createElement('endNac');
             $endNode->appendChild($nacNode);
-            $this->addChild($nacNode, 'cMun', $endereco->getCodigoMunicipio()->getCodigo(), true);
-            $this->addChild($nacNode, 'CEP', $endereco->getCep()->getCep(), true);
+            $this->addChild($nacNode, 'cMun', $cMun?->getCodigo(), true);
+            $this->addChild($nacNode, 'CEP', $cep?->getCep(), true);
         }
 
         $this->addChild($endNode, 'xLgr', $endereco->getLogradouro(), true);
@@ -496,11 +498,15 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         $parent->appendChild($node);
 
         if ($tribFed->getPisCofinsCst() !== null || $tribFed->getPisCofinsAliquotaPis() !== null) {
+            $cst = $tribFed->getPisCofinsCst();
+            if ($cst === null) {
+                throw new \InvalidArgumentException(
+                    'CST do PIS/COFINS é obrigatório quando o grupo piscofins é emitido (TCTribOutrosPisCofins)'
+                );
+            }
             $pisNode = $this->dom->createElement('piscofins');
             $node->appendChild($pisNode);
-            if ($tribFed->getPisCofinsCst() !== null) {
-                $this->addChild($pisNode, 'CST', $tribFed->getPisCofinsCst(), true);
-            }
+            $this->addChild($pisNode, 'CST', $cst, true);
             if ($tribFed->getPisCofinsBaseCalculo() !== null) {
                 $this->addChild($pisNode, 'vBCPisCofins', number_format((float) $tribFed->getPisCofinsBaseCalculo(), 2, '.', ''), false);
             }
@@ -605,27 +611,54 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $tipo = $servico->getTotTribTipo();
 
-        if ($tipo === 'pTotTribSN' && $servico->getPTotTribSN() !== null) {
-            $this->addChild($tt, 'pTotTribSN', number_format($servico->getPTotTribSN(), 2, '.', ''), true);
+        if ($tipo === 'pTotTribSN') {
+            $sn = $this->requireFloat($servico->getPTotTribSN(), 'pTotTribSN');
+            $this->addChild($tt, 'pTotTribSN', number_format($sn, 2, '.', ''), true);
         } elseif ($tipo === 'indTotTrib') {
-            $this->addChild($tt, 'indTotTrib', $servico->getIndTotTrib() ?? '0', true);
+            $ind = $servico->getIndTotTrib();
+            if ($ind === null) {
+                throw $this->faltaCampo('indTotTrib');
+            }
+            $this->addChild($tt, 'indTotTrib', $ind, true);
         } elseif ($tipo === 'pTotTrib') {
+            $fed = $this->requireFloat($servico->getPTotTribFed(), 'pTotTribFed');
+            $est = $this->requireFloat($servico->getPTotTribEst(), 'pTotTribEst');
+            $mun = $this->requireFloat($servico->getPTotTribMun(), 'pTotTribMun');
             $pt = $this->dom->createElement('pTotTrib');
             $tt->appendChild($pt);
-            $this->addChild($pt, 'pTotTribFed', $servico->getPTotTribFed() !== null ? number_format($servico->getPTotTribFed(), 2, '.', '') : '0.00', true);
-            $this->addChild($pt, 'pTotTribEst', $servico->getPTotTribEst() !== null ? number_format($servico->getPTotTribEst(), 2, '.', '') : '0.00', true);
-            $this->addChild($pt, 'pTotTribMun', $servico->getPTotTribMun() !== null ? number_format($servico->getPTotTribMun(), 2, '.', '') : '0.00', true);
-        } else {
-            // default: vTotTrib (valores monetários aproximados — Lei 12.741/2012).
-            // Usa os valores informados; na ausência, federal/estadual ficam em 0.00 e o
-            // municipal recai sobre o ISS calculado (mantém o comportamento legado).
+            $this->addChild($pt, 'pTotTribFed', number_format($fed, 2, '.', ''), true);
+            $this->addChild($pt, 'pTotTribEst', number_format($est, 2, '.', ''), true);
+            $this->addChild($pt, 'pTotTribMun', number_format($mun, 2, '.', ''), true);
+        } elseif ($tipo === 'vTotTrib') {
+            $fed = $this->requireFloat($servico->getVTotTribFed(), 'vTotTribFed');
+            $est = $this->requireFloat($servico->getVTotTribEst(), 'vTotTribEst');
+            $mun = $this->requireFloat($servico->getVTotTribMun(), 'vTotTribMun');
             $vt = $this->dom->createElement('vTotTrib');
             $tt->appendChild($vt);
-            $vTotTribMun = $servico->getVTotTribMun() ?? $servico->getValorIss()->getValue();
-            $this->addChild($vt, 'vTotTribFed', number_format($servico->getVTotTribFed() ?? 0.0, 2, '.', ''), true);
-            $this->addChild($vt, 'vTotTribEst', number_format($servico->getVTotTribEst() ?? 0.0, 2, '.', ''), true);
-            $this->addChild($vt, 'vTotTribMun', number_format($vTotTribMun, 2, '.', ''), true);
+            $this->addChild($vt, 'vTotTribFed', number_format($fed, 2, '.', ''), true);
+            $this->addChild($vt, 'vTotTribEst', number_format($est, 2, '.', ''), true);
+            $this->addChild($vt, 'vTotTribMun', number_format($mun, 2, '.', ''), true);
+        } else {
+            throw new \InvalidArgumentException(
+                'totTribTipo é obrigatório e deve ser um de: vTotTrib, pTotTrib, indTotTrib, pTotTribSN — a biblioteca não presume valores de total de tributos'
+            );
         }
+    }
+
+    private function requireFloat(?float $value, string $campo): float
+    {
+        if ($value === null) {
+            throw $this->faltaCampo($campo);
+        }
+
+        return $value;
+    }
+
+    private function faltaCampo(string $campo): \InvalidArgumentException
+    {
+        return new \InvalidArgumentException(
+            "{$campo} é obrigatório para o modo de total de tributos informado — a biblioteca não presume valores fiscais"
+        );
     }
 
     private function buildIbscbs(\DOMNode $parent, IbsCbsInfo $ibscbs): void

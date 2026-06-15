@@ -19,7 +19,6 @@ final class EnderecoTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
 
@@ -28,7 +27,6 @@ final class EnderecoTest extends TestCase
         $this->assertNull($end->getComplemento());
         $this->assertSame('Centro', $end->getBairro());
         $this->assertSame('3550308', $end->getCodigoMunicipio()->getCodigo());
-        $this->assertSame('SP', $end->getUf());
         $this->assertSame('01001001', $end->getCep()->getCep());
         $this->assertNull($end->getCodigoPais());
         $this->assertNull($end->getCodigoPostalExterior());
@@ -39,14 +37,14 @@ final class EnderecoTest extends TestCase
 
     public function test_create_exterior(): void
     {
+        // Exterior: cMun/CEP nacionais não se aplicam (choice endExt) — são null.
         $end = new Endereco(
             logradouro: 'Main Street',
             numero: '456',
             complemento: 'Suite 200',
             bairro: 'Downtown',
-            codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
-            cep: new Cep('00000000'),
+            codigoMunicipio: null,
+            cep: null,
             codigoPais: '049',
             codigoPostalExterior: '10001',
             nomeCidadeExterior: 'New York',
@@ -57,11 +55,29 @@ final class EnderecoTest extends TestCase
         $this->assertSame('456', $end->getNumero());
         $this->assertSame('Suite 200', $end->getComplemento());
         $this->assertSame('Downtown', $end->getBairro());
+        $this->assertNull($end->getCodigoMunicipio());
+        $this->assertNull($end->getCep());
         $this->assertSame('049', $end->getCodigoPais());
         $this->assertSame('10001', $end->getCodigoPostalExterior());
         $this->assertSame('New York', $end->getNomeCidadeExterior());
         $this->assertSame('NY', $end->getEstadoProvinciaExterior());
         $this->assertTrue($end->isExterior());
+    }
+
+    public function test_create_nacional_sem_cmun_throws(): void
+    {
+        // Endereço nacional exige cMun e CEP — a lib não presume '0000000'/'00000000'.
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Endereço nacional exige');
+
+        new Endereco(
+            logradouro: 'Rua Exemplo',
+            numero: '123',
+            complemento: null,
+            bairro: 'Centro',
+            codigoMunicipio: null,
+            cep: new Cep('01001001'),
+        );
     }
 
     public function test_create_with_complemento(): void
@@ -72,7 +88,6 @@ final class EnderecoTest extends TestCase
             complemento: 'Apto 42',
             bairro: 'Bela Vista',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01310000'),
         );
 
@@ -90,7 +105,6 @@ final class EnderecoTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
     }
@@ -106,7 +120,6 @@ final class EnderecoTest extends TestCase
             complemento: null,
             bairro: '',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
     }
@@ -119,7 +132,6 @@ final class EnderecoTest extends TestCase
             complemento: null,
             bairro: 'Bairro X',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
 
@@ -127,7 +139,6 @@ final class EnderecoTest extends TestCase
         $this->assertIsString($end->getNumero());
         $this->assertIsString($end->getBairro());
         $this->assertInstanceOf(CodigoMunicipio::class, $end->getCodigoMunicipio());
-        $this->assertIsString($end->getUf());
         $this->assertInstanceOf(Cep::class, $end->getCep());
     }
 }

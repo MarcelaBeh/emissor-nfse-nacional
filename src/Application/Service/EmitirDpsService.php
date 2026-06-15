@@ -225,18 +225,14 @@ class EmitirDpsService
                 ? new Cnpj($request->prestador->documento)
                 : new Cpf($request->prestador->documento);
         }
-        $enderecoPrestador = null;
-        if ($request->prestador->logradouro !== null && $request->prestador->cep !== null) {
-            $enderecoPrestador = $this->criarEndereco(
-                $request->prestador->logradouro,
-                $request->prestador->numero ?? '',
-                $request->prestador->complemento,
-                $request->prestador->bairro ?? '',
-                $request->prestador->codigoMunicipio,
-                $request->prestador->uf ?? '',
-                $request->prestador->cep
-            );
-        }
+        $enderecoPrestador = $this->criarEnderecoPessoa(
+            $request->prestador->logradouro,
+            $request->prestador->numero,
+            $request->prestador->complemento,
+            $request->prestador->bairro,
+            $request->prestador->codigoMunicipio,
+            $request->prestador->cep,
+        );
 
         $prestador = new Prestador(
             documento: $documentoPrestador,
@@ -275,7 +271,6 @@ class EmitirDpsService
                     $request->tomador->complemento,
                     $request->tomador->bairro,
                     $request->tomador->codigoMunicipio,
-                    $request->tomador->uf,
                     $request->tomador->cep,
                     $request->tomador->codigoPais,
                     $request->tomador->codigoPostalExterior,
@@ -311,7 +306,6 @@ class EmitirDpsService
                     $i->complemento,
                     $i->bairro,
                     $i->codigoMunicipio,
-                    $i->uf,
                     $i->cep,
                     $i->codigoPais,
                     $i->codigoPostalExterior,
@@ -416,36 +410,18 @@ class EmitirDpsService
                     $docDest = new Cpf($d->cpf);
                 }
 
-                $endDest = null;
-                $destEhExterior = $d->codigoPais !== null;
-                if ($destEhExterior && $d->logradouro !== null && $d->numero !== null && $d->bairro !== null) {
-                    $endDest = $this->criarEndereco(
-                        $d->logradouro,
-                        $d->numero,
-                        $d->complemento,
-                        $d->bairro,
-                        $d->codigoMunicipio ?? '0000000',
-                        $d->uf ?? '',
-                        $d->cep ?? '00000000',
-                        $d->codigoPais,
-                        $d->codigoPostalExterior,
-                        $d->nomeCidadeExterior,
-                        $d->estadoProvinciaExterior,
-                    );
-                } elseif (
-                    $d->logradouro !== null && $d->numero !== null && $d->bairro !== null
-                    && $d->codigoMunicipio !== null && $d->cep !== null
-                ) {
-                    $endDest = new Endereco(
-                        logradouro: $d->logradouro,
-                        numero: $d->numero,
-                        complemento: $d->complemento,
-                        bairro: $d->bairro,
-                        codigoMunicipio: new CodigoMunicipio($d->codigoMunicipio),
-                        uf: $d->uf ?? '',
-                        cep: new Cep($d->cep),
-                    );
-                }
+                $endDest = $this->criarEnderecoPessoa(
+                    $d->logradouro,
+                    $d->numero,
+                    $d->complemento,
+                    $d->bairro,
+                    $d->codigoMunicipio,
+                    $d->cep,
+                    $d->codigoPais,
+                    $d->codigoPostalExterior,
+                    $d->nomeCidadeExterior,
+                    $d->estadoProvinciaExterior,
+                );
 
                 $dest = new IbsCbsDest(
                     cnpj: $docDest instanceof Cnpj ? $docDest : null,
@@ -602,17 +578,36 @@ class EmitirDpsService
         }
 
         return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior(
-            modoPrestacao: $req->modoPrestacao ?? 0,
-            vinculoPrestador: $req->vinculoPrestador ?? 0,
-            codigoMoeda: $req->codigoMoeda ?? 'BRL',
-            valorServicoMoeda: $req->valorServicoMoeda ?? 0.0,
-            mecanismoApoioPrestador: $req->mecanismoApoioPrestador ?? '00',
-            mecanismoApoioTomador: $req->mecanismoApoioTomador ?? '00',
-            movimentacaoTemporaria: $req->movimentacaoTemporaria ?? '0',
-            enviarMDIC: $req->enviarMDIC ?? '0',
+            modoPrestacao: $this->exigir($req->modoPrestacao, 'mdPrestacao'),
+            vinculoPrestador: $this->exigir($req->vinculoPrestador, 'vincPrest'),
+            codigoMoeda: $this->exigir($req->codigoMoeda, 'tpMoeda'),
+            valorServicoMoeda: $this->exigir($req->valorServicoMoeda, 'vServMoeda'),
+            mecanismoApoioPrestador: $this->exigir($req->mecanismoApoioPrestador, 'mecAFComexP'),
+            mecanismoApoioTomador: $this->exigir($req->mecanismoApoioTomador, 'mecAFComexT'),
+            movimentacaoTemporaria: $this->exigir($req->movimentacaoTemporaria, 'movTempBens'),
+            enviarMDIC: $this->exigir($req->enviarMDIC, 'mdic'),
             numeroDeclaracaoImportacao: $req->numeroDeclaracaoImportacao,
             numeroRegistroExportacao: $req->numeroRegistroExportacao,
         );
+    }
+
+    /**
+     * Garante que um campo obrigatório do XSD foi informado pelo cliente.
+     * A biblioteca nunca presume valores fiscais — ausência é erro, não default.
+     *
+     * @template T
+     * @param T|null $valor
+     * @return T
+     */
+    private function exigir(mixed $valor, string $campo): mixed
+    {
+        if ($valor === null) {
+            throw new \InvalidArgumentException(
+                "{$campo} é obrigatório e não pode ser presumido pela biblioteca"
+            );
+        }
+
+        return $valor;
     }
 
     private function criarAtvEvento(?\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\AtvEventoRequest $req): ?\MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento
@@ -621,22 +616,23 @@ class EmitirDpsService
             return null;
         }
 
+        // Campos obrigatórios do XSD (TCAtvEvento e TCEnderObraEvento): sem presunção.
         $endereco = null;
         if ($req->endereco !== null) {
             $endExt = null;
             if ($req->endereco->codigoPais !== null) {
                 $endExt = new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoExterior(
-                    cEndPost: $req->endereco->codigoPostalExterior ?? '',
-                    xCidade: $req->endereco->nomeCidadeExterior ?? '',
-                    xEstProvReg: $req->endereco->estadoProvinciaExterior ?? '',
+                    cEndPost: $this->exigir($req->endereco->codigoPostalExterior, 'cEndPost'),
+                    xCidade: $this->exigir($req->endereco->nomeCidadeExterior, 'xCidade'),
+                    xEstProvReg: $this->exigir($req->endereco->estadoProvinciaExterior, 'xEstProvReg'),
                 );
             }
             $endereco = new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra(
                 cep: $req->endereco->codigoPais === null ? ($req->endereco->cep ?? null) : null,
                 endExt: $endExt,
-                xLgr: $req->endereco->logradouro ?? '',
-                nro: $req->endereco->numero ?? '',
-                xBairro: $req->endereco->bairro ?? '',
+                xLgr: $this->exigir($req->endereco->logradouro, 'xLgr'),
+                nro: $this->exigir($req->endereco->numero, 'nro'),
+                xBairro: $this->exigir($req->endereco->bairro, 'xBairro'),
                 xCpl: $req->endereco->complemento,
             );
         }
@@ -646,9 +642,9 @@ class EmitirDpsService
         }
 
         return new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento(
-            descricao: $req->descricao ?? '',
-            dataInicio: new \DateTimeImmutable($req->dataInicio ?? 'now'),
-            dataFim: new \DateTimeImmutable($req->dataFim ?? 'now'),
+            descricao: $this->exigir($req->descricao, 'xNome (atvEvento)'),
+            dataInicio: new \DateTimeImmutable($this->exigir($req->dataInicio, 'dtIni')),
+            dataFim: new \DateTimeImmutable($this->exigir($req->dataFim, 'dtFim')),
             identificacaoEvento: $req->identificacaoEvento,
             endereco: $endereco,
         );
@@ -679,9 +675,11 @@ class EmitirDpsService
             return null;
         }
 
+        // Campos obrigatórios do XSD (TCDocDedRed): a lib não presume tipo de documento,
+        // tipo de dedução, data nem valores fiscais. O DpsValidator já rejeita ausências.
         return array_map(
             fn ($d) => new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed(
-                tipoDocumento: $d->tipoDocumento ?? 'nDoc',
+                tipoDocumento: $this->exigir($d->tipoDocumento, 'tipoDocumento (docDedRed)'),
                 chaveNFSe: $d->chaveNFSe,
                 chaveNFe: $d->chaveNFe,
                 codigoMunicipioNFSe: $d->codigoMunicipioNFSe,
@@ -692,11 +690,11 @@ class EmitirDpsService
                 serieNFS: $d->serieNFS,
                 numeroDocFiscal: $d->numeroDocFiscal,
                 numeroDoc: $d->numeroDoc,
-                tipoDeducaoReducao: $d->tipoDeducaoReducao ?? '99',
+                tipoDeducaoReducao: $this->exigir($d->tipoDeducaoReducao, 'tpDedRed'),
                 descricaoOutrasDeducoes: $d->descricaoOutrasDeducoes,
-                dataEmissaoDoc: new \DateTimeImmutable($d->dataEmissaoDoc ?? 'now'),
-                valorDedutivel: $d->valorDedutivel ?? '0.00',
-                valorDeducao: $d->valorDeducao ?? '0.00',
+                dataEmissaoDoc: new \DateTimeImmutable($this->exigir($d->dataEmissaoDoc, 'dtEmiDoc')),
+                valorDedutivel: $this->exigir($d->valorDedutivel, 'vDedutivelRedutivel'),
+                valorDeducao: $this->exigir($d->valorDeducao, 'vDeducaoReducao'),
                 fornecedor: $d->fornecedor !== null
                     ? new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsFornecedor(
                         cnpj: $d->fornecedor->cnpj !== null ? new Cnpj($d->fornecedor->cnpj) : null,
@@ -767,7 +765,6 @@ class EmitirDpsService
         ?string $complemento,
         ?string $bairro,
         ?string $codigoMunicipio,
-        ?string $uf,
         ?string $cep,
         ?string $codigoPais = null,
         ?string $codigoPostalExterior = null,
@@ -782,42 +779,15 @@ class EmitirDpsService
             return null;
         }
 
-        return new Endereco(
-            logradouro: $logradouro ?? '',
-            numero: $numero ?? '',
-            complemento: $complemento,
-            bairro: $bairro ?? '',
-            codigoMunicipio: new CodigoMunicipio($codigoMunicipio ?? '0000000'),
-            uf: $uf ?? '',
-            cep: new Cep($cep ?? '00000000'),
-            codigoPais: $codigoPais,
-            codigoPostalExterior: $codigoPostalExterior,
-            nomeCidadeExterior: $nomeCidadeExterior,
-            estadoProvinciaExterior: $estadoProvinciaExterior,
-        );
-    }
+        $ehExterior = $codigoPais !== null;
 
-    private function criarEndereco(
-        string $logradouro,
-        string $numero,
-        ?string $complemento,
-        string $bairro,
-        string $codigoMunicipio,
-        string $uf,
-        string $cep,
-        ?string $codigoPais = null,
-        ?string $codigoPostalExterior = null,
-        ?string $nomeCidadeExterior = null,
-        ?string $estadoProvinciaExterior = null,
-    ): Endereco {
         return new Endereco(
-            logradouro: $logradouro,
-            numero: $numero,
+            logradouro: $this->exigir($logradouro, 'xLgr'),
+            numero: $this->exigir($numero, 'nro'),
             complemento: $complemento,
-            bairro: $bairro,
-            codigoMunicipio: new CodigoMunicipio($codigoMunicipio),
-            uf: $uf,
-            cep: new Cep($cep),
+            bairro: $this->exigir($bairro, 'xBairro'),
+            codigoMunicipio: $ehExterior ? null : new CodigoMunicipio($this->exigir($codigoMunicipio, 'cMun')),
+            cep: $ehExterior ? null : new Cep($this->exigir($cep, 'CEP')),
             codigoPais: $codigoPais,
             codigoPostalExterior: $codigoPostalExterior,
             nomeCidadeExterior: $nomeCidadeExterior,

@@ -31,7 +31,6 @@ final class DpsTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
     }
@@ -70,6 +69,8 @@ final class DpsTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
         );
     }
 

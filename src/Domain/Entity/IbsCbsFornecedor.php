@@ -17,6 +17,9 @@ class IbsCbsFornecedor
         private ?string $codigoNaoNif = null,
         private string $xNome = '',
     ) {
+        if (trim($this->xNome) === '') {
+            throw new \InvalidArgumentException('xNome do fornecedor é obrigatório');
+        }
     }
 
     public function getCnpj(): ?Cnpj

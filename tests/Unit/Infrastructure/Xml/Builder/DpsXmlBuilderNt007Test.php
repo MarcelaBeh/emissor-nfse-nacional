@@ -69,6 +69,19 @@ final class DpsXmlBuilderNt007Test extends TestCase
         $this->assertLessThan($posTpRet, $posVCofins);
     }
 
+    public function test_piscofins_sem_cst_lanca_excecao(): void
+    {
+        // CST é obrigatório no grupo piscofins (TCTribOutrosPisCofins). Informar pAliqPis
+        // sem CST não pode gerar <piscofins> sem CST — a lib falha alto.
+        $tribFederal = new TribFederal(
+            pisCofinsAliquotaPis: 1.65, // sem pisCofinsCst
+        );
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('CST do PIS/COFINS é obrigatório');
+        $this->builder->build($this->createDps(tribFederal: $tribFederal));
+    }
+
     public function test_vtottrib_monetario_usa_valores_informados(): void
     {
         $servico = $this->createServico(
@@ -85,16 +98,13 @@ final class DpsXmlBuilderNt007Test extends TestCase
         $this->assertStringContainsString('<vTotTribMun>50.00</vTotTribMun>', $xml);
     }
 
-    public function test_vtottrib_municipal_recai_no_iss_quando_nao_informado(): void
+    public function test_vtottrib_sem_valores_informados_lanca_excecao(): void
     {
-        // aliquotaIss 5% sobre 1000 = 50.00; sem valores informados o municipal vem do ISS.
         $servico = $this->createServico(totTribTipo: 'vTotTrib', aliquotaIss: 5.0);
 
-        $xml = $this->builder->build($this->createDps(servico: $servico));
-
-        $this->assertStringContainsString('<vTotTribFed>0.00</vTotTribFed>', $xml);
-        $this->assertStringContainsString('<vTotTribEst>0.00</vTotTribEst>', $xml);
-        $this->assertStringContainsString('<vTotTribMun>50.00</vTotTribMun>', $xml);
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('vTotTribFed é obrigatório');
+        $this->builder->build($this->createDps(servico: $servico));
     }
 
     public function test_tomador_sem_endereco_omite_grupo_end(): void
@@ -128,7 +138,6 @@ final class DpsXmlBuilderNt007Test extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
 
@@ -157,7 +166,7 @@ final class DpsXmlBuilderNt007Test extends TestCase
                 email: null,
                 endereco: $endereco,
             ),
-            servico: $servico ?? $this->createServico($tribFederal !== null ? 'vTotTrib' : null, tribFederal: $tribFederal),
+            servico: $servico ?? $this->createServico('indTotTrib', tribFederal: $tribFederal),
         );
         $dps->gerarChaveAcesso();
 
@@ -165,7 +174,7 @@ final class DpsXmlBuilderNt007Test extends TestCase
     }
 
     private function createServico(
-        ?string $totTribTipo = null,
+        ?string $totTribTipo = 'indTotTrib',
         ?float $vTotTribFed = null,
         ?float $vTotTribEst = null,
         ?float $vTotTribMun = null,
@@ -183,6 +192,7 @@ final class DpsXmlBuilderNt007Test extends TestCase
             codigoNbs: '12345678',
             tribFederal: $tribFederal,
             totTribTipo: $totTribTipo,
+            indTotTrib: $totTribTipo === 'indTotTrib' ? '0' : null,
             vTotTribFed: $vTotTribFed,
             vTotTribEst: $vTotTribEst,
             vTotTribMun: $vTotTribMun,

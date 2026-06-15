@@ -90,7 +90,6 @@ class DpsFactory
             complemento: $data['complemento'] ?? null,
             bairro: $data['bairro'],
             codigoMunicipio: new CodigoMunicipio($data['codigoMunicipio']),
-            uf: $data['uf'],
             cep: new Cep($data['cep']),
         );
     }

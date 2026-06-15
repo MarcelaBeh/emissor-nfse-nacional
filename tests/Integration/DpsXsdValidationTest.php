@@ -127,6 +127,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             obra: $obra,
         );
@@ -161,6 +163,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             obra: $obra,
         );
@@ -285,7 +289,6 @@ final class DpsXsdValidationTest extends TestCase
             complemento: null,
             bairro: 'Baixa',
             codigoMunicipio: new CodigoMunicipio('0000000'),
-            uf: '',
             cep: new Cep('00000000'),
             codigoPais: 'PT',
             nomeCidadeExterior: 'Lisboa',
@@ -526,6 +529,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             comExterior: $comExterior,
         );
@@ -554,6 +559,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             atvEvento: $atvEvento,
         );
@@ -582,6 +589,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             infoCompl: $infoCompl,
         );
@@ -612,6 +621,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             documentosDeducao: [$doc],
         );
@@ -636,6 +647,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             exigSusp: $exigSusp,
             beneficioMunicipal: $bm,
@@ -663,6 +676,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             beneficioMunicipal: $bm,
         );
@@ -698,6 +713,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             tribFederal: $tribFed,
         );
@@ -720,6 +737,8 @@ final class DpsXsdValidationTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             codigoNbs: '123456789',
             codigoPaisPrestacao: 'US',
         );
@@ -812,7 +831,6 @@ final class DpsXsdValidationTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
         $intermediario = new Intermediario(
@@ -889,7 +907,6 @@ final class DpsXsdValidationTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
     }
@@ -938,6 +955,8 @@ final class DpsXsdValidationTest extends TestCase
                 descontoIncondicionado: new Money(0),
                 descontoCondicionado: new Money(0),
                 aliquotaIss: 5.0,
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 codigoNbs: '123456789',
             ),
             ibscbs: $ibscbs,

@@ -117,6 +117,40 @@ final class ServicoTest extends TestCase
         $this->assertSame(90.00, $servico->getValorIss()->getValue());
     }
 
+    public function test_beneficio_municipal_valor_reduz_base_calculo(): void
+    {
+        // vRedBCBM = 400 → BC = 2000 - 400 = 1600.
+        $bm = new BeneficioMunicipal(numeroBeneficio: '35503080100001', valorReducaoBC: 400.00);
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(2000.00),
+            aliquotaIss: 5.0,
+            beneficioMunicipal: $bm,
+        );
+
+        $this->assertSame(1600.00, $servico->getBaseCalculo()->getValue());
+        $this->assertSame(80.00, $servico->getValorIss()->getValue());
+    }
+
+    public function test_beneficio_municipal_percentual_reduz_base_calculo(): void
+    {
+        // pRedBCBM = 20% de 2000 = 400 → BC = 1600.
+        $bm = new BeneficioMunicipal(numeroBeneficio: '35503080100001', percentualReducaoBC: 20.0);
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(2000.00),
+            aliquotaIss: 5.0,
+            beneficioMunicipal: $bm,
+        );
+
+        $this->assertSame(1600.00, $servico->getBaseCalculo()->getValue());
+        $this->assertSame(80.00, $servico->getValorIss()->getValue());
+    }
+
     public function test_create_with_all_optionals(): void
     {
         $servico = new Servico(

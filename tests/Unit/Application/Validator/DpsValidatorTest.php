@@ -960,6 +960,8 @@ final class DpsValidatorTest extends TestCase
             codigoNbs: $codigoNbs,
             tribISSQN: '1',
             tpRetISSQN: '1',
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
         );
     }
 
@@ -973,6 +975,8 @@ final class DpsValidatorTest extends TestCase
             codigoNbs: '123456789',
             tribISSQN: '1',
             tpRetISSQN: '1',
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
         );
 
         foreach ($overrides as $key => $value) {
@@ -1015,7 +1019,8 @@ final class DpsValidatorTest extends TestCase
                 aliquotaIss: 5.0,
                 codigoNbs: '123456789',
                 codigoPaisPrestacao: 'US',
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1059,7 +1064,8 @@ final class DpsValidatorTest extends TestCase
                 aliquotaIss: 5.0,
                 codigoNbs: '123456789',
                 codigoTributacaoMunicipal: '123',
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1124,7 +1130,8 @@ final class DpsValidatorTest extends TestCase
                 aliquotaIss: 5.0,
                 codigoNbs: '123456789',
                 valorRecebido: 500.0,
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1156,7 +1163,8 @@ final class DpsValidatorTest extends TestCase
                     movimentacaoTemporaria: '1',
                     enviarMDIC: '0',
                 ),
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1186,6 +1194,46 @@ final class DpsValidatorTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('mdPrestacao');
+        $this->validator->validate($request);
+    }
+
+    public function test_docref_obrigatorio_quando_emitido_por_tomador_throws(): void
+    {
+        // docRef é obrigatório quando tpEmit=2 (Tomador) — XSD documenta a regra contextual.
+        $request = $this->createValidDpsRequest(
+            tipoEmissao: 2,
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('docRef é obrigatório');
+        $this->validator->validate($request);
+    }
+
+    public function test_com_exterior_sem_mecanismos_obrigatorios_throws(): void
+    {
+        // mecAFComexP/mecAFComexT/movTempBens/mdic são obrigatórios no XSD (minOccurs=1).
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                comExterior: new ComExteriorRequest(
+                    modoPrestacao: 1,
+                    vinculoPrestador: 2,
+                    codigoMoeda: '840',
+                    valorServicoMoeda: 1000.00,
+                    // mecAFComexP/mecAFComexT/movTempBens/mdic ausentes
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('mecAFComexP é obrigatório');
         $this->validator->validate($request);
     }
 
@@ -1232,7 +1280,8 @@ final class DpsValidatorTest extends TestCase
                     dataFim: '2026-06-10',
                     identificacaoEvento: 'EVENTO12345678901234567890',
                 ),
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1379,7 +1428,8 @@ final class DpsValidatorTest extends TestCase
                         valorDeducao: '1000.00',
                     ),
                 ],
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1549,7 +1599,8 @@ final class DpsValidatorTest extends TestCase
                 aliquotaIss: 5.0,
                 codigoNbs: '123456789',
                 codigoPaisPrestacao: 'US',
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1750,7 +1801,8 @@ final class DpsValidatorTest extends TestCase
                     tipoSuspensao: 1,
                     numeroProcesso: '123456789012345678901234567890',
                 ),
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1796,7 +1848,8 @@ final class DpsValidatorTest extends TestCase
                 beneficioMunicipal: new BeneficioMunicipalRequest(
                     numeroBeneficio: '12345678901234',
                 ),
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1804,6 +1857,30 @@ final class DpsValidatorTest extends TestCase
 
         $this->validator->validate($request);
         $this->expectNotToPerformAssertions();
+    }
+
+    public function test_beneficio_municipal_vred_excedendo_valor_servico_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                beneficioMunicipal: new BeneficioMunicipalRequest(
+                    numeroBeneficio: '12345678901234',
+                    valorReducaoBC: 1500.0, // benefício > serviço → BC negativa
+                ),
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('vRedBCBM não pode exceder vServ');
+        $this->validator->validate($request);
     }
 
     public function test_beneficio_municipal_empty_throws(): void
@@ -1845,7 +1922,8 @@ final class DpsValidatorTest extends TestCase
                     pisCofinsAliquotaPis: 1.65,
                     pisCofinsAliquotaCofins: 7.60,
                 ),
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -1915,6 +1993,54 @@ final class DpsValidatorTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('totTribTipo');
+        $this->validator->validate($request);
+    }
+
+    public function test_tot_trib_ausente_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
+                // totTribTipo ausente
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('totTribTipo é obrigatório');
+        $this->validator->validate($request);
+    }
+
+    public function test_tot_trib_v_tot_trib_missing_fields_throws(): void
+    {
+        // vTotTrib exige vTotTribFed/Est/Mun (TCTribTotalMonet) — a lib não presume valores.
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
+                totTribTipo: 'vTotTrib',
+                // vTotTribFed/Est/Mun ausentes
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('vTotTribFed é obrigatório');
         $this->validator->validate($request);
     }
 
@@ -2176,7 +2302,8 @@ final class DpsValidatorTest extends TestCase
                 aliquotaIss: 5.0,
                 codigoNbs: '123456789',
                 documentosDeducao: array_fill(0, 1001, $doc),
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),
@@ -2286,7 +2413,8 @@ final class DpsValidatorTest extends TestCase
             descontoCondicionado: 0,
             aliquotaIss: 5.0,
             codigoNbs: '123456789',
-            totTribTipo: 'vTotTrib',
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
             tribISSQN: '1',
             tpRetISSQN: '1',
             tribFederal: new TribFederalRequest(
@@ -2365,7 +2493,8 @@ final class DpsValidatorTest extends TestCase
                 aliquotaIss: $aliquotaIss,
                 codigoNbs: $codigoNbs,
                 obra: $obra,
-                totTribTipo: 'vTotTrib',
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
                 tribISSQN: '1',
                 tpRetISSQN: '1',
             ),

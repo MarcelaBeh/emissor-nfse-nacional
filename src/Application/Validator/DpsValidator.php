@@ -552,7 +552,7 @@ class DpsValidator
         $this->validateObra($s, $errors);
         $this->validateComExterior($s, $errors);
         $this->validateAtvEvento($s, $errors);
-        $this->validateInfoCompl($s, $errors);
+        $this->validateInfoCompl($s, $request->tipoEmissao, $errors);
         $this->validateDocumentosDeducao($s, $errors);
         $this->validateTribMun($s, $errors);
         $this->validateTribFed($s, $errors);
@@ -693,15 +693,21 @@ class DpsValidator
             $errors[] = 'vServMoeda deve ser maior que zero (TSDec15V2)';
         }
 
-        if ($ce->mecanismoApoioPrestador !== null && !in_array($ce->mecanismoApoioPrestador, MecanismoApoioPrestador::valores(), true)) {
+        if ($ce->mecanismoApoioPrestador === null) {
+            $errors[] = 'mecAFComexP é obrigatório (TSMecAFComExPrest)';
+        } elseif (!in_array($ce->mecanismoApoioPrestador, MecanismoApoioPrestador::valores(), true)) {
             $errors[] = 'mecAFComexP inválido (TSMecAFComExPrest)';
         }
 
-        if ($ce->mecanismoApoioTomador !== null && !in_array($ce->mecanismoApoioTomador, MecanismoApoioTomador::valores(), true)) {
+        if ($ce->mecanismoApoioTomador === null) {
+            $errors[] = 'mecAFComexT é obrigatório (TSMecAFComExToma)';
+        } elseif (!in_array($ce->mecanismoApoioTomador, MecanismoApoioTomador::valores(), true)) {
             $errors[] = 'mecAFComexT inválido (TSMecAFComExToma)';
         }
 
-        if ($ce->movimentacaoTemporaria !== null && !in_array($ce->movimentacaoTemporaria, MovimentacaoTemporaria::valores(), true)) {
+        if ($ce->movimentacaoTemporaria === null) {
+            $errors[] = 'movTempBens é obrigatório (TSMovTempBens)';
+        } elseif (!in_array($ce->movimentacaoTemporaria, MovimentacaoTemporaria::valores(), true)) {
             $errors[] = 'movTempBens inválido (TSMovTempBens)';
         }
 
@@ -713,7 +719,9 @@ class DpsValidator
             $errors[] = 'nRE deve ter 1 a 12 caracteres (TSNumRegExport)';
         }
 
-        if ($ce->enviarMDIC !== null && !in_array($ce->enviarMDIC, EnviarMdic::valores(), true)) {
+        if ($ce->enviarMDIC === null) {
+            $errors[] = 'mdic é obrigatório (TSEnvMDIC)';
+        } elseif (!in_array($ce->enviarMDIC, EnviarMdic::valores(), true)) {
             $errors[] = 'mdic inválido (TSEnvMDIC)';
         }
     }
@@ -812,9 +820,15 @@ class DpsValidator
     }
 
     /** @param array<string> $errors */
-    private function validateInfoCompl(ServicoRequest $s, array &$errors): void
+    private function validateInfoCompl(ServicoRequest $s, int $tipoEmissao, array &$errors): void
     {
         $ic = $s->infoCompl;
+
+        $emitidaPorTomadorOuInterm = in_array($tipoEmissao, [2, 3], true);
+        if ($emitidaPorTomadorOuInterm && ($ic === null || $ic->docReferencia === null || $ic->docReferencia === '')) {
+            $errors[] = 'docRef é obrigatório quando a NFS-e é emitida pelo Tomador ou Intermediário (tpEmit=2 ou 3)';
+        }
+
         if ($ic === null) {
             return;
         }
@@ -1063,6 +1077,10 @@ class DpsValidator
             if ($hasPRed && ($bm->percentualReducaoBC < 0 || $bm->percentualReducaoBC > 100)) {
                 $errors[] = 'pRedBCBM deve estar entre 0 e 100 (TSDec3V2)';
             }
+
+            if ($hasVRed && $bm->valorReducaoBC > $s->valorServicos) {
+                $errors[] = 'vRedBCBM não pode exceder vServ (base de cálculo negativa)';
+            }
         }
 
         if ($s->tpRetISSQN === null) {
@@ -1111,17 +1129,28 @@ class DpsValidator
     /** @param array<string> $errors */
     private function validateTotTrib(ServicoRequest $s, array &$errors): void
     {
-        $hasTotTrib = $s->totTribTipo !== null || $s->pTotTribFed !== null
-            || $s->pTotTribEst !== null || $s->pTotTribMun !== null
-            || $s->indTotTrib !== null || $s->pTotTribSN !== null;
-
-        if (!$hasTotTrib) {
-            return;
-        }
-
         $validTypes = ['vTotTrib', 'pTotTrib', 'indTotTrib', 'pTotTribSN'];
         if ($s->totTribTipo === null || !in_array($s->totTribTipo, $validTypes, true)) {
             $errors[] = 'totTribTipo é obrigatório — deve ser vTotTrib, pTotTrib, indTotTrib ou pTotTribSN (TCTribTotal choice)';
+
+            return;
+        }
+
+        if ($s->totTribTipo === 'vTotTrib') {
+            if ($s->vTotTribFed === null) {
+                $errors[] = 'vTotTribFed é obrigatório quando totTribTipo=vTotTrib (TSDec15V2)';
+            }
+            if ($s->vTotTribEst === null) {
+                $errors[] = 'vTotTribEst é obrigatório quando totTribTipo=vTotTrib (TSDec15V2)';
+            }
+            if ($s->vTotTribMun === null) {
+                $errors[] = 'vTotTribMun é obrigatório quando totTribTipo=vTotTrib (TSDec15V2)';
+            }
+            foreach (['vTotTribFed' => $s->vTotTribFed, 'vTotTribEst' => $s->vTotTribEst, 'vTotTribMun' => $s->vTotTribMun] as $campo => $valor) {
+                if ($valor !== null && $valor < 0) {
+                    $errors[] = "{$campo} não pode ser negativo (TSDec15V2)";
+                }
+            }
         }
 
         if ($s->totTribTipo === 'pTotTrib') {

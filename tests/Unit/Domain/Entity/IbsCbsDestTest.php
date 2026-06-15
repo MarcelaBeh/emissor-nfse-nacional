@@ -71,7 +71,6 @@ final class IbsCbsDestTest extends TestCase
             complemento: null,
             bairro: 'Centro',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
         $dest = new IbsCbsDest(xNome: 'Com Endereço', endereco: $endereco);
@@ -102,7 +101,6 @@ final class IbsCbsDestTest extends TestCase
             complemento: 'Apto 10',
             bairro: 'Jardim',
             codigoMunicipio: new CodigoMunicipio('3550308'),
-            uf: 'SP',
             cep: new Cep('01001001'),
         );
 
@@ -124,5 +122,17 @@ final class IbsCbsDestTest extends TestCase
         $this->assertSame($endereco, $dest->getEndereco());
         $this->assertSame('11988888888', $dest->getFone());
         $this->assertSame('contato@dest.com', $dest->getEmail());
+    }
+
+    public function test_xnome_vazio_throws(): void
+    {
+        // xNome é obrigatório (TCRTCInfoDest, minOccurs=1) — a lib não presume nome vazio.
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('xNome do destinatário é obrigatório');
+
+        new IbsCbsDest(
+            cnpj: new Cnpj('11444777000161'),
+            xNome: '',
+        );
     }
 }

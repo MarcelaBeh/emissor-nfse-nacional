@@ -62,10 +62,13 @@ class Servico
     private function calcularValores(Money $valorServicos): void
     {
         $valorDeducoes = $this->calcularValorDeducao($valorServicos);
+        $reducaoBM = $this->calcularReducaoBeneficioMunicipal($valorServicos);
         $descontoIncond = $this->descontoIncondicionado ?? new Money(0);
         $descontoCond = $this->descontoCondicionado ?? new Money(0);
 
-        $this->baseCalculo = $valorServicos->subtract($valorDeducoes);
+        $this->baseCalculo = $valorServicos
+            ->subtract($valorDeducoes)
+            ->subtract($reducaoBM);
         $this->valorIss = $this->aliquotaIss !== null
             ? $this->baseCalculo->percentage($this->aliquotaIss)
             : new Money(0);
@@ -95,6 +98,30 @@ class Servico
             }
 
             return new Money($total);
+        }
+
+        return new Money(0);
+    }
+
+    /**
+     * Valor monetário da redução da base de cálculo por Benefício Municipal (BM),
+     * derivado do choice vRedBCBM | pRedBCBM. Conforme o XSD:
+     * vBC = vServ - descIncond - deduções - benefício municipal.
+     */
+    private function calcularReducaoBeneficioMunicipal(Money $valorServicos): Money
+    {
+        if ($this->beneficioMunicipal === null) {
+            return new Money(0);
+        }
+
+        $valor = $this->beneficioMunicipal->getValorReducaoBC();
+        if ($valor !== null) {
+            return new Money($valor);
+        }
+
+        $percentual = $this->beneficioMunicipal->getPercentualReducaoBC();
+        if ($percentual !== null) {
+            return $valorServicos->percentage($percentual);
         }
 
         return new Money(0);

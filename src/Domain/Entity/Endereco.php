@@ -14,9 +14,8 @@ class Endereco
         private string $numero,
         private ?string $complemento,
         private string $bairro,
-        private CodigoMunicipio $codigoMunicipio,
-        private string $uf,
-        private Cep $cep,
+        private ?CodigoMunicipio $codigoMunicipio,
+        private ?Cep $cep,
         private ?string $codigoPais = null,
         private ?string $nomeCidadeExterior = null,
         private ?string $estadoProvinciaExterior = null,
@@ -33,6 +32,13 @@ class Endereco
 
         if (empty($this->bairro)) {
             throw new \InvalidArgumentException('Bairro é obrigatório');
+        }
+
+        // Choice do XSD (TCEndereco): endNac exige cMun+CEP; endExt não os usa.
+        if (!$this->isExterior() && ($this->codigoMunicipio === null || $this->cep === null)) {
+            throw new \InvalidArgumentException(
+                'Endereço nacional exige código de município (cMun) e CEP'
+            );
         }
     }
 
@@ -56,17 +62,12 @@ class Endereco
         return $this->bairro;
     }
 
-    public function getCodigoMunicipio(): CodigoMunicipio
+    public function getCodigoMunicipio(): ?CodigoMunicipio
     {
         return $this->codigoMunicipio;
     }
 
-    public function getUf(): string
-    {
-        return $this->uf;
-    }
-
-    public function getCep(): Cep
+    public function getCep(): ?Cep
     {
         return $this->cep;
     }
