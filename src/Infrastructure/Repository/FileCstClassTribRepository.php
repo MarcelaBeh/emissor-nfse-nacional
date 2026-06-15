@@ -36,6 +36,18 @@ final class FileCstClassTribRepository implements CstClassTribRepository
         );
     }
 
+    public function findValidosParaNfse(): array
+    {
+        $this->load();
+
+        return array_values(
+            array_filter(
+                $this->cache ?? [],
+                fn (CstClassTribProperties $p) => $p->isValidoParaNfse(),
+            )
+        );
+    }
+
     private function load(): void
     {
         if ($this->cache !== null) {

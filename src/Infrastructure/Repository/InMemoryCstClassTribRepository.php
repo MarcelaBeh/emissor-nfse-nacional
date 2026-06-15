@@ -33,6 +33,16 @@ final class InMemoryCstClassTribRepository implements CstClassTribRepository
         );
     }
 
+    public function findValidosParaNfse(): array
+    {
+        return array_values(
+            array_filter(
+                $this->properties,
+                fn (CstClassTribProperties $p) => $p->isValidoParaNfse(),
+            )
+        );
+    }
+
     /**
      * @return array<string, CstClassTribProperties>
      */

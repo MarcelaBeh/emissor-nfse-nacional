@@ -140,7 +140,6 @@ final class DpsIdServiceTest extends TestCase
             codigoTributacao: '123456',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(100.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,

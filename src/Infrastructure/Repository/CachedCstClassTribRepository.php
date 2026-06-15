@@ -45,4 +45,19 @@ final class CachedCstClassTribRepository implements CstClassTribRepository
 
         return [];
     }
+
+    public function findValidosParaNfse(): array
+    {
+        $key = '__validos_nfse';
+        if (!array_key_exists($key, $this->cache)) {
+            $this->cache[$key] = $this->inner->findValidosParaNfse();
+        }
+
+        $result = $this->cache[$key];
+        if (is_array($result)) {
+            return $result;
+        }
+
+        return [];
+    }
 }

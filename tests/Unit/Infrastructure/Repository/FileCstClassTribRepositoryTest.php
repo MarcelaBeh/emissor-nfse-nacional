@@ -97,6 +97,52 @@ final class FileCstClassTribRepositoryTest extends TestCase
         $this->assertCount(0, $results);
     }
 
+    public function test_find_validos_para_nfse_excludes_invalidos(): void
+    {
+        $json = json_encode([
+            [
+                'cClassTrib' => '000001',
+                'cst' => '000',
+                'descricao' => 'Serviço tributado',
+                'validoParaNfse' => true,
+                'permiteDiferimento' => false,
+                'exigeGrupoTributacaoRegular' => false,
+            ],
+            [
+                'cClassTrib' => '000002',
+                'cst' => '000',
+                'descricao' => 'Exploração de via (não-serviço)',
+                'validoParaNfse' => false,
+                'permiteDiferimento' => false,
+                'exigeGrupoTributacaoRegular' => false,
+            ],
+            [
+                'cClassTrib' => '200001',
+                'cst' => '200',
+                'descricao' => 'Outro serviço válido',
+                'validoParaNfse' => true,
+                'permiteDiferimento' => false,
+                'exigeGrupoTributacaoRegular' => false,
+            ],
+        ]);
+
+        file_put_contents($this->tempFile, $json);
+
+        $repo = new FileCstClassTribRepository($this->tempFile);
+
+        $validos = $repo->findValidosParaNfse();
+        $this->assertCount(2, $validos);
+
+        $codigos = array_map(fn ($p) => $p->getCClassTrib(), $validos);
+        $this->assertContains('000001', $codigos);
+        $this->assertContains('200001', $codigos);
+        $this->assertNotContains('000002', $codigos);
+
+        foreach ($validos as $p) {
+            $this->assertTrue($p->isValidoParaNfse());
+        }
+    }
+
     public function test_missing_file_returns_null(): void
     {
         $repo = new FileCstClassTribRepository('/tmp/nonexistent_file_12345.json');

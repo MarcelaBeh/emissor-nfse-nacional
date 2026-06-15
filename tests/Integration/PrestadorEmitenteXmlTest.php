@@ -131,7 +131,6 @@ final class PrestadorEmitenteXmlTest extends TestCase
                 codigoTributacao: '010101',
                 localPrestacao: new CodigoMunicipio('3550308'),
                 valorServicos: new Money(1000.00),
-                valorDeducoes: new Money(0),
                 descontoIncondicionado: new Money(0),
                 descontoCondicionado: new Money(0),
                 aliquotaIss: 5.0,

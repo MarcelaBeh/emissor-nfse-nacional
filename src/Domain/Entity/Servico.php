@@ -22,7 +22,6 @@ class Servico
         private string $discriminacao,
         private string $codigoTributacao,
         Money $valorServicos,
-        private ?Money $valorDeducoes = null,
         private ?Money $descontoIncondicionado = null,
         private ?Money $descontoCondicionado = null,
         private ?float $aliquotaIss = null,
@@ -62,7 +61,7 @@ class Servico
 
     private function calcularValores(Money $valorServicos): void
     {
-        $valorDeducoes = $this->valorDeducoes ?? new Money(0);
+        $valorDeducoes = $this->calcularValorDeducao($valorServicos);
         $descontoIncond = $this->descontoIncondicionado ?? new Money(0);
         $descontoCond = $this->descontoCondicionado ?? new Money(0);
 
@@ -73,6 +72,32 @@ class Servico
         $this->valorTotal = $valorServicos
             ->subtract($descontoIncond)
             ->subtract($descontoCond);
+    }
+
+    /**
+     * Valor monetário da dedução/redução que reduz a base de cálculo do ISS,
+     * derivado do grupo oficial <vDedRed> (choice: pDR | vDR | documentos).
+     */
+    private function calcularValorDeducao(Money $valorServicos): Money
+    {
+        if ($this->percentualDeducao !== null) {
+            return $valorServicos->percentage($this->percentualDeducao);
+        }
+
+        if ($this->valorDeducaoPadrao !== null) {
+            return new Money($this->valorDeducaoPadrao);
+        }
+
+        if ($this->documentosDeducao !== null) {
+            $total = 0.0;
+            foreach ($this->documentosDeducao as $doc) {
+                $total += (float) $doc->getValorDeducao();
+            }
+
+            return new Money($total);
+        }
+
+        return new Money(0);
     }
 
     private function validate(): void
@@ -129,11 +154,6 @@ class Servico
     public function getValorIss(): Money
     {
         return $this->valorIss;
-    }
-
-    public function getValorDeducoes(): ?Money
-    {
-        return $this->valorDeducoes;
     }
 
     public function getDescontoIncondicionado(): ?Money

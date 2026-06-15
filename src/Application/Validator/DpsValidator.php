@@ -526,12 +526,17 @@ class DpsValidator
             $errors[] = 'vServ deve ser maior que zero (TSDec15V2)';
         }
 
-        if ($s->descontoIncondicionado < 0) {
+        if ($s->descontoIncondicionado !== null && $s->descontoIncondicionado < 0) {
             $errors[] = 'vDescIncond não pode ser negativo (TSDec15V2)';
         }
 
-        if ($s->descontoCondicionado < 0) {
+        if ($s->descontoCondicionado !== null && $s->descontoCondicionado < 0) {
             $errors[] = 'vDescCond não pode ser negativo (TSDec15V2)';
+        }
+
+        $totalDescontos = ($s->descontoIncondicionado ?? 0.0) + ($s->descontoCondicionado ?? 0.0);
+        if ($s->valorServicos > 0 && $totalDescontos >= $s->valorServicos) {
+            $errors[] = 'A soma de vDescIncond e vDescCond deve ser menor que vServ (vTotal deve ser positivo)';
         }
 
         // pAliq é TSDec1V2: 1 dígito inteiro + 2 decimais → máximo 9.99 (cobre o teto legal de ISS de 5%).
@@ -863,6 +868,21 @@ class DpsValidator
             if ($hasVDR && $s->valorDeducaoPadrao <= 0) {
                 $errors[] = 'vDR deve ser maior que zero (TSDec15V2)';
             }
+
+            // A dedução/redução não pode exceder o valor do serviço — geraria
+            // base de cálculo do ISS negativa. Vale para os três modos de <vDedRed>.
+            if ($hasVDR && $s->valorDeducaoPadrao > $s->valorServicos) {
+                $errors[] = 'vDR não pode exceder vServ (base de cálculo negativa)';
+            }
+            if ($s->documentosDeducao !== null) {
+                $somaDeducao = 0.0;
+                foreach ($s->documentosDeducao as $doc) {
+                    $somaDeducao += (float) ($doc->valorDeducao ?? 0);
+                }
+                if ($somaDeducao > $s->valorServicos) {
+                    $errors[] = 'A soma das deduções (vDeducaoReducao) não pode exceder vServ (base de cálculo negativa)';
+                }
+            }
         }
 
         if ($s->documentosDeducao === null) {
@@ -942,11 +962,15 @@ class DpsValidator
                 $errors[] = "{$pfx}: nDoc é obrigatório";
             }
 
-            if ($doc->dataEmissaoDoc !== null && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dataEmissaoDoc)) {
+            if ($doc->dataEmissaoDoc === null || $doc->dataEmissaoDoc === '') {
+                $errors[] = "{$pfx}: dtEmiDoc é obrigatório (xs:date)";
+            } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dataEmissaoDoc)) {
                 $errors[] = "{$pfx}: dtEmiDoc deve estar no formato AAAA-MM-DD (xs:date)";
             }
 
-            if ($doc->tipoDeducaoReducao !== null && !in_array($doc->tipoDeducaoReducao, ['1','2','3','4','5','6','7','8','9','99'], true)) {
+            if ($doc->tipoDeducaoReducao === null || $doc->tipoDeducaoReducao === '') {
+                $errors[] = "{$pfx}: tpDedRed é obrigatório (TSIdeDedRed)";
+            } elseif (!in_array($doc->tipoDeducaoReducao, ['1','2','3','4','5','6','7','8','9','99'], true)) {
                 $errors[] = "{$pfx}: tpDedRed inválido (TSIdeDedRed)";
             }
 
@@ -958,14 +982,32 @@ class DpsValidator
                 $errors[] = "{$pfx}: xDescOutDed deve ter 1 a 150 caracteres (TSDescOutDedRed)";
             }
 
-            if ($doc->valorDedutivel !== null && !is_numeric($doc->valorDedutivel)) {
-                $errors[] = "{$pfx}: vDedutivelRedutivel deve ser numérico (TSDec15V2)";
+            if ($doc->valorDedutivel === null || $doc->valorDedutivel === '') {
+                $errors[] = "{$pfx}: vDedutivelRedutivel é obrigatório (TSDec15V2)";
+            } elseif (!self::isDec15V2($doc->valorDedutivel)) {
+                $errors[] = "{$pfx}: vDedutivelRedutivel deve seguir o padrão decimal de 2 casas (TSDec15V2)";
             }
 
-            if ($doc->valorDeducao !== null && !is_numeric($doc->valorDeducao)) {
-                $errors[] = "{$pfx}: vDeducaoReducao deve ser numérico (TSDec15V2)";
+            if ($doc->valorDeducao === null || $doc->valorDeducao === '') {
+                $errors[] = "{$pfx}: vDeducaoReducao é obrigatório (TSDec15V2)";
+            } elseif (!self::isDec15V2($doc->valorDeducao)) {
+                $errors[] = "{$pfx}: vDeducaoReducao deve seguir o padrão decimal de 2 casas (TSDec15V2)";
+            }
+
+            if (self::isDec15V2((string) $doc->valorDedutivel) && self::isDec15V2((string) $doc->valorDeducao)
+                && (float) $doc->valorDeducao > (float) $doc->valorDedutivel) {
+                $errors[] = "{$pfx}: vDeducaoReducao deve ser menor ou igual a vDedutivelRedutivel";
             }
         }
+    }
+
+    /**
+     * Valida o padrão oficial TSDec15V2: 1 a 15 dígitos inteiros mais 2 casas decimais
+     * exatas (ou inteiro sem decimais). Pattern idêntico ao do XSD.
+     */
+    private static function isDec15V2(string $value): bool
+    {
+        return preg_match('/^(0|0\.[0-9]{2}|[1-9][0-9]{0,14}(\.[0-9]{2})?)$/', $value) === 1;
     }
 
     /** @param array<string> $errors */

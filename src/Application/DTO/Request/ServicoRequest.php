@@ -10,7 +10,6 @@ final readonly class ServicoRequest
         public string $discriminacao,
         public string $codigoTributacao,
         public float $valorServicos,
-        public ?float $valorDeducoes = null,
         public ?float $descontoIncondicionado = null,
         public ?float $descontoCondicionado = null,
         public ?float $aliquotaIss = null,

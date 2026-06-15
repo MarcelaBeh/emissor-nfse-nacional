@@ -141,7 +141,6 @@ final class DpsValidatorTest extends TestCase
             discriminacao: 'Serviço de teste',
             codigoTributacao: '010101',
             valorServicos: 1000.0,
-            valorDeducoes: 0,
             descontoIncondicionado: 0,
             descontoCondicionado: 0,
             aliquotaIss: 5.0,
@@ -991,7 +990,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1012,7 +1010,6 @@ final class DpsValidatorTest extends TestCase
                 discriminacao: 'test',
                 codigoTributacao: '010101',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1036,7 +1033,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1058,7 +1054,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1082,7 +1077,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1104,7 +1098,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1126,7 +1119,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1150,7 +1142,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1183,7 +1174,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1207,7 +1197,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1233,7 +1222,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1262,7 +1250,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1287,7 +1274,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1313,7 +1299,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1380,7 +1365,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1405,6 +1389,176 @@ final class DpsValidatorTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    public function test_documentos_deducao_missing_required_fields_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                documentosDeducao: [
+                    // tpDedRed, dtEmiDoc, vDedutivelRedutivel e vDeducaoReducao ausentes
+                    new DocDedRedRequest(
+                        tipoDocumento: 'chNFe',
+                        chaveNFe: '12345678901234567890123456789012345678901234',
+                    ),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('tpDedRed é obrigatório');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_invalid_decimal_pattern_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                documentosDeducao: [
+                    new DocDedRedRequest(
+                        tipoDocumento: 'chNFe',
+                        chaveNFe: '12345678901234567890123456789012345678901234',
+                        tipoDeducaoReducao: '1',
+                        dataEmissaoDoc: '2026-05-15',
+                        valorDedutivel: '1000.5', // apenas 1 casa decimal — viola TSDec15V2
+                        valorDeducao: '1000.00',
+                    ),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('vDedutivelRedutivel deve seguir o padrão decimal');
+        $this->validator->validate($request);
+    }
+
+    public function test_documentos_deducao_value_greater_than_dedutivel_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                documentosDeducao: [
+                    new DocDedRedRequest(
+                        tipoDocumento: 'chNFe',
+                        chaveNFe: '12345678901234567890123456789012345678901234',
+                        tipoDeducaoReducao: '1',
+                        dataEmissaoDoc: '2026-05-15',
+                        valorDedutivel: '1000.00',
+                        valorDeducao: '1500.00', // maior que o dedutível
+                    ),
+                ],
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('vDeducaoReducao deve ser menor ou igual a vDedutivelRedutivel');
+        $this->validator->validate($request);
+    }
+
+    public function test_deducao_vdr_excedendo_valor_servico_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                valorDeducaoPadrao: 1500.0, // dedução > serviço → BC negativa
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('vDR não pode exceder vServ');
+        $this->validator->validate($request);
+    }
+
+    public function test_desconto_incondicionado_negativo_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: -10.0,
+                descontoCondicionado: 0,
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('vDescIncond não pode ser negativo');
+        $this->validator->validate($request);
+    }
+
+    public function test_descontos_excedendo_valor_servico_throws(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                codigoMunicipioPrestacao: '3550308',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 600.0,
+                descontoCondicionado: 400.0, // soma = 1000 = vServ → vTotal = 0 (não positivo)
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+            ),
+        );
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('deve ser menor que vServ');
+        $this->validator->validate($request);
+    }
+
+    public function test_descontos_dentro_do_valor_servico_passes(): void
+    {
+        $request = $this->createValidDpsRequest(
+            servico: new ServicoRequest(
+                discriminacao: 'test',
+                codigoTributacao: '010101',
+                valorServicos: 1000.0,
+                descontoIncondicionado: 300.0,
+                descontoCondicionado: 200.0, // soma = 500 < 1000 → vTotal = 500
+                aliquotaIss: 5.0,
+                codigoNbs: '123456789',
+                codigoPaisPrestacao: 'US',
+                totTribTipo: 'vTotTrib',
+                tribISSQN: '1',
+                tpRetISSQN: '1',
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->expectNotToPerformAssertions();
+    }
+
     public function test_documentos_deducao_invalid_tipo_throws(): void
     {
         $request = $this->createValidDpsRequest(
@@ -1413,7 +1567,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1437,7 +1590,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1461,7 +1613,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1488,7 +1639,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1515,7 +1665,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1539,7 +1688,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1567,7 +1715,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1595,7 +1742,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1622,7 +1768,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1644,7 +1789,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1670,7 +1814,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1692,7 +1835,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1721,7 +1863,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1743,7 +1884,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1765,7 +1905,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1787,7 +1926,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1809,7 +1947,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1835,7 +1972,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -1857,7 +1993,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -2036,7 +2171,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: 5.0,
@@ -2148,7 +2282,6 @@ final class DpsValidatorTest extends TestCase
             codigoTributacao: '010101',
             codigoMunicipioPrestacao: '3550308',
             valorServicos: 1000.0,
-            valorDeducoes: 0,
             descontoIncondicionado: 0,
             descontoCondicionado: 0,
             aliquotaIss: 5.0,
@@ -2227,7 +2360,6 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: $valorServicos,
-                valorDeducoes: 0,
                 descontoIncondicionado: 0,
                 descontoCondicionado: 0,
                 aliquotaIss: $aliquotaIss,

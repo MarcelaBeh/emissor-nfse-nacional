@@ -359,7 +359,6 @@ class EmitirDpsService
             discriminacao: $request->servico->discriminacao,
             codigoTributacao: $request->servico->codigoTributacao,
             valorServicos: new Money($request->servico->valorServicos),
-            valorDeducoes: $request->servico->valorDeducoes !== null ? new Money($request->servico->valorDeducoes) : null,
             descontoIncondicionado: $request->servico->descontoIncondicionado !== null ? new Money($request->servico->descontoIncondicionado) : null,
             descontoCondicionado: $request->servico->descontoCondicionado !== null ? new Money($request->servico->descontoCondicionado) : null,
             aliquotaIss: $request->servico->aliquotaIss,

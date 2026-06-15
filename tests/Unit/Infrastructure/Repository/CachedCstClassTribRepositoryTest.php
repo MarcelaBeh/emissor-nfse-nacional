@@ -58,6 +58,29 @@ final class CachedCstClassTribRepositoryTest extends TestCase
         $this->assertSame([$props], $cached->findByCst('000'));
     }
 
+    public function test_delegates_and_caches_find_validos_para_nfse(): void
+    {
+        $inner = $this->createMock(\MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository::class);
+
+        $props = new CstClassTribProperties(
+            cClassTrib: '000001',
+            cst: '000',
+            descricao: 'Test',
+            validoParaNfse: true,
+            permiteDiferimento: false,
+            exigeGrupoTributacaoRegular: false,
+        );
+
+        $inner->expects($this->once())
+            ->method('findValidosParaNfse')
+            ->willReturn([$props]);
+
+        $cached = new CachedCstClassTribRepository($inner);
+
+        $this->assertSame([$props], $cached->findValidosParaNfse());
+        $this->assertSame([$props], $cached->findValidosParaNfse());
+    }
+
     public function test_cache_null_result(): void
     {
         $inner = $this->createMock(\MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository::class);

@@ -28,7 +28,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -50,18 +49,70 @@ final class ServicoTest extends TestCase
 
     public function test_calculates_valor_total(): void
     {
+        // Dedução informada via <vDR> (valorDeducaoPadrao) deve reduzir a base de cálculo.
         $servico = new Servico(
             discriminacao: 'test',
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(2000.00),
-            valorDeducoes: new Money(200.00),
             descontoIncondicionado: new Money(50.00),
             descontoCondicionado: new Money(30.00),
             aliquotaIss: 5.0,
+            valorDeducaoPadrao: 200.00,
         );
 
         $this->assertSame(1920.00, $servico->getValorTotal()->getValue());
+        $this->assertSame(1800.00, $servico->getBaseCalculo()->getValue());
+        $this->assertSame(90.00, $servico->getValorIss()->getValue());
+    }
+
+    public function test_deducao_percentual_reduz_base_calculo(): void
+    {
+        // <pDR>: 10% de 2000 = 200 de dedução → BC = 1800.
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(2000.00),
+            aliquotaIss: 5.0,
+            percentualDeducao: 10.0,
+        );
+
+        $this->assertSame(1800.00, $servico->getBaseCalculo()->getValue());
+        $this->assertSame(90.00, $servico->getValorIss()->getValue());
+    }
+
+    public function test_deducao_por_documentos_soma_reduz_base_calculo(): void
+    {
+        // Σ vDeducaoReducao = 150 + 50 = 200 → BC = 1800.
+        $docs = [
+            new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed(
+                tipoDocumento: 'nDoc',
+                dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
+                numeroDoc: 'A',
+                tipoDeducaoReducao: '1',
+                valorDedutivel: '150.00',
+                valorDeducao: '150.00',
+            ),
+            new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed(
+                tipoDocumento: 'nDoc',
+                dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
+                numeroDoc: 'B',
+                tipoDeducaoReducao: '1',
+                valorDedutivel: '50.00',
+                valorDeducao: '50.00',
+            ),
+        ];
+
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(2000.00),
+            aliquotaIss: 5.0,
+            documentosDeducao: $docs,
+        );
+
         $this->assertSame(1800.00, $servico->getBaseCalculo()->getValue());
         $this->assertSame(90.00, $servico->getValorIss()->getValue());
     }
@@ -73,7 +124,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -117,7 +167,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -145,7 +194,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -169,7 +217,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -191,7 +238,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -217,7 +263,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -243,7 +288,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -269,7 +313,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -286,7 +329,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -303,7 +345,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: -1.0,
@@ -320,7 +361,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 101.0,
@@ -337,7 +377,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(100.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(200.00),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
@@ -351,7 +390,6 @@ final class ServicoTest extends TestCase
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(500.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,

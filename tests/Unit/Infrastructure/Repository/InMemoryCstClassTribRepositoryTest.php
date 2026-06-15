@@ -72,6 +72,20 @@ final class InMemoryCstClassTribRepositoryTest extends TestCase
         $this->assertFalse($props->isValidoParaNfse());
     }
 
+    public function test_find_validos_para_nfse_returns_only_validos(): void
+    {
+        $validos = $this->repository->findValidosParaNfse();
+
+        $this->assertNotEmpty($validos);
+        foreach ($validos as $props) {
+            $this->assertTrue($props->isValidoParaNfse());
+        }
+
+        $codigos = array_map(fn ($p) => $p->getCClassTrib(), $validos);
+        $this->assertContains('000001', $codigos);
+        $this->assertNotContains('820001', $codigos, '820001 não é válido para NFS-e');
+    }
+
     public function test_custom_data(): void
     {
         $custom = [

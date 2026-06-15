@@ -176,7 +176,6 @@ final class DpsXmlBuilderNt007Test extends TestCase
             discriminacao: 'Serviço de teste',
             codigoTributacao: '010101',
             valorServicos: new Money(1000.00),
-            valorDeducoes: new Money(0),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: $aliquotaIss,

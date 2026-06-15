@@ -14,4 +14,14 @@ interface CstClassTribRepository
      * @return array<int, CstClassTribProperties>
      */
     public function findByCst(string $cst): array;
+
+    /**
+     * Retorna apenas os códigos efetivamente emitíveis em NFS-e
+     * (validoParaNfse = true). Use este método para listar opções
+     * aos clientes; findByCst() devolve a tabela oficial completa,
+     * inclusive códigos não-serviço.
+     *
+     * @return array<int, CstClassTribProperties>
+     */
+    public function findValidosParaNfse(): array;
 }

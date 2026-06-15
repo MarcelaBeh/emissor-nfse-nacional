@@ -58,7 +58,6 @@ class DpsFactory
             codigoTributacao: $servicoData['codigoTributacao'],
             localPrestacao: new CodigoMunicipio($servicoData['codigoMunicipioPrestacao']),
             valorServicos: new Money($servicoData['valorServicos']),
-            valorDeducoes: new Money($servicoData['valorDeducoes'] ?? 0),
             descontoIncondicionado: new Money($servicoData['descontoIncondicionado'] ?? 0),
             descontoCondicionado: new Money($servicoData['descontoCondicionado'] ?? 0),
             aliquotaIss: $servicoData['aliquotaIss'],

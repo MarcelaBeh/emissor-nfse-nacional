@@ -11,6 +11,21 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.2.9] - 2026-06-15
+
+### ⚠️ BREAKING CHANGES
+- Removido `valorDeducoes` de `ServicoRequest`/`Servico`. Migração: use `valorDeducaoPadrao` (`<vDR>`).
+
+### Fixed
+- Dedução via `<vDedRed>` (`pDR`/`vDR`/`documentos`) agora reduz `baseCalculo` e `valorIss`. Antes só `valorDeducoes` calculava, inflando o ISS com `aliquotaIss != null`.
+
+### Added
+- Validação: dedução e soma de descontos não podem exceder `vServ`.
+- Validação: campos obrigatórios, decimal `TSDec15V2` e `vDeducaoReducao ≤ vDedutivelRedutivel` em `docDedRed`.
+- `CstClassTribRepository::findValidosParaNfse()`.
+
+---
+
 ## [v2.2.8] - 2026-06-12
 
 Falsos positivos do validador IBS/CBS que rejeitavam NFS-e válidas (aceitas pela SEFIN com `cStat=100`).
@@ -277,7 +292,9 @@ Ajustes de leiaute confirmados pela **NT-007 SE/CGNFS-e v1.0**.
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.7...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.9...HEAD
+[v2.2.9]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.8...v2.2.9
+[v2.2.8]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.7...v2.2.8
 [v2.2.7]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.6...v2.2.7
 [v2.2.6]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.5...v2.2.6
 [v2.2.5]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.4...v2.2.5
