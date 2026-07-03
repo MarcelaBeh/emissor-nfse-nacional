@@ -15,7 +15,6 @@ use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiringException;
 use MarcelaBeh\EmissorNfseNacional\Presentation\Factory\ServiceFactory;
 use NFePHP\Common\Certificate;
 use Psr\Log\LoggerInterface;
@@ -41,8 +40,8 @@ class NfseNacionalFacade
      *        Configuration (ex.: produzido por ConfigFactory).
      * @param LoggerInterface $logger logger dos serviços. Padrão: NullLogger (sem saída). Para
      *        rastreabilidade em produção sem vazar dados sensíveis, passe um SanitizedLogger.
-     * @throws CertificateExpiredException se o certificado estiver vencido
-     * @throws CertificateExpiringException se o certificado vencer em menos de 30 dias
+     * @throws CertificateExpiredException se o certificado estiver vencido. A proximidade de
+     *         vencimento não é verificada pela lib — cabe ao integrador monitorá-la.
      */
     public static function create(
         Configuration|array $config,

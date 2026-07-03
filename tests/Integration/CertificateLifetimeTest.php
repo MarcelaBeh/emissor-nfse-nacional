@@ -86,11 +86,23 @@ final class CertificateLifetimeTest extends TestCase
     }
 
     /**
-     * Gera um certificado X.509 autoassinado, válido por 365 dias, para não
-     * disparar CertificateExpiredException (vencido) nem
-     * CertificateExpiringException (vence em < 30 dias).
+     * Certificado próximo do vencimento, mas ainda válido, NÃO bloqueia: a lib
+     * só barra certificado efetivamente vencido. Proximidade de vencimento é
+     * política de renovação do integrador, fora do escopo da lib.
      */
-    private function certificadoDeTeste(): Certificate
+    public function test_proximidade_de_vencimento_nao_bloqueia_a_construcao(): void
+    {
+        // Vence em 5 dias: válido, então a construção deve concluir sem exceção.
+        $manager = new CertificateManager($this->certificadoDeTeste(5));
+
+        self::assertInstanceOf(CertificateManager::class, $manager);
+    }
+
+    /**
+     * Gera um certificado X.509 autoassinado com validade parametrizável (em dias).
+     * Enquanto não estiver vencido, qualquer validade é aceita pela lib.
+     */
+    private function certificadoDeTeste(int $diasValidade = 365): Certificate
     {
         $dn = [
             'countryName' => 'BR',
@@ -107,7 +119,7 @@ final class CertificateLifetimeTest extends TestCase
         $csr = openssl_csr_new($dn, $privateKey, ['digest_alg' => 'sha256']);
         self::assertNotFalse($csr, 'Falha ao gerar CSR de teste.');
 
-        $x509 = openssl_csr_sign($csr, null, $privateKey, 365, ['digest_alg' => 'sha256']);
+        $x509 = openssl_csr_sign($csr, null, $privateKey, $diasValidade, ['digest_alg' => 'sha256']);
         self::assertNotFalse($x509, 'Falha ao assinar certificado de teste.');
 
         $pfx = '';

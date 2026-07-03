@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Infrastructure\Security;
 
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
-use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiringException;
 use NFePHP\Common\Certificate;
 
 class CertificateManager implements Contract\CertificateManagerInterface
@@ -35,13 +34,6 @@ class CertificateManager implements Contract\CertificateManagerInterface
             $expiry = $this->certificate->getValidTo();
             throw new CertificateExpiredException(
                 "Certificado expirado em {$expiry->format('d/m/Y')}"
-            );
-        }
-
-        $daysToExpire = $this->certificate->getValidTo()->diff(new \DateTime())->days;
-        if ($daysToExpire <= 30) {
-            throw new CertificateExpiringException(
-                "Certificado expira em {$daysToExpire} dias"
             );
         }
     }

@@ -11,6 +11,20 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.3.1] - 2026-07-02
+
+### Corrigido
+- **Certificado próximo do vencimento não bloqueia mais a emissão.** A construção
+  do cliente lançava `CertificateExpiringException` quando o certificado vencia em 30 dias ou menos. Agora só o certificado **efetivamente vencido** bloqueia
+  (`CertificateExpiredException`).
+
+### Descontinuado
+- `CertificateExpiringException` — não é mais lançada e está `@deprecated`;
+  será removida numa versão major futura. Monitorar a janela de renovação cabe ao
+  integrador, via `getCertificate()->getValidTo()`.
+
+---
+
 ## [v2.3.0] - 2026-06-15
 
 ### Fixed
@@ -311,7 +325,8 @@ Ajustes de leiaute confirmados pela **NT-007 SE/CGNFS-e v1.0**.
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.1...HEAD
+[v2.3.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.0...v2.3.1
 [v2.3.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.9...v2.3.0
 [v2.2.9]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.8...v2.2.9
 [v2.2.8]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.7...v2.2.8

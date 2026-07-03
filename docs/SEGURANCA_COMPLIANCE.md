@@ -26,7 +26,9 @@ O `CertificateManager` (`src/Infrastructure/Security/CertificateManager.php`) é
 único responsável pelo certificado. Ele:
 
 - **Valida na construção**: lança `CertificateExpiredException` se o certificado
-  já expirou e `CertificateExpiringException` se vence em **30 dias ou menos**.
+  já expirou (um certificado vencido falha no handshake mTLS com a SEFAZ). A
+  **proximidade de vencimento não é verificada** — monitorar a janela de
+  renovação cabe ao integrador, via `getCertificate()->getValidTo()`.
 - **Materializa os PEMs sob demanda**: o diretório temporário é criado com
   `mkdir(..., 0o700)` e cada arquivo é criado por `tempnam()` (permissão `0600`,
   owner-only). Os PEMs só são escritos quando uma request realmente ocorre.
@@ -43,16 +45,14 @@ private function validate(): void
         );
     }
 
-    $daysToExpire = $this->certificate->getValidTo()->diff(new \DateTime())->days;
-    if ($daysToExpire <= 30) {
-        throw new CertificateExpiringException("Certificado expira em {$daysToExpire} dias");
-    }
+    // Proximidade de vencimento não é verificada: é política de renovação do
+    // integrador, não da lib. Certificado ainda válido => emissão permitida.
 }
 ```
 
-> **Escopo:** a validação cobre **expiração** e **proximidade de vencimento**.
-> Força de chave RSA, cadeia ICP-Brasil e revogação (OCSP/CRL) **não** são
-> verificadas pela lib — quando exigidas, cabem ao integrador.
+> **Escopo:** a validação cobre apenas **expiração** (bloqueia). Proximidade de
+> vencimento, força de chave RSA, cadeia ICP-Brasil e revogação (OCSP/CRL) **não**
+> são verificadas pela lib — quando exigidas, cabem ao integrador.
 
 ---
 
