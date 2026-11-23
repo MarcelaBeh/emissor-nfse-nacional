@@ -10,6 +10,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\CancelarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\EventoValidator;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
@@ -19,7 +20,10 @@ use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\SanitizedLogger;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\EventoXmlBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
+use MarcelaBeh\EmissorNfseNacional\Tests\Support\EventoProcessadoXml;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 final class CancelarNfseServiceTest extends TestCase
 {
@@ -66,7 +70,6 @@ final class CancelarNfseServiceTest extends TestCase
             cnpjAutor: '12345678000195',
             codigoMotivo: '1',
             descricaoMotivo: 'Cancelamento de teste',
-            nSeqEvento: '1',
         );
     }
 
@@ -281,5 +284,73 @@ final class CancelarNfseServiceTest extends TestCase
         $this->expectExceptionMessage('Falha ao cancelar NFSe: Connection timeout');
 
         $this->service->executar($request);
+    }
+
+    /**
+     * Prepara os mocks do caminho feliz e faz o POST responder com os dados informados.
+     *
+     * @param array<string, mixed> $dadosDaResposta
+     */
+    private function prepararCancelamentoComResposta(array $dadosDaResposta, ?LoggerInterface $logger = null): CancelarNfseService
+    {
+        $xml = '<?xml version="1.0"?><pedRegEvento></pedRegEvento>';
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><pedRegEvento></pedRegEvento>';
+
+        $this->validator->method('validate');
+        $this->xmlBuilder->method('build')->willReturn($xml);
+        $this->xsdValidator->method('validate');
+        $this->xmlSigner->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->method('buildEventoPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiEndpoints->method('cancelarNfse')->willReturn('https://api.example.com/nfse/' . self::CHAVE_50 . '/eventos');
+        $this->apiConnector->method('post')->willReturn(['success' => true, 'data' => $dadosDaResposta]);
+
+        return new CancelarNfseService(
+            $this->apiConnector,
+            $this->xmlBuilder,
+            $this->xmlSigner,
+            $this->xsdValidator,
+            $this->validator,
+            $this->requestBuilder,
+            $this->apiEndpoints,
+            $logger ?? new NullLogger(),
+        );
+    }
+
+    public function test_executar_le_o_evento_processado_da_resposta(): void
+    {
+        $dados = [
+            'tipoAmbiente' => 2,
+            'eventoXmlGZipB64' => EventoProcessadoXml::gzipBase64(EventoProcessadoXml::build()),
+        ];
+
+        $response = $this->prepararCancelamentoComResposta($dados)->executar($this->createValidEventoRequest());
+
+        $this->assertTrue($response->success);
+        $this->assertSame($dados, $response->dados);
+        $this->assertNotNull($response->evento);
+        $this->assertSame('1', $response->evento->nSeqEvento);
+        $this->assertSame(TipoEvento::CANCELAMENTO, $response->evento->pedido->tipoEvento);
+        $this->assertSame('2026-11-23T17:13:38-03:00', $response->evento->dhProc->format('Y-m-d\TH:i:sP'));
+    }
+
+    public function test_executar_sem_evento_na_resposta_deixa_evento_nulo(): void
+    {
+        $response = $this->prepararCancelamentoComResposta(['status' => 'cancelado'])->executar($this->createValidEventoRequest());
+
+        $this->assertTrue($response->success);
+        $this->assertNull($response->evento);
+    }
+
+    public function test_executar_evento_ilegivel_nao_transforma_o_registro_em_erro(): void
+    {
+        $dados = ['eventoXmlGZipB64' => EventoProcessadoXml::gzipBase64('<evento versao="1.01"><infEvento/></evento>')];
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('warning')->with($this->stringContains('não pôde ser lido'));
+
+        $response = $this->prepararCancelamentoComResposta($dados, $logger)->executar($this->createValidEventoRequest());
+
+        $this->assertTrue($response->success);
+        $this->assertNull($response->evento);
+        $this->assertSame($dados, $response->dados);
     }
 }

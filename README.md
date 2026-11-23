@@ -112,9 +112,10 @@ src/
 
 - `emitirDps(DpsRequest)` → `NfseResponse`
 - `consultarPorChave(string)` → `NfseResponse|null`
-- `consultarDpsPorChave(string)` → `array`
+- `consultarChavePorDps(string idDps)`: devolve a chave da NFS-e gerada (`string|null`)
 - `cancelar(EventoRequest)` → `EventoResponse`
-- `consultarEventos(string)` → `array`
+- `consultarEventos(string chave, string tipo, int sequencial)`: devolve os itens da SEFIN (`array`)
+- `consultarEventosProcessados(string chave, string tipo, int sequencial)`: devolve `list<EventoProcessado>`
 
 ## ⚠️ Avisos Importantes
 

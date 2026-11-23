@@ -91,6 +91,40 @@ final class ChaveAcessoTest extends TestCase
         $this->assertFalse(ChaveAcesso::isValida(self::VALID_CHAVE . '1'));
     }
 
+    public function test_do_id_nfse_extrai_a_chave_do_id(): void
+    {
+        $this->assertSame(self::VALID_CHAVE, ChaveAcesso::doIdNfse('NFS' . self::VALID_CHAVE));
+    }
+
+    public function test_do_id_nfse_aceita_inscricao_alfanumerica(): void
+    {
+        $chave = '355030821' . '12ABC34501DE35' . substr(self::VALID_CHAVE, 23);
+
+        $this->assertSame($chave, ChaveAcesso::doIdNfse('NFS' . $chave));
+    }
+
+    /**
+     * @return array<string, array{mixed}>
+     */
+    public static function idsInvalidos(): array
+    {
+        return [
+            'sem prefixo' => [self::VALID_CHAVE],
+            'prefixo errado' => ['DPS' . self::VALID_CHAVE],
+            'curto' => ['NFS' . substr(self::VALID_CHAVE, 1)],
+            'longo' => ['NFS' . self::VALID_CHAVE . '1'],
+            'letra fora da inscricao' => ['NFS' . 'A' . substr(self::VALID_CHAVE, 1)],
+            'nulo' => [null],
+            'nao e texto' => [123],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('idsInvalidos')]
+    public function test_do_id_nfse_devolve_null_para_id_invalido(mixed $id): void
+    {
+        $this->assertNull(ChaveAcesso::doIdNfse($id));
+    }
+
     public function test_pontuacao_nao_e_descartada_silenciosamente(): void
     {
         // Antes tudo que não fosse dígito era removido, mascarando chaves malformadas.

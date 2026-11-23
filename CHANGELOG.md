@@ -10,62 +10,55 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 ## [Unreleased]
 
 **BREAKING.** Adequação à NT 009 v1.01 (release 1), esquemas `PRODREST-v1.01-20261020`. O XML novo só é aceito pelo XSD
-de produção restrita de 20/10/2026 e **não é compatível com o leiaute de produção atual (NT 004)**: um XML novo é
-rejeitado pelo XSD antigo e vice-versa. A data de entrada em produção não está confirmada pela SE/CGNFS-e. Quem emite
-em produção deve permanecer na linha 2.x até a confirmação.
+de produção restrita de 20/10/2026 e **não é compatível com o leiaute de produção atual (NT 004)**, nem o antigo com o
+novo. A data de entrada em produção não está confirmada pela SE/CGNFS-e: quem emite em produção deve permanecer na
+linha 2.x até lá.
 
 ### Alterado
-- `finNFSe` passa a ser obrigatório em `infDPS` (independe do grupo IBSCBS). Entra em `DpsRequest::$finNFSe`
-  (padrão `"0"`, único valor admitido neste leiaute) e sai de `IbsCbsRequest`.
-- `xDescServ` é o último elemento de `cServ`.
-- `valores/trib/gIBSCBS` passa a conter só `cCredPres`, `gTribRegular` e `gDif`; `CST` e `cClassTrib` sobem para
-  `valores/trib`. O grupo `gIBSCBS` é omitido para os CSTs 400, 410 e 820 (sem tributação IBS/CBS) e, nesses casos,
-  `cIndOp`, `cCredPres`, `gTribRegular` e `gDif` são vedados. `IbsCbsRequest::$informarGIBSCBS` força ou suprime o grupo
-  para um CST fora dessa lista.
-- `cIndOp` passa a ser opcional em `IbsCbsRequest`.
-- Série da DPS limitada de 1 a 89999 (`TSSerieDPS`). O desvio local da NT 004 foi removido porque o XSD novo o corrigiu.
-- Resposta da NFS-e: `vCalcDR` vira `vCalcAjusteBCISSQN`; `vCalcReeRepRes` vira `vCalcAjusteBCIBSCBS`; novo
-  `vCalcAjusteBCLocImoveis`. `IbscbsResponseValidator` aplica as RNs E1533, E1534, E1535, E1537, E1543, E1547 e E1579
-  e tolera os grupos IBS/CBS ausentes. Sem grupo de tributação na DPS, a resposta não precisa trazer `IBSCBS`.
-- CNPJ alfanumérico: `Cnpj`, `ChaveAcesso`, `Dps::gerarIdDps()` e os validadores aceitam letras A-Z na inscrição
-  federal. `Cnpj` e `ChaveAcesso` não descartam mais caracteres em silêncio (só a máscara é removida).
-- `Dps` gera o `Id` pelo `DpsIdService` (`Dps::gerarIdDps()`), em vez da pseudo-chave de 50 posições.
-- `EventoValidator`, `ConsultaValidator` e `DpsValidator` aceitam a chave de acesso com inscrição alfanumérica.
+- Leiaute da DPS: `finNFSe` obrigatório em `infDPS` (`DpsRequest::$finNFSe`, padrão `"0"`); `CST` e `cClassTrib` sobem para
+  `valores/trib`; o grupo `gIBSCBS` é omitido nos CSTs 400, 410 e 820 (`IbsCbsRequest::$informarGIBSCBS` força ou suprime);
+  `cIndOp` opcional; série de 1 a 89999.
+- Resposta da NFS-e: `vCalcDR` vira `vCalcAjusteBCISSQN`, `vCalcReeRepRes` vira `vCalcAjusteBCIBSCBS` e entra
+  `vCalcAjusteBCLocImoveis`. O `IbscbsResponseValidator` aplica as RNs novas.
+- CNPJ alfanumérico em `Cnpj`, `ChaveAcesso`, `Dps::gerarIdDps()` e nos validadores. O `Id` da DPS vem do `DpsIdService`.
 
 ### Adicionado
-- `vAjusteBC`, grupo unificado de ajuste da base de cálculo: `ServicoRequest::$percentualAjusteBcIssqn`,
-  `$valorAjusteBcIssqn` e `$documentosAjusteBc` (`DocAjusteBCRequest`). Enum `TipoAjusteBC` (2, 5 a 9, 99, 101 a 105 e 199).
-- Operações com imóveis: `IbsCbsImovelRequest` reestruturado (`cMun`, `locacao`, `unidades`) com `gLocacao`,
-  `gUnidImob` (até 99) e `gAjusteBCLocImoveis`. Enum `TipoAjusteBCLocImoveis`.
-- `IbsCbsRequest::$bensMoveis` (locação de bens móveis, cTribNac 99.04.01).
-- Validações com o código da RN oficial (E0453 a E0476, E0859, E0860, E0936 a E0974 e outras) na mensagem.
-- `NfseResponse::$alertas`: avisos (`alertas[]`) previstos no contrato da API da SEFIN para a NFS-e autorizada. Antes eram
-  descartados.
+- `vAjusteBC` (`ServicoRequest::$documentosAjusteBc`, enum `TipoAjusteBC`), operações com imóveis (`IbsCbsImovelRequest`
+  reestruturado) e `IbsCbsRequest::$bensMoveis`.
+- `NfseResponse::$alertas`: avisos previstos no contrato da API da SEFIN. Antes eram descartados.
+- Código da RN oficial nas mensagens de validação.
+- Leitura do evento processado (`evento_v1.01.xsd`): `EventoResponse::$evento` e `consultarEventosProcessados()` devolvem
+  data e hora do registro, sequencial e o XML assinado do evento, como comprovante.
 
 ### Corrigido
-- `vDescCond` zerado: com só desconto incondicionado, a DPS saía com `<vDescCond>0.00</vDescCond>` e a SEFIN rejeitava
-  (E0432). Agora só o desconto positivo é emitido.
-- `vAjusteBC`: os tipos 101, 103, 104 e 199 exigem documento fiscal, não `docOutro` (E0479), e `docFiscalOutro` só
-  vale para documentos anteriores a 2026 (E0476). O `DpsValidator` passa a recusar o que a SEFIN recusa.
+- `vDescCond` zerado: com só desconto incondicionado, a DPS saía com `<vDescCond>0.00</vDescCond>` e a SEFIN rejeitava (E0432).
+- `vAjusteBC`: os tipos 101, 103, 104 e 199 exigem documento fiscal, não `docOutro` (E0479), e `docFiscalOutro` só vale
+  para documentos anteriores a 2026 (E0476).
+- Consulta de NFS-e: `consultarPorChave()` agora preenche `chaveAcesso` e `numero` e devolve o erro real da SEFIN (antes
+  qualquer falha virava "NFSe não encontrada"). O cancelamento não aparece na consulta da nota (`cStat` segue 100): use
+  `consultarEventosProcessados()`.
+- Substituição: a SEFIN recusa o pedido de evento `105102` enviado pelo emitente (E1861). O `EventoValidator` passa a
+  recusá-lo e orientar a emitir a DPS substituta com `subst`, que faz a SEFIN registrar o evento na nota original.
 
 ### Removido
-- `DocDedRedRequest`/`DocDedRed`, `IbsCbsReeRepResRequest`/`IbsCbsReeRepRes`,
-  `IbsCbsDocumentoReeRepResRequest`/`IbsCbsDocumentoReeRepRes` e `TipoReembolsoRepasseRessarcimento`: substituídos
-  por `vAjusteBC`. Os tipos de ajuste 1, 3 e 4 foram extintos pela NT e não há mapeamento automático.
-- `Dps::gerarChaveAcesso()` e `Dps::getChaveAcesso()`: use `gerarIdDps()` e `getIdDps()`.
-- `storage/prefeituras.json` e o parâmetro `prefeitura` da configuração: toda emissão passa pela SEFIN Nacional, não
-  há mais endereço por município. `ConfigFactory::createDefault()`, `createHomologacao()` e `createProducao()` deixam
-  de receber o município.
+- `DocDedRed`, `IbsCbsReeRepRes`, `IbsCbsDocumentoReeRepRes` e `TipoReembolsoRepasseRessarcimento`, com os DTOs de request:
+  substituídos por `vAjusteBC`. Os tipos de ajuste 1, 3 e 4 foram extintos pela NT.
+- `Dps::gerarChaveAcesso()` e `getChaveAcesso()` (use `gerarIdDps()` e `getIdDps()`) e `Presentation\Factory\DpsFactory`,
+  descontinuada na v2.3.2.
+- `storage/prefeituras.json` e o parâmetro `prefeitura`: toda emissão passa pela SEFIN Nacional.
+- `consultarDpsPorChave()`: nunca funcionou (a SEFIN consulta a DPS pelo Id da DPS, não pela chave da NFS-e). Use
+  `consultarChavePorDps()`.
 
 ### Migração
-- Troque `documentosDeducao` (e `reeRepRes`) por `documentosAjusteBc`; os documentos agora exigem `vTotDoc` e
-  `vAjusteAplic` e escolhem o comprobatório (`dFeNacional`, `docFiscalOutro` ou `docOutro`).
-- Mova `finNFSe` de `IbsCbsRequest` para `DpsRequest` (ou omita, para o padrão `"0"`).
-- Reescreva `imovel`: `cMun` é obrigatório e `inscImobFisc`, `cCIB` e o endereço passam para cada unidade (`unidades`).
-  O endereço do imóvel é sempre nacional (CEP) e `xBairro` é opcional.
-- Para CNPJ alfanumérico, o documento no request deve vir em maiúsculas e sem máscara (o `DpsValidator` rejeita minúsculas).
-- Tire `prefeitura` da configuração e o município das chamadas de `ConfigFactory` (`createDefault('3550308', 2)` vira
-  `createDefault(2)`). Um `prefeitura` que sobrar em um array de configuração é ignorado.
+- Troque `documentosDeducao` e `reeRepRes` por `documentosAjusteBc`, sem mapeamento automático (exige `vTotDoc`,
+  `vAjusteAplic` e um comprobatório: `dFeNacional`, `docFiscalOutro` ou `docOutro`).
+- Mova `finNFSe` de `IbsCbsRequest` para `DpsRequest`.
+- Reescreva `imovel`: `cMun` é obrigatório; `inscImobFisc`, `cCIB` e o endereço passam para cada unidade.
+- CNPJ alfanumérico no request: maiúsculas e sem máscara.
+- Tire `prefeitura` da configuração e o município de `ConfigFactory` (`createDefault('3550308', 2)` vira `createDefault(2)`).
+- Tire `nSeqEvento`, `ambGer`, `dhProc` e `nDFSe` do `EventoRequest`.
+- `consultarEventos()` passa a exigir tipo e sequencial, devolve a lista de itens da SEFIN e lança `ServiceException`
+  em vez de `['erro' => ...]`.
 
 ---
 

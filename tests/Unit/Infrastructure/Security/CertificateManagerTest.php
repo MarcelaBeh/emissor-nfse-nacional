@@ -48,9 +48,7 @@ final class CertificateManagerTest extends TestCase
 
     private function diretorioDe(?string $cnpj, ?string $cpf = null): string
     {
-        $manager = new CertificateManager($this->certificado($cnpj, $cpf));
-        $dir = (new \ReflectionProperty($manager, 'tempDir'))->getValue($manager);
-        $this->assertIsString($dir);
+        $dir = (new CertificateManager($this->certificado($cnpj, $cpf)))->getTempDir();
         $this->criados[] = rtrim($dir, '/\\');
 
         return str_replace('\\', '/', $dir);

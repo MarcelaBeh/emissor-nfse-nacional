@@ -61,11 +61,8 @@ class ApiConnector implements ApiConnectorInterface
     private function resolveBaseUrl(): string
     {
         $ambiente = $this->config->getTipoAmbiente();
-        $tipo = $this->config->getTipoApi();
 
-        $key = "{$tipo}_" . ($ambiente->isProducao() ? 'producao' : 'homologacao');
-
-        return $this->config->getUrl($key);
+        return $this->config->getUrl($ambiente->isProducao() ? 'sefin_producao' : 'sefin_homologacao');
     }
 
     /**
@@ -112,7 +109,7 @@ class ApiConnector implements ApiConnectorInterface
                 $decoded = json_decode($body, true);
                 if (isset($decoded['nfseXmlGZipB64'])) {
                     $alertas = $decoded['alertas'] ?? null;
-                    $body = $this->decodeGzipBase64($decoded['nfseXmlGZipB64']);
+                    $body = GzipBase64Decoder::decode($decoded['nfseXmlGZipB64']);
                 }
             }
         }
@@ -134,20 +131,5 @@ class ApiConnector implements ApiConnectorInterface
         }
 
         return $resultado;
-    }
-
-    private function decodeGzipBase64(string $data): string
-    {
-        $decoded = base64_decode($data, true);
-        if ($decoded === false) {
-            throw new \RuntimeException('Falha ao decodificar base64');
-        }
-
-        $uncompressed = gzdecode($decoded);
-        if ($uncompressed === false) {
-            throw new \RuntimeException('Falha ao descomprimir gzip');
-        }
-
-        return $uncompressed;
     }
 }

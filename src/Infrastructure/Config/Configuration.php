@@ -18,7 +18,6 @@ class Configuration implements Contract\ConfigInterface
     private array $urls;
     /** @var array<string, string> */
     private array $operations;
-    private string $tipoApi;
 
     /**
      * @param array<string, mixed> $config
@@ -26,8 +25,6 @@ class Configuration implements Contract\ConfigInterface
     public function __construct(array $config)
     {
         $this->config = $this->validateConfig($config);
-        $this->tipoApi = $config['tipoApi'] ?? 'sefin';
-
         $this->loadUrls();
         $this->loadOperations();
     }
@@ -61,8 +58,6 @@ class Configuration implements Contract\ConfigInterface
         $this->urls = [
             'sefin_homologacao' => 'https://sefin.producaorestrita.nfse.gov.br/SefinNacional',
             'sefin_producao' => 'https://sefin.nfse.gov.br/sefinnacional',
-            'adn_homologacao' => 'https://adn.producaorestrita.nfse.gov.br',
-            'adn_producao' => 'https://adn.nfse.gov.br',
         ];
     }
 
@@ -70,7 +65,7 @@ class Configuration implements Contract\ConfigInterface
     {
         $this->operations = [
             'consultar_nfse' => 'nfse/{chave}',
-            'consultar_dps' => 'dps/{chave}',
+            'consultar_dps' => 'dps/{id}',
             'consultar_eventos' => 'nfse/{chave}/eventos/{tipoEvento}/{nSequencial}',
             'emitir_nfse' => 'nfse',
             'cancelar_nfse' => 'nfse/{chave}/eventos',
@@ -83,12 +78,6 @@ class Configuration implements Contract\ConfigInterface
     public function getTipoAmbiente(): TipoAmbiente
     {
         return TipoAmbiente::from($this->config['tpAmb']);
-    }
-
-    #[\Override]
-    public function getTipoApi(): string
-    {
-        return $this->tipoApi;
     }
 
     #[\Override]

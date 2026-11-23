@@ -18,28 +18,19 @@ class ApiEndpoints
         return str_replace('{chave}', $chave, $this->config->getOperation('consultar_nfse'));
     }
 
-    public function consultarDps(string $chave): string
+    public function consultarDps(string $id): string
     {
-        return str_replace('{chave}', $chave, $this->config->getOperation('consultar_dps'));
+        return str_replace('{id}', $id, $this->config->getOperation('consultar_dps'));
     }
 
-    public function consultarEventos(string $chave, ?string $tipoEvento = null, ?int $nSequencial = null): string
+    /** A SEFIN só tem a consulta com tipo e sequencial: `GET .../eventos` sem eles responde 405. */
+    public function consultarEventos(string $chave, string $tipoEvento, int $nSequencial): string
     {
-        $operation = str_replace('{chave}', $chave, $this->config->getOperation('consultar_eventos'));
-
-        if ($tipoEvento === null) {
-            $operation = str_replace('/{tipoEvento}/{nSequencial}', '', $operation);
-        } else {
-            $operation = str_replace('{tipoEvento}', $tipoEvento, $operation);
-        }
-
-        if ($nSequencial === null) {
-            $operation = str_replace('/{nSequencial}', '', $operation);
-        } else {
-            $operation = str_replace('{nSequencial}', (string) $nSequencial, $operation);
-        }
-
-        return $operation;
+        return str_replace(
+            ['{chave}', '{tipoEvento}', '{nSequencial}'],
+            [$chave, $tipoEvento, (string) $nSequencial],
+            $this->config->getOperation('consultar_eventos')
+        );
     }
 
     public function emitirNfse(): string

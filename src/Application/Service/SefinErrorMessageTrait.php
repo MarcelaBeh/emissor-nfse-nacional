@@ -32,6 +32,11 @@ trait SefinErrorMessageTrait
             return [];
         }
 
+        // As consultas devolvem `erro` como um único objeto (codigo e descricao), não como lista.
+        if (isset($erros['codigo']) || isset($erros['Codigo']) || isset($erros['descricao']) || isset($erros['Descricao'])) {
+            $erros = [$erros];
+        }
+
         $resultado = [];
         foreach ($erros as $erro) {
             if (is_array($erro)) {

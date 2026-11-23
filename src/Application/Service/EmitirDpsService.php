@@ -57,6 +57,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\GzipBase64Decoder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract\XmlBuilderInterface;
@@ -100,7 +101,7 @@ class EmitirDpsService
 
             $payload = $this->requestBuilder->buildDpsPayload($xmlAssinado);
 
-            $response = $this->apiConnector->post('nfse', $payload);
+            $response = $this->apiConnector->post($this->apiEndpoints->emitirNfse(), $payload);
 
             return $this->processarResposta($response, $dps);
 
@@ -208,17 +209,11 @@ class EmitirDpsService
 
     private function descompactarXml(string $gzipBase64): string
     {
-        $decoded = base64_decode($gzipBase64, true);
-        if ($decoded === false) {
-            throw new ServiceException('Falha ao decodificar base64');
+        try {
+            return GzipBase64Decoder::decode($gzipBase64);
+        } catch (\RuntimeException $e) {
+            throw new ServiceException($e->getMessage(), 0, $e);
         }
-
-        $uncompressed = gzdecode($decoded);
-        if ($uncompressed === false) {
-            throw new ServiceException('Falha ao descompactar gzip');
-        }
-
-        return $uncompressed;
     }
 
     private function criarDpsFromRequest(DpsRequest $request): Dps
@@ -841,10 +836,7 @@ class EmitirDpsService
             // O atributo Id do infNFSe segue TSIdNFSe: "NFS" + 50 posições (53 no total), com
             // a inscrição federal alfanumérica nas posições 10 a 23. Só extrai a chave quando o
             // formato confere; id malformado não vira chave inválida silenciosa.
-            $id = $xmlParsed['id'] ?? null;
-            if (is_string($id) && preg_match('/^NFS([0-9]{9}[0-9A-Z]{14}[0-9]{27})$/', $id, $m) === 1) {
-                $chaveReal = $m[1];
-            }
+            $chaveReal = ChaveAcesso::doIdNfse($xmlParsed['id'] ?? null);
             $numero = $xmlParsed['numero'] ?? null;
             $numeroNfse = is_string($numero) && $numero !== '' ? $numero : null;
         }

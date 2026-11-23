@@ -68,24 +68,6 @@ final class EventoTest extends TestCase
         $this->assertSame('52998224725', $evento->getCpfAutor());
     }
 
-    public function test_create_with_n_seq_evento_amb_ger(): void
-    {
-        $evento = new Evento(
-            tipo: TipoEvento::CANCELAMENTO,
-            chaveNfse: new ChaveAcesso(self::CHAVE_50),
-            dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
-            versaoAplicacao: '1.0.0',
-            cnpjAutor: '11444777000161',
-            nSeqEvento: '001',
-            ambGer: 2,
-            nDFSe: '123',
-        );
-
-        $this->assertSame('001', $evento->getNSeqEvento());
-        $this->assertSame(2, $evento->getAmbGer());
-        $this->assertSame('123', $evento->getNDFSe());
-    }
-
     public function test_create_all_16_tipo_evento(): void
     {
         $casos = [

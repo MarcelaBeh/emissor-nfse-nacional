@@ -21,10 +21,6 @@ class Evento implements EventoInterface
         private ?string $cpfAutor = null,
         private ?string $codigoMotivo = null,
         private ?string $descricaoMotivo = null,
-        private ?string $nSeqEvento = null,
-        private ?int $ambGer = null,
-        private ?\DateTimeImmutable $dhProc = null,
-        private ?string $nDFSe = null,
         private ?string $chSubstituta = null,
         private ?string $cpfAgTrib = null,
         private ?string $nProcAdm = null,
@@ -107,26 +103,6 @@ class Evento implements EventoInterface
     public function getDescricaoMotivo(): ?string
     {
         return $this->descricaoMotivo;
-    }
-
-    public function getNSeqEvento(): ?string
-    {
-        return $this->nSeqEvento;
-    }
-
-    public function getAmbGer(): ?int
-    {
-        return $this->ambGer;
-    }
-
-    public function getDhProc(): ?\DateTimeImmutable
-    {
-        return $this->dhProc;
-    }
-
-    public function getNDFSe(): ?string
-    {
-        return $this->nDFSe;
     }
 
     public function getChSubstituta(): ?string

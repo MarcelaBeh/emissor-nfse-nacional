@@ -31,7 +31,6 @@ final class EventoValidatorTest extends TestCase
             cnpjAutor: '12345678000195',
             codigoMotivo: '1',
             descricaoMotivo: 'Cancelamento de teste',
-            nSeqEvento: '1',
         );
 
         $this->validator->validate($request);
@@ -49,7 +48,6 @@ final class EventoValidatorTest extends TestCase
             tipoAmbiente: 2,
             cnpjAutor: '12345678000195',
             codigoMotivo: '1',
-            nSeqEvento: '1',
         );
 
         $this->expectException(ValidationException::class);
@@ -67,7 +65,6 @@ final class EventoValidatorTest extends TestCase
             versaoAplicacao: '1.0.0',
             tipoAmbiente: 2,
             cnpjAutor: '12345678000195',
-            nSeqEvento: '1',
         );
 
         $this->expectException(ValidationException::class);
@@ -88,7 +85,6 @@ final class EventoValidatorTest extends TestCase
             cnpjAutor: '12345678000195',
             codigoMotivo: '1',
             descricaoMotivo: 'Erro',
-            nSeqEvento: '1',
         );
 
         $this->expectException(ValidationException::class);
@@ -109,7 +105,6 @@ final class EventoValidatorTest extends TestCase
             tipoAmbiente: 2,
             cnpjAutor: '12345678000195',
             codigoMotivo: '1',
-            nSeqEvento: '1',
         );
 
         $this->expectException(ValidationException::class);
@@ -118,9 +113,10 @@ final class EventoValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
-    public function test_substituicao_sem_descricao_passa_para_qualquer_codigo(): void
+    public function test_substituicao_nao_e_aceita_como_pedido_de_evento(): void
     {
-        // Substituição (TE105102): xMotivo é minOccurs=0 no XSD, opcional para qualquer código.
+        // A SEFIN recusa o 105102 enviado no POST de eventos (E1861, confirmado em produção restrita): o evento nasce da
+        // DPS substituta. O pedido completo e bem formado é recusado do mesmo jeito.
         foreach (['01', '99'] as $codigo) {
             $request = new EventoRequest(
                 tipoEvento: '105102',
@@ -131,13 +127,16 @@ final class EventoValidatorTest extends TestCase
                 cnpjAutor: '12345678000195',
                 codigoMotivo: $codigo,
                 chSubstituta: '99345678901234567890123456789012345678901234567890',
-                nSeqEvento: '1',
             );
 
-            $this->validator->validate($request);
+            try {
+                $this->validator->validate($request);
+                $this->fail("O pedido 105102 com motivo {$codigo} deveria ser recusado");
+            } catch (ValidationException $e) {
+                $this->assertStringContainsString('E1861', $e->getMessage());
+                $this->assertStringContainsString('DpsRequest::$substituicao', $e->getMessage());
+            }
         }
-
-        $this->assertTrue(true);
     }
 
     public function test_descricao_motivo_com_15_ou_mais_caracteres_passa(): void
@@ -151,7 +150,6 @@ final class EventoValidatorTest extends TestCase
             cnpjAutor: '12345678000195',
             codigoMotivo: '1',
             descricaoMotivo: 'Erro na emissao da nota',
-            nSeqEvento: '1',
         );
 
         $this->validator->validate($request);

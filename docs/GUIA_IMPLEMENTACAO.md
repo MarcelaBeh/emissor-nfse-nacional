@@ -496,13 +496,10 @@ class Configuration implements Contract\ConfigInterface
     private array $config;
     private array $urls;
     private array $operations;
-    private string $tipoApi;
     
     public function __construct(array $config)
     {
         $this->config = $this->validateConfig($config);
-        $this->tipoApi = $config['tipoApi'] ?? 'sefin';
-
         $this->loadUrls();
         $this->loadOperations();
     }
@@ -528,12 +525,10 @@ class Configuration implements Contract\ConfigInterface
 
     private function loadUrls(): void
     {
-        // URLs padrão (apenas sefin_* e adn_*)
+        // URLs padrão da SEFIN Nacional
         $this->urls = [
             'sefin_homologacao' => 'https://sefin.producaorestrita.nfse.gov.br/SefinNacional',
             'sefin_producao' => 'https://sefin.nfse.gov.br/sefinnacional',
-            'adn_homologacao' => 'https://adn.producaorestrita.nfse.gov.br',
-            'adn_producao' => 'https://adn.nfse.gov.br',
         ];
     }
 

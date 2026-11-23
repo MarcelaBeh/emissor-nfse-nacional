@@ -110,7 +110,6 @@ $evento = new EventoRequest(
     cnpjAutor: '11444777000161',
     codigoMotivo: '9',             // 9 = Outros (no cancelamento)
     descricaoMotivo: 'Erro na emissão',
-    nSeqEvento: '1',
 );
 
 $response = $nfse->cancelar($evento);  // EventoResponse
@@ -123,19 +122,26 @@ $response = $nfse->consultarPorChave('352606114447770001615500100000012310000000
 // NfseResponse|null
 ```
 
-### 4. Consultar DPS por Chave
+A consulta devolve a NFS-e como foi emitida: o cancelamento **não** aparece nela (o `cStat` continua 100). Para saber
+se uma nota foi cancelada, consulte o evento (item 5).
+
+### 4. Descobrir a chave da NFS-e pelo Id da DPS
 
 ```php
-$dados = $nfse->consultarDpsPorChave('35260611444777000161550010000001231000000001');
-// array<string, mixed> (não é um objeto Response)
+$chave = $nfse->consultarChavePorDps('DPS355030821144477700016100001000000000000123');
+// string (chave de 50 posições) ou null se nenhuma NFS-e foi gerada com esse Id de DPS
 ```
 
-### 5. Consultar Eventos
+### 5. Consultar um evento (por exemplo, saber se a nota foi cancelada)
 
 ```php
-$eventos = $nfse->consultarEventos('35260611444777000161550010000001231000000001');
-// array (histórico de eventos). Parâmetros opcionais: ($chave, ?$tipoEvento, ?$sequencial)
+$eventos = $nfse->consultarEventosProcessados('35260611444777000161550010000001231000000001', '101101', 1);
+// list<EventoProcessado>: vazia se não há evento. Cada um traz dhProc (data e hora do registro), nSeqEvento
+// e xml (o XML assinado do evento, para guardar como comprovante).
 ```
+
+O tipo e o sequencial são obrigatórios: a SEFIN não lista eventos sem eles. O cancelamento é o tipo `101101` e só
+ocorre uma vez (sequencial 1). A mesma resposta de `$nfse->cancelar()` já traz o evento em `$response->evento`.
 
 ---
 

@@ -271,7 +271,6 @@ final class EventoXmlBuilderTest extends TestCase
             versaoAplicacao: '1.0.0',
             tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
-            nSeqEvento: '001',
         );
 
         $xml = $this->builder->build($evento);

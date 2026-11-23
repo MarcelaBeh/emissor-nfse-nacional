@@ -35,10 +35,17 @@ final class ApiEndpointsTest extends TestCase
         $this->assertSame("nfse/{$chave}", $this->endpoints->consultarNfse($chave));
     }
 
-    public function test_consultar_dps(): void
+    public function test_consultar_dps_usa_o_id_da_dps(): void
+    {
+        // Regressão: o caminho saía com "{id}" literal, porque o código trocava "{chave}".
+        $id = 'DPS' . str_repeat('1', 42);
+        $this->assertSame("dps/{$id}", $this->endpoints->consultarDps($id));
+    }
+
+    public function test_consultar_eventos_exige_tipo_e_sequencial_no_caminho(): void
     {
         $chave = str_repeat('1', 50);
-        $this->assertSame("dps/{$chave}", $this->endpoints->consultarDps($chave));
+        $this->assertSame("nfse/{$chave}/eventos/101101/1", $this->endpoints->consultarEventos($chave, '101101', 1));
     }
 
     public function test_verificar_dps_nao_lanca_operacao_nao_configurada(): void

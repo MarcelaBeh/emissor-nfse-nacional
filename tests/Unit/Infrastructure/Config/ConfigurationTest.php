@@ -17,7 +17,6 @@ final class ConfigurationTest extends TestCase
         $config = new Configuration(['tpAmb' => 2]);
 
         $this->assertSame(TipoAmbiente::HOMOLOGACAO, $config->getTipoAmbiente());
-        $this->assertSame('sefin', $config->getTipoApi());
     }
 
     public function test_sem_tpamb_e_recusado(): void
@@ -41,7 +40,7 @@ final class ConfigurationTest extends TestCase
         $antigo = new Configuration(['tpAmb' => 2, 'prefeitura' => '3501608']);
         $novo = new Configuration(['tpAmb' => 2]);
 
-        foreach (['sefin_homologacao', 'sefin_producao', 'adn_homologacao', 'adn_producao'] as $chave) {
+        foreach (['sefin_homologacao', 'sefin_producao'] as $chave) {
             $this->assertSame($novo->getUrl($chave), $antigo->getUrl($chave));
         }
         $this->assertSame($novo->getOperation('emitir_nfse'), $antigo->getOperation('emitir_nfse'));

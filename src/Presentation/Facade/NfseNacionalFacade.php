@@ -13,6 +13,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\CancelarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\EventoProcessado;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
 use MarcelaBeh\EmissorNfseNacional\Presentation\Factory\ServiceFactory;
@@ -73,18 +74,20 @@ class NfseNacionalFacade
     }
 
     /**
-     * Consulta o DPS original de uma NFS-e pela chave de acesso.
+     * Descobre a chave de acesso da NFS-e gerada a partir de uma DPS, pelo Id da DPS ("DPS" + 42 dígitos). Devolve null
+     * se nenhuma NFS-e foi gerada com esse Id.
      *
-     * @return array<string, mixed>
+     * @throws ValidationException se o Id não tiver o formato do TSIdDPS
      * @throws ServiceException se a comunicação com a API falhar
      */
-    public function consultarDpsPorChave(string $chave): array
+    public function consultarChavePorDps(string $idDps): ?string
     {
-        return $this->consultarNfseService->consultarDpsPorChave($chave);
+        return $this->consultarNfseService->consultarChavePorDps($idDps);
     }
 
     /**
-     * Cancela, manifesta ou substitui uma NFS-e via evento.
+     * Cancela ou manifesta uma NFS-e via evento. A substituição não é um pedido de evento: emita a NFS-e substituta com
+     * `DpsRequest::$substituicao` e a SEFIN registra o evento 105102 na original.
      *
      * @throws ValidationException se os dados do evento forem inválidos
      * @throws ServiceException se a comunicação com a API falhar
@@ -95,21 +98,31 @@ class NfseNacionalFacade
     }
 
     /**
-     * Consulta os eventos registrados para uma NFS-e.
+     * Consulta um evento já registrado e devolve os itens como a SEFIN os envia (com o `arquivoXml` ainda codificado).
+     * O tipo e o sequencial são obrigatórios, porque a SEFIN não lista eventos sem eles. Para o evento já lido, use
+     * `consultarEventosProcessados()`.
      *
-     * @return array<int, mixed>
+     * @return list<array<string, mixed>> vazia se a SEFIN não encontrar o evento
+     * @throws ValidationException se a chave, o tipo ou o sequencial forem inválidos
      * @throws ServiceException se a comunicação com a API falhar
      */
-    public function consultarEventos(
-        string $chave,
-        ?string $tipoEvento = null,
-        ?int $sequencial = null
-    ): array {
-        return array_values($this->consultarNfseService->consultarEventos(
-            $chave,
-            $tipoEvento,
-            $sequencial
-        ));
+    public function consultarEventos(string $chave, string $tipoEvento, int $sequencial): array
+    {
+        return $this->consultarNfseService->consultarEventos($chave, $tipoEvento, $sequencial);
+    }
+
+    /**
+     * Consulta um evento já registrado (o cancelamento, por exemplo, é o tipo 101101 sequencial 1) e devolve o evento
+     * processado: data e hora do registro, sequencial e o XML assinado para guardar como comprovante. Lista vazia se a
+     * SEFIN não encontrar o evento.
+     *
+     * @return list<EventoProcessado>
+     * @throws ValidationException se a chave, o tipo ou o sequencial forem inválidos
+     * @throws ServiceException se a comunicação com a API falhar ou o evento não puder ser lido
+     */
+    public function consultarEventosProcessados(string $chave, string $tipoEvento, int $sequencial): array
+    {
+        return $this->consultarNfseService->consultarEventosProcessados($chave, $tipoEvento, $sequencial);
     }
 
     /**

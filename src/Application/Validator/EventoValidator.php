@@ -37,6 +37,13 @@ class EventoValidator
             }
         }
 
+        // Confirmado na produção restrita (E1861): a SEFIN não aceita este pedido no POST da API de eventos. O evento
+        // é registrado por ela quando a NFS-e substituta é emitida com o grupo subst na DPS.
+        if ($tipoEvento === TipoEvento::SUBSTITUICAO) {
+            $errors[] = 'E1861: o cancelamento por substituição não é aceito como pedido de evento; emita a NFS-e substituta '
+                . 'com o grupo subst na DPS (DpsRequest::$substituicao) e a SEFIN registra o evento 105102 na original';
+        }
+
         if (empty($request->versaoAplicacao)) {
             $errors[] = 'Versão da aplicação é obrigatória';
         } elseif (mb_strlen($request->versaoAplicacao) > 20) {
