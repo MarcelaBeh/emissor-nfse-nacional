@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Application\Validator;
 
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocAjusteBCRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsFornecedorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsUnidadeImobiliariaRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocAjusteBC;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\CausaNaoNif;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\EnviarMdic;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
@@ -23,15 +28,18 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoSubstituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MovimentacaoTemporaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeEspecialTributacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBC;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBCLocImoveis;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoChaveDocumentoFiscal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VinculoPrestador;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
 
 class DpsValidator
 {
@@ -71,20 +79,27 @@ class DpsValidator
     private function validateInfDps(DpsRequest $request, array &$errors): void
     {
         if (!in_array($request->tipoAmbiente, TipoAmbiente::valores(), true)) {
-            $errors[] = 'tpAmb inválido — deve ser 1 (Produção) ou 2 (Homologação)';
+            $errors[] = 'tpAmb inválido - deve ser 1 (Produção) ou 2 (Homologação)';
         }
 
         if (!in_array($request->tipoEmissao, TipoEmitente::valores(), true)) {
-            $errors[] = 'tpEmit inválido — deve ser 1 (Prestador), 2 (Tomador) ou 3 (Intermediário) (TSEmitenteDPS)';
+            $errors[] = 'tpEmit inválido - deve ser 1 (Prestador), 2 (Tomador) ou 3 (Intermediário) (TSEmitenteDPS)';
         }
 
         if ($request->cMotivoEmisTI !== null && !in_array($request->cMotivoEmisTI, MotivoEmissaoTI::valores(), true)) {
             $errors[] = 'cMotivoEmisTI inválido (TSMotivoEmisTI)';
         }
 
-        $serieStr = sprintf('%05d', $request->serie);
-        if (!preg_match('/^0{0,4}\d{1,5}$/', $serieStr)) {
-            $errors[] = 'serie deve ser numérico de 1 a 5 dígitos (TSSerieDPS)';
+        // TSSerieDPS (XSD NT 009): [0-9]{1,4}|[0-8][0-9]{4}, ou seja, 1 a 89999. A faixa 90000 a 99999
+        // não é aceita pelo leiaute; a faixa permitida a cada tipo de emissor é regra do servidor.
+        if ($request->serie < 1 || $request->serie > 89999) {
+            $errors[] = 'serie deve estar entre 1 e 89999 (TSSerieDPS)';
+        }
+
+        if ($request->finNFSe === '') {
+            $errors[] = 'finNFSe é obrigatória (TSRTCFinNFSe)';
+        } elseif (!in_array($request->finNFSe, FinalidadeNfse::valores(), true)) {
+            $errors[] = 'finNFSe inválido (TSRTCFinNFSe): nesta versão do leiaute só é admitido 0 (NFS-e regular)';
         }
 
         $nDpsStr = (string) $request->numero;
@@ -110,8 +125,8 @@ class DpsValidator
             $errors[] = 'cLocEmi deve ter exatamente 7 dígitos numéricos (TSCodMunIBGE)';
         }
 
-        if ($request->chNFSeRej !== null && !preg_match('/^[0-9]{50}$/', $request->chNFSeRej)) {
-            $errors[] = 'chNFSeRej deve ter exatamente 50 dígitos numéricos (TSChaveNFSe)';
+        if ($request->chNFSeRej !== null && !preg_match(ChaveAcesso::PADRAO, $request->chNFSeRej)) {
+            $errors[] = 'chNFSeRej deve ter 50 posições, com letras A-Z somente na inscrição federal (posições 10 a 23) (TSChaveNFSe)';
         }
     }
 
@@ -121,15 +136,15 @@ class DpsValidator
         $p = $request->prestador;
 
         if (!in_array($p->regimeTributario, RegimeTributario::valores(), true)) {
-            $errors[] = 'opSimpNac inválido — deve ser 1, 2 ou 3 (TSOpSimpNac)';
+            $errors[] = 'opSimpNac inválido - deve ser 1, 2 ou 3 (TSOpSimpNac)';
         }
 
         if ($p->regApTribSN !== null && !in_array($p->regApTribSN, [1, 2, 3], true)) {
-            $errors[] = 'regApTribSN inválido — deve ser 1, 2 ou 3 (TSRegimeApuracaoSimpNac)';
+            $errors[] = 'regApTribSN inválido - deve ser 1, 2 ou 3 (TSRegimeApuracaoSimpNac)';
         }
 
         if ($p->regEspTrib !== null && !in_array((string) $p->regEspTrib, RegimeEspecialTributacao::valores(), true)) {
-            $errors[] = 'regEspTrib inválido — deve ser 0, 1, 2, 3, 4, 5, 6 ou 9 (TSRegEspTrib)';
+            $errors[] = 'regEspTrib inválido - deve ser 0, 1, 2, 3, 4, 5, 6 ou 9 (TSRegEspTrib)';
         }
 
         if (mb_strlen($p->razaoSocial, 'UTF-8') > 300) {
@@ -156,8 +171,8 @@ class DpsValidator
 
         if ($p->documento !== null) {
             if ($p->isCnpj === true) {
-                if (!preg_match('/^[0-9]{14}$/', $p->documento)) {
-                    $errors[] = 'CNPJ do prestador deve ter 14 dígitos numéricos (TSCNPJ)';
+                if (!preg_match(Cnpj::PADRAO, $p->documento)) {
+                    $errors[] = 'CNPJ do prestador deve ter 14 caracteres: 12 de raiz e ordem (dígitos ou letras A-Z) e 2 dígitos verificadores (TSCNPJ)';
                 }
             } elseif ($p->isCnpj === false) {
                 if (!preg_match('/^[0-9]{11}$/', $p->documento)) {
@@ -171,7 +186,7 @@ class DpsValidator
         }
 
         if ($p->codigoNaoNif !== null && !in_array($p->codigoNaoNif, CausaNaoNif::valores(), true)) {
-            $errors[] = 'cNaoNIF inválido — deve ser 0, 1 ou 2 (TSCodNaoNIF)';
+            $errors[] = 'cNaoNIF inválido - deve ser 0, 1 ou 2 (TSCodNaoNIF)';
         }
 
         if ($p->caepf !== null && !preg_match('/^[0-9]{14}$/', $p->caepf)) {
@@ -271,8 +286,8 @@ class DpsValidator
 
         if ($t->documento !== null) {
             if ($t->isCnpj === true) {
-                if (!preg_match('/^[0-9]{14}$/', $t->documento)) {
-                    $errors[] = 'CNPJ do tomador deve ter 14 dígitos numéricos (TSCNPJ)';
+                if (!preg_match(Cnpj::PADRAO, $t->documento)) {
+                    $errors[] = 'CNPJ do tomador deve ter 14 caracteres: 12 de raiz e ordem (dígitos ou letras A-Z) e 2 dígitos verificadores (TSCNPJ)';
                 }
             } elseif ($t->isCnpj === false) {
                 if (!preg_match('/^[0-9]{11}$/', $t->documento)) {
@@ -286,7 +301,7 @@ class DpsValidator
         }
 
         if ($t->codigoNaoNif !== null && !in_array($t->codigoNaoNif, CausaNaoNif::valores(), true)) {
-            $errors[] = 'cNaoNIF do tomador inválido — deve ser 0, 1 ou 2 (TSCodNaoNIF)';
+            $errors[] = 'cNaoNIF do tomador inválido - deve ser 0, 1 ou 2 (TSCodNaoNIF)';
         }
 
         if ($t->caepf !== null && !preg_match('/^[0-9]{14}$/', $t->caepf)) {
@@ -306,7 +321,7 @@ class DpsValidator
             || $tomadorExterior;
 
         if ($hasAddress) {
-            // xLgr, nro e xBairro são obrigatórios (minOccurs=1) dentro de <end> — não podem
+            // xLgr, nro e xBairro são obrigatórios (minOccurs=1) dentro de <end> - não podem
             // ficar vazios quando o grupo é emitido, senão o XSD rejeita com erro genérico.
             if (empty($t->logradouro)) {
                 $errors[] = 'xLgr do tomador é obrigatório quando há endereço (TSLogradouro)';
@@ -315,7 +330,7 @@ class DpsValidator
             }
 
             if (empty($t->numero)) {
-                $errors[] = 'nro do tomador é obrigatório quando há endereço — use "S/N" se não houver (TSNumeroEndereco)';
+                $errors[] = 'nro do tomador é obrigatório quando há endereço - use "S/N" se não houver (TSNumeroEndereco)';
             } elseif (mb_strlen($t->numero, 'UTF-8') > 60) {
                 $errors[] = 'nro do tomador deve ter no máximo 60 caracteres (TSNumeroEndereco)';
             }
@@ -401,8 +416,8 @@ class DpsValidator
 
         if ($i->documento !== null) {
             if ($i->isCnpj === true) {
-                if (!preg_match('/^[0-9]{14}$/', $i->documento)) {
-                    $errors[] = 'CNPJ do intermediário deve ter 14 dígitos numéricos (TSCNPJ)';
+                if (!preg_match(Cnpj::PADRAO, $i->documento)) {
+                    $errors[] = 'CNPJ do intermediário deve ter 14 caracteres: 12 de raiz e ordem (dígitos ou letras A-Z) e 2 dígitos verificadores (TSCNPJ)';
                 }
             } elseif ($i->isCnpj === false) {
                 if (!preg_match('/^[0-9]{11}$/', $i->documento)) {
@@ -416,7 +431,7 @@ class DpsValidator
         }
 
         if ($i->codigoNaoNif !== null && !in_array($i->codigoNaoNif, CausaNaoNif::valores(), true)) {
-            $errors[] = 'cNaoNIF do intermediário inválido — deve ser 0, 1 ou 2 (TSCodNaoNIF)';
+            $errors[] = 'cNaoNIF do intermediário inválido - deve ser 0, 1 ou 2 (TSCodNaoNIF)';
         }
 
         if ($i->caepf !== null && !preg_match('/^[0-9]{14}$/', $i->caepf)) {
@@ -442,7 +457,7 @@ class DpsValidator
             }
 
             if (empty($i->numero)) {
-                $errors[] = 'nro do intermediário é obrigatório quando há endereço — use "S/N" se não houver (TSNumeroEndereco)';
+                $errors[] = 'nro do intermediário é obrigatório quando há endereço - use "S/N" se não houver (TSNumeroEndereco)';
             } elseif (mb_strlen($i->numero, 'UTF-8') > 60) {
                 $errors[] = 'nro do intermediário deve ter no máximo 60 caracteres (TSNumeroEndereco)';
             }
@@ -553,7 +568,7 @@ class DpsValidator
         $this->validateComExterior($s, $errors);
         $this->validateAtvEvento($s, $errors);
         $this->validateInfoCompl($s, $request->tipoEmissao, $errors);
-        $this->validateDocumentosDeducao($s, $errors);
+        $this->validateAjusteBC($s, $errors);
         $this->validateTribMun($s, $errors);
         $this->validateTribFed($s, $errors);
         $this->validateTotTrib($s, $errors);
@@ -861,156 +876,238 @@ class DpsValidator
         }
     }
 
-    /** @param array<string> $errors */
-    private function validateDocumentosDeducao(ServicoRequest $s, array &$errors): void
+    /**
+     * Valida o grupo vAjusteBC (TCInfoAjusteBC, NT 009 item 2.3): ajuste percentual OU por valor
+     * do ISSQN (choice opcional) e documentos de ajuste (opcional, 1 a 1000).
+     *
+     * @param array<string> $errors
+     */
+    private function validateAjusteBC(ServicoRequest $s, array &$errors): void
     {
-        $hasPDR = $s->percentualDeducao !== null;
-        $hasVDR = $s->valorDeducaoPadrao !== null;
-        $hasDocs = $s->documentosDeducao !== null;
+        $temPercentual = $s->percentualAjusteBcIssqn !== null;
+        $temValor = $s->valorAjusteBcIssqn !== null;
+        $docs = $s->documentosAjusteBc;
 
-        if ($hasPDR || $hasVDR || $hasDocs) {
-            $choices = ($hasPDR ? 1 : 0) + ($hasVDR ? 1 : 0) + ($hasDocs ? 1 : 0);
-
-            if ($choices > 1) {
-                $errors[] = 'pDR, vDR e documentos são mutuamente exclusivos (TCInfoDedRed choice)';
-            }
-
-            if ($hasPDR && ($s->percentualDeducao < 0 || $s->percentualDeducao > 100)) {
-                $errors[] = 'pDR deve estar entre 0 e 100 (TSDec3V2)';
-            }
-
-            if ($hasVDR && $s->valorDeducaoPadrao <= 0) {
-                $errors[] = 'vDR deve ser maior que zero (TSDec15V2)';
-            }
-
-            // A dedução/redução não pode exceder o valor do serviço — geraria
-            // base de cálculo do ISS negativa. Vale para os três modos de <vDedRed>.
-            if ($hasVDR && $s->valorDeducaoPadrao > $s->valorServicos) {
-                $errors[] = 'vDR não pode exceder vServ (base de cálculo negativa)';
-            }
-            if ($s->documentosDeducao !== null) {
-                $somaDeducao = 0.0;
-                foreach ($s->documentosDeducao as $doc) {
-                    $somaDeducao += (float) ($doc->valorDeducao ?? 0);
-                }
-                if ($somaDeducao > $s->valorServicos) {
-                    $errors[] = 'A soma das deduções (vDeducaoReducao) não pode exceder vServ (base de cálculo negativa)';
-                }
-            }
+        if ($temPercentual && $temValor) {
+            $errors[] = 'pAjusteBCISSQN e vAjusteBCISSQN são mutuamente exclusivos (TCInfoAjusteBC choice)';
         }
 
-        if ($s->documentosDeducao === null) {
+        if ($temPercentual && ($s->percentualAjusteBcIssqn <= 0 || $s->percentualAjusteBcIssqn > 100)) {
+            $errors[] = 'E0453: pAjusteBCISSQN deve ser maior que 0 e menor ou igual a 100 (TSDec3V2)';
+        }
+
+        if ($temValor && $s->valorAjusteBcIssqn <= 0) {
+            $errors[] = 'vAjusteBCISSQN deve ser maior que zero (TSDec15V2)';
+        }
+
+        if ($temValor && $s->valorAjusteBcIssqn > $s->valorServicos) {
+            $errors[] = 'vAjusteBCISSQN não pode exceder vServ (base de cálculo negativa)';
+        }
+
+        if ($docs === null) {
+            $this->validateBaseIssqnNaoNegativa($s, 0.0, $errors);
+
             return;
         }
 
-        if (count($s->documentosDeducao) > 1000) {
-            $errors[] = 'docDedRed deve conter no máximo 1000 documentos (maxOccurs=1000)';
+        if ($docs === []) {
+            $errors[] = 'documentos de vAjusteBC deve conter ao menos um docAjusteBC (minOccurs=1)';
+            $this->validateBaseIssqnNaoNegativa($s, 0.0, $errors);
+
+            return;
         }
 
-        $validTypes = ['chNFSe', 'chNFe', 'NFSeMun', 'NFNFS', 'nDocFisc', 'nDoc'];
+        if (count($docs) > 1000) {
+            $errors[] = 'docAjusteBC deve conter no máximo 1000 documentos (maxOccurs=1000)';
+        }
 
-        foreach ($s->documentosDeducao as $i => $doc) {
-            $pfx = "DocDedRed #{$i}";
+        $somaAjusteIssqn = 0.0;
 
-            if ($doc->tipoDocumento === null || !in_array($doc->tipoDocumento, $validTypes, true)) {
-                $errors[] = "{$pfx}: tipoDocumento inválido";
-            }
+        foreach ($docs as $i => $doc) {
+            $pfx = "docAjusteBC #{$i}";
+            $tipo = null;
 
-            if ($doc->tipoDocumento === 'chNFSe') {
-                if (empty($doc->chaveNFSe)) {
-                    $errors[] = "{$pfx}: chNFSe é obrigatória";
-                } elseif (!preg_match('/^[0-9]{50}$/', $doc->chaveNFSe)) {
-                    $errors[] = "{$pfx}: chNFSe deve ter 50 dígitos numéricos (TSChaveNFSe)";
+            if ($doc->tpAjusteBC === null || $doc->tpAjusteBC === '') {
+                $errors[] = "{$pfx}: tpAjusteBC é obrigatório (TSRTCTpAjusteBC)";
+            } else {
+                $tipo = TipoAjusteBC::tryFrom($doc->tpAjusteBC);
+                if ($tipo === null) {
+                    $errors[] = "{$pfx}: tpAjusteBC inválido (TSRTCTpAjusteBC)";
                 }
             }
 
-            if ($doc->tipoDocumento === 'chNFe') {
-                if (empty($doc->chaveNFe)) {
-                    $errors[] = "{$pfx}: chNFe é obrigatória";
-                } elseif (!preg_match('/^[0-9]{44}$/', $doc->chaveNFe)) {
-                    $errors[] = "{$pfx}: chNFe deve ter 44 dígitos numéricos (TSChaveNFe)";
+            if ($tipo !== null) {
+                if ($tipo->exigeDescricao() && ($doc->xTpAjusteBC === null || trim($doc->xTpAjusteBC) === '')) {
+                    $errors[] = "{$pfx}: xTpAjusteBC é obrigatório quando tpAjusteBC = {$tipo->value}";
+                }
+                if (!$tipo->exigeDescricao() && $doc->xTpAjusteBC !== null) {
+                    $errors[] = "{$pfx}: E0464: xTpAjusteBC só pode ser informado quando tpAjusteBC = 99 ou 199";
+                }
+                if (($temPercentual || $temValor) && $tipo->exclusivoIssqn()) {
+                    $errors[] = "{$pfx}: E0462: tpAjusteBC {$tipo->value} não pode ser informado por documento quando há ajuste por percentual ou valor (pAjusteBCISSQN/vAjusteBCISSQN)";
                 }
             }
 
-            if ($doc->tipoDocumento === 'NFSeMun') {
-                if (empty($doc->codigoMunicipioNFSe)) {
-                    $errors[] = "{$pfx}: cMunNFSeMun é obrigatório";
-                } elseif (!preg_match('/^[0-9]{7}$/', $doc->codigoMunicipioNFSe)) {
-                    $errors[] = "{$pfx}: cMunNFSeMun deve ter 7 dígitos numéricos (TSCodMunIBGE)";
-                }
-                if (empty($doc->numeroNFSe)) {
-                    $errors[] = "{$pfx}: nNFSeMun é obrigatório";
-                } elseif (!preg_match('/^[0-9]{15}$/', $doc->numeroNFSe)) {
-                    $errors[] = "{$pfx}: nNFSeMun deve ter 15 dígitos numéricos (TSNum15Dig)";
-                }
-                if (empty($doc->codigoVerificacaoNFSe)) {
-                    $errors[] = "{$pfx}: cVerifNFSeMun é obrigatório";
-                } elseif (!preg_match('/^[a-zA-Z0-9]{1,9}$/', $doc->codigoVerificacaoNFSe)) {
-                    $errors[] = "{$pfx}: cVerifNFSeMun deve ser alfanumérico de 1 a 9 caracteres (TSCodVerificacao)";
-                }
+            if ($doc->xTpAjusteBC !== null && (trim($doc->xTpAjusteBC) === '' || mb_strlen($doc->xTpAjusteBC, 'UTF-8') > 150)) {
+                $errors[] = "{$pfx}: xTpAjusteBC deve ter 1 a 150 caracteres (TSDesc150)";
             }
 
-            if ($doc->tipoDocumento === 'NFNFS') {
-                if (empty($doc->numeroNFS)) {
-                    $errors[] = "{$pfx}: nNFS é obrigatório";
-                } elseif (!preg_match('/^[0-9]{7}$/', $doc->numeroNFS)) {
-                    $errors[] = "{$pfx}: nNFS deve ter 7 dígitos numéricos (TSNum7Dig)";
+            $totalValido = $this->validateValorDec15V2($doc->vTotDoc, 'vTotDoc', $pfx, $errors);
+            $aplicadoValido = $this->validateValorDec15V2($doc->vAjusteAplic, 'vAjusteAplic', $pfx, $errors);
+
+            if ($totalValido && $aplicadoValido) {
+                if ((float) $doc->vAjusteAplic > (float) $doc->vTotDoc) {
+                    $errors[] = "{$pfx}: vAjusteAplic deve ser menor ou igual a vTotDoc";
                 }
-                if (empty($doc->modeloNFS)) {
-                    $errors[] = "{$pfx}: modNFS é obrigatório";
-                } elseif (!preg_match('/^[0-9]{15}$/', $doc->modeloNFS)) {
-                    $errors[] = "{$pfx}: modNFS deve ter 15 dígitos numéricos (TSNum15Dig)";
+                if ((float) $doc->vAjusteAplic > $s->valorServicos) {
+                    $errors[] = "{$pfx}: E0467: vAjusteAplic deve ser menor ou igual ao valor do serviço prestado (vServ)";
                 }
-                if (empty($doc->serieNFS)) {
-                    $errors[] = "{$pfx}: serieNFS é obrigatório";
-                } elseif (!preg_match('/^[a-zA-Z0-9]{1,15}$/', $doc->serieNFS)) {
-                    $errors[] = "{$pfx}: serieNFS deve ser alfanumérico de 1 a 15 caracteres (TSSerieNFNFS)";
+                if ($tipo !== null && $tipo->ajustaBaseIssqn()) {
+                    $somaAjusteIssqn += (float) $doc->vAjusteAplic;
                 }
             }
 
-            if ($doc->tipoDocumento === 'nDocFisc' && empty($doc->numeroDocFiscal)) {
-                $errors[] = "{$pfx}: nDocFisc é obrigatório";
-            }
+            $this->validateDatasDocAjuste($doc, $pfx, $errors);
+            $this->validateDocumentoComprobatorio($doc, $pfx, $errors);
+            $this->validateIbsCbsFornecedor($doc->fornec, $pfx, $errors);
+        }
 
-            if ($doc->tipoDocumento === 'nDoc' && empty($doc->numeroDoc)) {
-                $errors[] = "{$pfx}: nDoc é obrigatório";
-            }
+        $this->validateBaseIssqnNaoNegativa($s, $somaAjusteIssqn, $errors);
+    }
 
-            if ($doc->dataEmissaoDoc === null || $doc->dataEmissaoDoc === '') {
-                $errors[] = "{$pfx}: dtEmiDoc é obrigatório (xs:date)";
-            } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dataEmissaoDoc)) {
-                $errors[] = "{$pfx}: dtEmiDoc deve estar no formato AAAA-MM-DD (xs:date)";
-            }
+    /**
+     * vBC = vServ - vDescIncond - ajustes (RN E1295): os ajustes do ISSQN (percentual ou valor
+     * padrão mais os documentos que repercutem no ISSQN) e o desconto incondicional não podem
+     * somar mais que vServ, senão a base de cálculo ficaria negativa.
+     *
+     * @param array<string> $errors
+     */
+    private function validateBaseIssqnNaoNegativa(ServicoRequest $s, float $somaDocumentosIssqn, array &$errors): void
+    {
+        $ajuste = $somaDocumentosIssqn;
+        if ($s->valorAjusteBcIssqn !== null) {
+            $ajuste += $s->valorAjusteBcIssqn;
+        }
+        if ($s->percentualAjusteBcIssqn !== null) {
+            $ajuste += $s->valorServicos * $s->percentualAjusteBcIssqn / 100;
+        }
 
-            if ($doc->tipoDeducaoReducao === null || $doc->tipoDeducaoReducao === '') {
-                $errors[] = "{$pfx}: tpDedRed é obrigatório (TSIdeDedRed)";
-            } elseif (!in_array($doc->tipoDeducaoReducao, ['1','2','3','4','5','6','7','8','9','99'], true)) {
-                $errors[] = "{$pfx}: tpDedRed inválido (TSIdeDedRed)";
-            }
+        if ($ajuste + ($s->descontoIncondicionado ?? 0.0) > $s->valorServicos) {
+            $errors[] = 'A soma dos ajustes da base de cálculo do ISSQN e do desconto incondicionado não pode exceder vServ (base de cálculo negativa)';
+        }
+    }
 
-            if ($doc->tipoDeducaoReducao === '99' && empty($doc->descricaoOutrasDeducoes)) {
-                $errors[] = "{$pfx}: xDescOutDed é obrigatório quando tpDedRed=99";
-            }
+    /**
+     * @param array<string> $errors
+     * @return bool true quando o valor foi informado e segue o padrão TSDec15V2
+     */
+    private function validateValorDec15V2(?string $valor, string $campo, string $pfx, array &$errors): bool
+    {
+        if ($valor === null || $valor === '') {
+            $errors[] = "{$pfx}: {$campo} é obrigatório (TSDec15V2)";
 
-            if ($doc->descricaoOutrasDeducoes !== null && (mb_strlen($doc->descricaoOutrasDeducoes, 'UTF-8') < 1 || mb_strlen($doc->descricaoOutrasDeducoes, 'UTF-8') > 150)) {
-                $errors[] = "{$pfx}: xDescOutDed deve ter 1 a 150 caracteres (TSDescOutDedRed)";
-            }
+            return false;
+        }
 
-            if ($doc->valorDedutivel === null || $doc->valorDedutivel === '') {
-                $errors[] = "{$pfx}: vDedutivelRedutivel é obrigatório (TSDec15V2)";
-            } elseif (!self::isDec15V2($doc->valorDedutivel)) {
-                $errors[] = "{$pfx}: vDedutivelRedutivel deve seguir o padrão decimal de 2 casas (TSDec15V2)";
-            }
+        if (!self::isDec15V2($valor)) {
+            $errors[] = "{$pfx}: {$campo} deve seguir o padrão decimal de 2 casas (TSDec15V2)";
 
-            if ($doc->valorDeducao === null || $doc->valorDeducao === '') {
-                $errors[] = "{$pfx}: vDeducaoReducao é obrigatório (TSDec15V2)";
-            } elseif (!self::isDec15V2($doc->valorDeducao)) {
-                $errors[] = "{$pfx}: vDeducaoReducao deve seguir o padrão decimal de 2 casas (TSDec15V2)";
-            }
+            return false;
+        }
 
-            if (self::isDec15V2((string) $doc->valorDedutivel) && self::isDec15V2((string) $doc->valorDeducao)
-                && (float) $doc->valorDeducao > (float) $doc->valorDedutivel) {
-                $errors[] = "{$pfx}: vDeducaoReducao deve ser menor ou igual a vDedutivelRedutivel";
+        return true;
+    }
+
+    /** @param array<string> $errors */
+    private function validateDatasDocAjuste(DocAjusteBCRequest $doc, string $pfx, array &$errors): void
+    {
+        $emissao = null;
+        $competencia = null;
+
+        foreach (['dtEmiDoc' => $doc->dtEmiDoc, 'dtCompDoc' => $doc->dtCompDoc] as $campo => $valor) {
+            if ($valor === null) {
+                continue;
+            }
+            $data = preg_match('/^\d{4}-\d{2}-\d{2}$/', $valor) === 1
+                ? \DateTimeImmutable::createFromFormat('!Y-m-d', $valor)
+                : false;
+            if ($data === false || $data->format('Y-m-d') !== $valor) {
+                $errors[] = "{$pfx}: {$campo} deve ser uma data válida no formato AAAA-MM-DD (TSData)";
+                continue;
+            }
+            if ($campo === 'dtEmiDoc') {
+                $emissao = $data;
+            } else {
+                $competencia = $data;
+            }
+        }
+
+        if ($emissao !== null && $competencia !== null && $emissao < $competencia) {
+            $errors[] = "{$pfx}: E0472: dtEmiDoc deve ser igual ou posterior a dtCompDoc";
+        }
+
+        if ($doc->tipoDocumento === DocAjusteBC::DOC_FISCAL_OUTRO
+            && $competencia !== null
+            && $competencia >= new \DateTimeImmutable('2026-01-01')) {
+            $errors[] = "{$pfx}: E0476: docFiscalOutro só pode ser informado se dtCompDoc for anterior a 01/01/2026";
+        }
+    }
+
+    /**
+     * Valida o documento que comprova o ajuste: exatamente um entre dFeNacional,
+     * docFiscalOutro e docOutro (choice de TCDocAjusteBC).
+     *
+     * @param array<string> $errors
+     */
+    private function validateDocumentoComprobatorio(DocAjusteBCRequest $doc, string $pfx, array &$errors): void
+    {
+        if (!in_array($doc->tipoDocumento, [DocAjusteBC::DOC_DFE_NACIONAL, DocAjusteBC::DOC_FISCAL_OUTRO, DocAjusteBC::DOC_OUTRO], true)) {
+            $errors[] = "{$pfx}: tipoDocumento inválido (use dFeNacional, docFiscalOutro ou docOutro)";
+
+            return;
+        }
+
+        if ($doc->tipoDocumento === DocAjusteBC::DOC_DFE_NACIONAL) {
+            if (!in_array($doc->tipoChaveDFe, TipoChaveDocumentoFiscal::valores(), true)) {
+                $errors[] = "{$pfx}: tipoChaveDFe inválido (TSRTCTipoChaveDFe)";
+            }
+            if (empty($doc->chaveDFe)) {
+                $errors[] = "{$pfx}: chaveDFe é obrigatória para dFeNacional (TSRTCChaveDFe)";
+            } elseif (mb_strlen($doc->chaveDFe, 'UTF-8') > 50) {
+                $errors[] = "{$pfx}: chaveDFe deve ter no máximo 50 caracteres (TSRTCChaveDFe)";
+            } elseif ($doc->tipoChaveDFe === '1' && !preg_match(ChaveAcesso::PADRAO, $doc->chaveDFe)) {
+                $errors[] = "{$pfx}: E0460: chaveDFe de NFS-e deve ter 50 posições, com letras A-Z somente na inscrição federal";
+            } elseif (in_array($doc->tipoChaveDFe, ['2', '3'], true) && !preg_match('/^[0-9]{6}[0-9A-Z]{14}[0-9]{24}$/', $doc->chaveDFe)) {
+                $errors[] = "{$pfx}: E0460: chaveDFe de NF-e/CT-e deve ter 44 posições, com letras A-Z somente na inscrição federal (TSChaveNFe)";
+            }
+            if ($doc->tipoChaveDFe === '9' && empty($doc->xTipoChaveDFe)) {
+                $errors[] = "{$pfx}: E0470: xTipoChaveDFe é obrigatório quando tipoChaveDFe=9 (TSDesc255)";
+            }
+            if ($doc->xTipoChaveDFe !== null && (mb_strlen($doc->xTipoChaveDFe, 'UTF-8') < 1 || mb_strlen($doc->xTipoChaveDFe, 'UTF-8') > 255)) {
+                $errors[] = "{$pfx}: xTipoChaveDFe deve ter 1 a 255 caracteres (TSDesc255)";
+            }
+        }
+
+        if ($doc->tipoDocumento === DocAjusteBC::DOC_FISCAL_OUTRO) {
+            if (!preg_match('/^\d{7}$/', $doc->cMunDocFiscal ?? '')) {
+                $errors[] = "{$pfx}: cMunDocFiscal deve ter 7 dígitos numéricos (TSCodMunIBGE)";
+            }
+            foreach (['nDocFiscal' => $doc->nDocFiscal, 'xDocFiscal' => $doc->xDocFiscal] as $campo => $valor) {
+                if ($valor === null || $valor === '') {
+                    $errors[] = "{$pfx}: {$campo} é obrigatório para docFiscalOutro (TSDesc255)";
+                } elseif (mb_strlen($valor, 'UTF-8') > 255) {
+                    $errors[] = "{$pfx}: {$campo} deve ter no máximo 255 caracteres (TSDesc255)";
+                }
+            }
+        }
+
+        if ($doc->tipoDocumento === DocAjusteBC::DOC_OUTRO) {
+            foreach (['nDoc' => $doc->nDoc, 'xDoc' => $doc->xDoc] as $campo => $valor) {
+                if ($valor === null || $valor === '') {
+                    $errors[] = "{$pfx}: {$campo} é obrigatório para docOutro (TSDesc255)";
+                } elseif (mb_strlen($valor, 'UTF-8') > 255) {
+                    $errors[] = "{$pfx}: {$campo} deve ter no máximo 255 caracteres (TSDesc255)";
+                }
             }
         }
     }
@@ -1099,7 +1196,7 @@ class DpsValidator
         }
 
         if ($tf->pisCofinsCst !== null && !in_array($tf->pisCofinsCst, self::CST_PISCOFINS, true)) {
-            $errors[] = 'CST do PIS/COFINS inválido — deve ser um dos códigos do domínio oficial (TSTipoCST)';
+            $errors[] = 'CST do PIS/COFINS inválido - deve ser um dos códigos do domínio oficial (TSTipoCST)';
         }
 
         // pAliqPis/pAliqCofins são TSDec2V2: até 2 dígitos inteiros + 2 decimais → máximo 99.99.
@@ -1112,7 +1209,7 @@ class DpsValidator
         }
 
         // CST é minOccurs=1 no grupo piscofins (TCTribOutrosPisCofins). O builder emite o grupo quando
-        // CST OU pAliqPis está presente — espelhamos essa condição para exigir CST sempre que o grupo sair.
+        // CST OU pAliqPis está presente - espelhamos essa condição para exigir CST sempre que o grupo sair.
         if ($tf->pisCofinsAliquotaPis !== null && $tf->pisCofinsCst === null) {
             $errors[] = 'CST do PIS/COFINS é obrigatório quando pAliqPis é informado (TCTribOutrosPisCofins)';
         }
@@ -1131,7 +1228,7 @@ class DpsValidator
     {
         $validTypes = ['vTotTrib', 'pTotTrib', 'indTotTrib', 'pTotTribSN'];
         if ($s->totTribTipo === null || !in_array($s->totTribTipo, $validTypes, true)) {
-            $errors[] = 'totTribTipo é obrigatório — deve ser vTotTrib, pTotTrib, indTotTrib ou pTotTribSN (TCTribTotal choice)';
+            $errors[] = 'totTribTipo é obrigatório - deve ser vTotTrib, pTotTrib, indTotTrib ou pTotTribSN (TCTribTotal choice)';
 
             return;
         }
@@ -1203,16 +1300,24 @@ class DpsValidator
             $errors[] = 'E1508: Código NBS é obrigatório quando IBS/CBS é declarado';
         }
 
-        if ($req->finNFSe === '') {
-            $errors[] = 'finNFSe é obrigatória (TSRTCFinNFSe)';
-        } elseif (!in_array($req->finNFSe, FinalidadeNfse::valores(), true)) {
-            $errors[] = 'finNFSe inválido (TSRTCFinNFSe)';
-        }
+        // ind_gIBSCBS (NT 009, item 2.16): sem grupo de tributação, cIndOp e gIBSCBS são vedados
+        // (RN E0859 e E0960/E0961); com grupo, cIndOp é obrigatório (RN E0860).
+        $temGrupoTributacao = $req->informarGIBSCBS ?? !in_array($req->cst, IbsCbsInfo::CST_SEM_GRUPO_TRIBUTACAO, true);
+        $temCIndOp = $req->cIndOp !== null && $req->cIndOp !== '';
 
-        if ($req->cIndOp === '') {
-            $errors[] = 'cIndOp é obrigatório (TSRTCCodIndOp)';
-        } elseif (!preg_match('/^[0-9]{6}$/', $req->cIndOp)) {
+        if ($temCIndOp && !preg_match('/^[0-9]{6}$/', $req->cIndOp)) {
             $errors[] = 'cIndOp deve ter 6 dígitos numéricos (TSRTCCodIndOp)';
+        }
+        if ($temGrupoTributacao && !$temCIndOp) {
+            $errors[] = 'E0860: cIndOp é obrigatório quando há tributação IBS/CBS (TSRTCCodIndOp)';
+        }
+        if (!$temGrupoTributacao) {
+            if ($temCIndOp) {
+                $errors[] = 'E0859: cIndOp não deve ser informado quando não há tributação IBS/CBS (CST ' . $req->cst . ')';
+            }
+            if ($req->cCredPres !== null || $req->tribRegular !== null || $req->diferimento !== null) {
+                $errors[] = 'E0961: cCredPres, gTribRegular e gDif não devem ser informados quando não há tributação IBS/CBS (CST ' . $req->cst . ')';
+            }
         }
 
         if ($req->indDest === '') {
@@ -1267,9 +1372,9 @@ class DpsValidator
         }
 
         $this->validateIbsCbsDest($req, $errors);
-        $this->validateIbsCbsImovel($req, $errors);
+        $this->validateIbsCbsImovel($request, $errors);
+        $this->validateIbsCbsBensMoveis($request, $errors);
         $this->validateIbsCbsRefNFSe($req, $errors);
-        $this->validateIbsCbsReeRepRes($req, $errors);
         $this->validateIbsCbsDiferimento($req, $errors);
         $this->validateIbsCbsTribRegular($req, $errors);
         $this->validateIbsCbsCstClassTrib($req, $errors);
@@ -1310,8 +1415,8 @@ class DpsValidator
             $errors[] = 'Destinatário: CNPJ, CPF, NIF e cNaoNIF são mutuamente exclusivos';
         }
 
-        if ($dest->cnpj !== null && !preg_match('/^[0-9]{14}$/', $dest->cnpj)) {
-            $errors[] = 'CNPJ do destinatário deve ter 14 dígitos numéricos (TSCNPJ)';
+        if ($dest->cnpj !== null && !preg_match(Cnpj::PADRAO, $dest->cnpj)) {
+            $errors[] = 'CNPJ do destinatário deve ter 14 caracteres: 12 de raiz e ordem (dígitos ou letras A-Z) e 2 dígitos verificadores (TSCNPJ)';
         }
         if ($dest->cpf !== null && !preg_match('/^[0-9]{11}$/', $dest->cpf)) {
             $errors[] = 'CPF do destinatário deve ter 11 dígitos numéricos (TSCPF)';
@@ -1391,72 +1496,252 @@ class DpsValidator
         }
     }
 
-    /** @param array<string> $errors */
-    private function validateIbsCbsImovel(IbsCbsRequest $req, array &$errors): void
+    /**
+     * Valida o grupo IBSCBS/imovel (TCRTCInfoImovel, NT 009 item 2.6): cMun, gLocacao (apenas
+     * subitem 99.03) e até 99 unidades imobiliárias (gUnidImob), cada uma com CIB ou endereço.
+     *
+     * @param array<string> $errors
+     */
+    private function validateIbsCbsImovel(DpsRequest $request, array &$errors): void
     {
-        $im = $req->imovel;
-        if ($im === null) {
+        $req = $request->ibscbs;
+        if ($req === null) {
             return;
         }
 
-        if ($im->inscImobFisc !== null && (mb_strlen($im->inscImobFisc, 'UTF-8') < 1 || mb_strlen($im->inscImobFisc, 'UTF-8') > 30)) {
-            $errors[] = 'inscImobFisc deve ter 1 a 30 caracteres (TSInscImobFisc)';
+        $s = $request->servico;
+        $im = $req->imovel;
+        $ehLocacao = str_starts_with($s->codigoTributacao, '9903');
+        $exigeUnidade = in_array($req->cIndOp, ['020101', '020201', '020301'], true);
+
+        if ($im === null) {
+            if ($ehLocacao) {
+                $errors[] = 'E0937: o grupo imovel/gLocacao deve ser informado para o subitem 99.03 do código de tributação nacional';
+            }
+            if ($exigeUnidade) {
+                $errors[] = 'E0938: o grupo imovel/gUnidImob é obrigatório para o cIndOp informado';
+            }
+
+            return;
         }
 
-        if ($im->cCIB !== null && $im->endereco !== null) {
-            $errors[] = 'cCIB e end são mutuamente exclusivos no grupo imovel (TCRTCInfoImovel choice)';
-        }
-        if ($im->cCIB === null && $im->endereco === null) {
-            $errors[] = 'É obrigatório informar cCIB ou end no grupo imovel (TCRTCInfoImovel choice)';
+        if (!preg_match('/^[0-9]{7}$/', $im->cMun)) {
+            $errors[] = 'cMun do imóvel deve ter 7 dígitos numéricos (TSCodMunIBGE)';
         }
 
-        if ($im->cCIB !== null && mb_strlen($im->cCIB) !== 8) {
-            $errors[] = 'cCIB deve ter exatamente 8 caracteres (TSCodCIB)';
+        $this->validateIbsCbsLocacao($request, $ehLocacao, $errors);
+
+        if (count($im->unidades) > IbsCbsImovel::MAX_UNIDADES) {
+            $errors[] = 'gUnidImob deve conter no máximo ' . IbsCbsImovel::MAX_UNIDADES . ' unidades (maxOccurs=99)';
+        }
+        if ($exigeUnidade && $im->unidades === []) {
+            $errors[] = 'E0938: o grupo imovel/gUnidImob é obrigatório para o cIndOp informado';
         }
 
-        if ($im->endereco !== null) {
-            $e = $im->endereco;
+        foreach ($im->unidades as $i => $unidade) {
+            $this->validateIbsCbsUnidadeImobiliaria($request, $unidade, "gUnidImob #{$i}", $ehLocacao, $errors);
+        }
+    }
 
-            if ($e->cep !== null && $e->endExt !== null) {
-                $errors[] = 'CEP e endExt são mutuamente exclusivos no endereço do imóvel (choice)';
-            }
-            if ($e->cep === null && $e->endExt === null) {
-                $errors[] = 'É obrigatório informar CEP ou endExt no endereço do imóvel (choice)';
-            }
+    /** @param array<string> $errors */
+    private function validateIbsCbsLocacao(DpsRequest $request, bool $ehLocacao, array &$errors): void
+    {
+        $loc = $request->ibscbs?->imovel?->locacao;
+        $s = $request->servico;
 
-            if ($e->cep !== null && !preg_match('/^[0-9]{8}$/', $e->cep)) {
-                $errors[] = 'CEP do endereço do imóvel deve ter 8 dígitos numéricos (TSCEP)';
-            }
+        if ($loc === null) {
+            return;
+        }
 
-            if ($e->endExt !== null) {
-                if (mb_strlen($e->endExt->cEndPost, 'UTF-8') < 1 || mb_strlen($e->endExt->cEndPost, 'UTF-8') > 11) {
-                    $errors[] = 'cEndPost do endExt do imóvel deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
-                }
-                if (mb_strlen($e->endExt->xCidade, 'UTF-8') < 1 || mb_strlen($e->endExt->xCidade, 'UTF-8') > 60) {
-                    $errors[] = 'xCidade do endExt do imóvel deve ter 1 a 60 caracteres (TSCidade)';
-                }
-                if (mb_strlen($e->endExt->xEstProvReg, 'UTF-8') < 1 || mb_strlen($e->endExt->xEstProvReg, 'UTF-8') > 60) {
-                    $errors[] = 'xEstProvReg do endExt do imóvel deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
-                }
-            }
+        if (!$ehLocacao) {
+            $errors[] = 'E0936: o grupo gLocacao só pode ser informado para o subitem 99.03 do código de tributação nacional';
+        }
 
-            if (empty($e->xLgr)) {
-                $errors[] = 'xLgr é obrigatório no endereço do imóvel (TSLogradouro)';
-            } elseif (mb_strlen($e->xLgr, 'UTF-8') > 255) {
-                $errors[] = 'xLgr deve ter no máximo 255 caracteres (TSLogradouro)';
+        $pValido = false;
+        if (!preg_match('/^(0|0\.[0-9]{2}|[1-9][0-9]{0,2}(\.[0-9]{2})?)$/', $loc->pCopropriedade)) {
+            $errors[] = 'pCopropriedade deve seguir o padrão decimal de 2 casas (TSDec3V2)';
+        } elseif ((float) $loc->pCopropriedade > 100) {
+            $errors[] = 'E0940: pCopropriedade deve ser maior ou igual a 0 e menor ou igual a 100';
+        } else {
+            $pValido = true;
+        }
+
+        $totalValido = false;
+        if (!self::isDec15V2($loc->vTotOper)) {
+            $errors[] = 'vTotOper deve seguir o padrão decimal de 2 casas (TSDec15V2)';
+        } elseif ((float) $loc->vTotOper <= 0) {
+            $errors[] = 'vTotOper deve ser maior que zero (TSDec15V2)';
+        } else {
+            $totalValido = true;
+        }
+
+        foreach (['vDescIncondTot' => $loc->vDescIncondTot, 'vDescCondTot' => $loc->vDescCondTot] as $campo => $valor) {
+            if ($valor !== null && !self::isDec15V2($valor)) {
+                $errors[] = "{$campo} deve seguir o padrão decimal de 2 casas (TSDec15V2)";
             }
-            if (empty($e->nro)) {
-                $errors[] = 'nro é obrigatório no endereço do imóvel (TSNumeroEndereco)';
-            } elseif (mb_strlen($e->nro, 'UTF-8') > 60) {
-                $errors[] = 'nro deve ter no máximo 60 caracteres (TSNumeroEndereco)';
+        }
+
+        if ($loc->dVencOrig !== null) {
+            $data = preg_match('/^\d{4}-\d{2}-\d{2}$/', $loc->dVencOrig) === 1
+                ? \DateTimeImmutable::createFromFormat('!Y-m-d', $loc->dVencOrig)
+                : false;
+            if ($data === false || $data->format('Y-m-d') !== $loc->dVencOrig) {
+                $errors[] = 'dVencOrig deve ser uma data válida no formato AAAA-MM-DD (TSData)';
+            }
+        }
+
+        if (!$pValido || !$totalValido) {
+            return;
+        }
+
+        // vServ, vDescIncond e vDescCond derivam do percentual de copropriedade (NT 009 item 2.6).
+        $fator = (float) $loc->pCopropriedade / 100;
+        $this->validateValorDerivadoLocacao('vServ', $s->valorServicos, round((float) $loc->vTotOper * $fator, 2), $errors);
+
+        foreach ([
+            'vDescIncond' => [$s->descontoIncondicionado, $loc->vDescIncondTot],
+            'vDescCond' => [$s->descontoCondicionado, $loc->vDescCondTot],
+        ] as $campo => [$informado, $total]) {
+            if ($total !== null && self::isDec15V2($total)) {
+                $this->validateValorDerivadoLocacao($campo, $informado ?? 0.0, round((float) $total * $fator, 2), $errors);
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateValorDerivadoLocacao(string $campo, float $informado, float $esperado, array &$errors): void
+    {
+        if (abs($informado - $esperado) > 0.01) {
+            $errors[] = sprintf(
+                '%s deve ser igual a pCopropriedade x total da operação para o subitem 99.03 (esperado %.2f, informado %.2f)',
+                $campo,
+                $esperado,
+                $informado
+            );
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsUnidadeImobiliaria(
+        DpsRequest $request,
+        IbsCbsUnidadeImobiliariaRequest $u,
+        string $pfx,
+        bool $ehLocacao,
+        array &$errors
+    ): void {
+        if ($u->inscImobFisc !== null && (mb_strlen($u->inscImobFisc, 'UTF-8') < 1 || mb_strlen($u->inscImobFisc, 'UTF-8') > 30)) {
+            $errors[] = "{$pfx}: inscImobFisc deve ter 1 a 30 caracteres (TSInscImobFisc)";
+        }
+
+        if ($u->cCIB !== null && $u->endereco !== null) {
+            $errors[] = "{$pfx}: cCIB e end são mutuamente exclusivos (TCRTCUnidadesImobiliarias choice)";
+        }
+        if ($u->cCIB === null && $u->endereco === null) {
+            $errors[] = "{$pfx}: é obrigatório informar cCIB ou end (TCRTCUnidadesImobiliarias choice)";
+        }
+        if ($u->cCIB !== null && mb_strlen($u->cCIB) !== 8) {
+            $errors[] = "{$pfx}: cCIB deve ter exatamente 8 caracteres (TSCodCIB)";
+        }
+
+        if ($u->endereco !== null) {
+            $e = $u->endereco;
+            if (!preg_match('/^[0-9]{8}$/', $e->cep)) {
+                $errors[] = "{$pfx}: CEP do endereço do imóvel deve ter 8 dígitos numéricos (TSCEP)";
+            }
+            if ($e->xLgr === '' || mb_strlen($e->xLgr, 'UTF-8') > 255) {
+                $errors[] = "{$pfx}: xLgr deve ter 1 a 255 caracteres (TSLogradouro)";
+            }
+            if ($e->nro === '' || mb_strlen($e->nro, 'UTF-8') > 60) {
+                $errors[] = "{$pfx}: nro deve ter 1 a 60 caracteres (TSNumeroEndereco)";
             }
             if ($e->xCpl !== null && (mb_strlen($e->xCpl, 'UTF-8') < 1 || mb_strlen($e->xCpl, 'UTF-8') > 156)) {
-                $errors[] = 'xCpl deve ter 1 a 156 caracteres (TSComplementoEndereco)';
+                $errors[] = "{$pfx}: xCpl deve ter 1 a 156 caracteres (TSComplementoEndereco)";
             }
-            if (empty($e->xBairro)) {
-                $errors[] = 'xBairro é obrigatório no endereço do imóvel (TSBairro)';
-            } elseif (mb_strlen($e->xBairro, 'UTF-8') > 60) {
-                $errors[] = 'xBairro deve ter no máximo 60 caracteres (TSBairro)';
+            if ($e->xBairro !== null && (mb_strlen($e->xBairro, 'UTF-8') < 1 || mb_strlen($e->xBairro, 'UTF-8') > 60)) {
+                $errors[] = "{$pfx}: xBairro deve ter 1 a 60 caracteres (TSBairro)";
+            }
+        }
+
+        if ($u->ajustes === []) {
+            return;
+        }
+
+        if (!$ehLocacao) {
+            $errors[] = "{$pfx}: E0939: gAjusteBCLocImoveis só pode ser informado para o subitem 99.03 do código de tributação nacional";
+        }
+        if (count($u->ajustes) > 1000) {
+            $errors[] = "{$pfx}: gAjusteBCLocImoveis deve conter no máximo 1000 ocorrências (maxOccurs=1000)";
+        }
+
+        $vTotOper = $request->ibscbs?->imovel?->locacao?->vTotOper;
+        foreach ($u->ajustes as $j => $ajuste) {
+            $apfx = "{$pfx} gAjusteBCLocImoveis #{$j}";
+            $tipo = TipoAjusteBCLocImoveis::tryFrom($ajuste->tpAjusteBCLocImoveis);
+
+            if ($tipo === null) {
+                $errors[] = "{$apfx}: tpAjusteBCLocImoveis inválido (TSAjusteBCLocImoveis)";
+            } else {
+                $temDescricao = $ajuste->xTpAjusteBCLocImoveis !== null && trim($ajuste->xTpAjusteBCLocImoveis) !== '';
+                if ($tipo->exigeDescricao() && !$temDescricao) {
+                    $errors[] = "{$apfx}: E0949: xTpAjusteBCLocImoveis é obrigatório quando tpAjusteBCLocImoveis = 99";
+                }
+                if (!$tipo->exigeDescricao() && $ajuste->xTpAjusteBCLocImoveis !== null) {
+                    $errors[] = "{$apfx}: E0954: xTpAjusteBCLocImoveis só pode ser informado quando tpAjusteBCLocImoveis = 99";
+                }
+                if ($tipo === TipoAjusteBCLocImoveis::REDUTOR_SOCIAL && $request->servico->codigoNbs !== '110021000') {
+                    $errors[] = "{$apfx}: E0944: o redutor social (04) só se aplica à locação de imóvel residencial (cNBS 1.1002.10.00)";
+                }
+            }
+
+            if ($ajuste->xTpAjusteBCLocImoveis !== null && mb_strlen($ajuste->xTpAjusteBCLocImoveis, 'UTF-8') > 150) {
+                $errors[] = "{$apfx}: xTpAjusteBCLocImoveis deve ter no máximo 150 caracteres (TSDesc150)";
+            }
+
+            if (!self::isDec15V2($ajuste->vAjusteBCLocImoveis)) {
+                $errors[] = "{$apfx}: vAjusteBCLocImoveis deve seguir o padrão decimal de 2 casas (TSDec15V2)";
+            } elseif ($vTotOper !== null && self::isDec15V2($vTotOper)
+                && (float) $ajuste->vAjusteBCLocImoveis > (float) $vTotOper) {
+                $errors[] = "{$apfx}: E0966: vAjusteBCLocImoveis deve ser menor ou igual a vTotOper";
+            }
+        }
+    }
+
+    /** @param array<string> $errors */
+    private function validateIbsCbsBensMoveis(DpsRequest $request, array &$errors): void
+    {
+        $req = $request->ibscbs;
+        $bens = $req?->bensMoveis;
+        $ehLocacaoBensMoveis = $request->servico->codigoTributacao === '990401';
+
+        if ($bens === null || $bens === []) {
+            if ($ehLocacaoBensMoveis) {
+                $errors[] = 'E0963: o grupo bensMoveis deve ser informado para o código de tributação nacional 99.04.01';
+            }
+
+            return;
+        }
+
+        if (!$ehLocacaoBensMoveis) {
+            $errors[] = 'E0967: o grupo bensMoveis só pode ser informado para o código de tributação nacional 99.04.01';
+        }
+
+        if (count($bens) > IbsCbsInfo::MAX_BENS_MOVEIS) {
+            $errors[] = 'bensMoveis deve conter no máximo ' . IbsCbsInfo::MAX_BENS_MOVEIS . ' ocorrências (maxOccurs=1000)';
+        }
+
+        foreach ($bens as $i => $bem) {
+            $pfx = "bensMoveis #{$i}";
+
+            if (!preg_match('/^[0-9]{8}$/', $bem->cNCMBemMovel)) {
+                $errors[] = "{$pfx}: cNCMBemMovel deve ter 8 dígitos numéricos (TSNCM)";
+            }
+            if (trim($bem->xNCMBemMovel) === '' || mb_strlen($bem->xNCMBemMovel, 'UTF-8') > 150) {
+                $errors[] = "{$pfx}: xNCMBemMovel deve ter 1 a 150 caracteres (TSDesc150)";
+            }
+            if (!preg_match('/^[0-9]{1,3}$/', $bem->qtdNCMBemMovel)) {
+                $errors[] = "{$pfx}: qtdNCMBemMovel deve ter de 1 a 3 dígitos numéricos (TSNum3Dig)";
+            } elseif ((int) $bem->qtdNCMBemMovel <= 0) {
+                $errors[] = "{$pfx}: E0974: qtdNCMBemMovel deve ser superior a zero";
             }
         }
     }
@@ -1483,104 +1768,8 @@ class DpsValidator
                 $errors[] = 'gRefNFSe deve conter no máximo 99 refNFSe (maxOccurs=99)';
             }
             foreach ($req->refNFSeList as $i => $chave) {
-                if (!preg_match('/^[0-9]{50}$/', $chave)) {
-                    $errors[] = "E0907: refNFSe #{$i} deve ter 50 dígitos numéricos (TSChaveNFSe)";
-                }
-            }
-        }
-    }
-
-    /** @param array<string> $errors */
-    private function validateIbsCbsReeRepRes(IbsCbsRequest $req, array &$errors): void
-    {
-        $ree = $req->reeRepRes;
-        if ($ree === null) {
-            return;
-        }
-
-        if (empty($ree->documentos)) {
-            $errors[] = 'gReeRepRes deve conter ao menos um documento';
-        }
-
-        if (count($ree->documentos) > 1000) {
-            $errors[] = 'gReeRepRes deve conter no máximo 1000 documentos (maxOccurs=1000)';
-        }
-
-        foreach ($ree->documentos as $i => $doc) {
-            $pfx = "Documento #{$i}";
-
-            $this->validateIbsCbsFornecedor($doc->fornec, $pfx, $errors);
-
-            if (!in_array($doc->tipoDocumento, ['dFeNacional', 'docFiscalOutro', 'docOutro'], true)) {
-                $errors[] = "{$pfx}: tipoDocumento inválido (TCRTCListaDoc choice)";
-            }
-
-            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dtEmiDoc)) {
-                $errors[] = "{$pfx}: dtEmiDoc deve estar no formato AAAA-MM-DD (TSData)";
-            }
-            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $doc->dtCompDoc)) {
-                $errors[] = "{$pfx}: dtCompDoc deve estar no formato AAAA-MM-DD (TSData)";
-            }
-
-            if (!in_array($doc->tpReeRepRes, TipoReembolsoRepasseRessarcimento::valores(), true)) {
-                $errors[] = "{$pfx}: tpReeRepRes inválido (TSRTCTpReeRepRes)";
-            }
-
-            if ($doc->vlrReeRepRes <= 0) {
-                $errors[] = "{$pfx}: vlrReeRepRes deve ser maior que zero (TSDec15V2)";
-            }
-
-            if ($doc->tpReeRepRes === '99' && empty($doc->xTpReeRepRes)) {
-                $errors[] = "{$pfx}: xTpReeRepRes é obrigatório quando tpReeRepRes=99 (TSDesc150)";
-            }
-
-            if ($doc->xTpReeRepRes !== null && (mb_strlen($doc->xTpReeRepRes, 'UTF-8') < 1 || mb_strlen($doc->xTpReeRepRes, 'UTF-8') > 150)) {
-                $errors[] = "{$pfx}: xTpReeRepRes deve ter 1 a 150 caracteres (TSDesc150)";
-            }
-
-            if ($doc->tipoDocumento === 'dFeNacional') {
-                if (!in_array($doc->tipoChaveDFe, TipoChaveDocumentoFiscal::valores(), true)) {
-                    $errors[] = "{$pfx}: tipoChaveDFe inválido (TSRTCTipoChaveDFe)";
-                }
-                if (empty($doc->chaveDFe)) {
-                    $errors[] = "{$pfx}: chaveDFe é obrigatória para dFeNacional (TSRTCChaveDFe)";
-                } elseif (mb_strlen($doc->chaveDFe, 'UTF-8') > 50) {
-                    $errors[] = "{$pfx}: chaveDFe deve ter no máximo 50 caracteres (TSRTCChaveDFe)";
-                }
-                if ($doc->tipoChaveDFe === '9' && empty($doc->xTipoChaveDFe)) {
-                    $errors[] = "{$pfx}: xTipoChaveDFe é obrigatório quando tipoChaveDFe=9 (TSDesc255)";
-                }
-                if ($doc->xTipoChaveDFe !== null && (mb_strlen($doc->xTipoChaveDFe, 'UTF-8') < 1 || mb_strlen($doc->xTipoChaveDFe, 'UTF-8') > 255)) {
-                    $errors[] = "{$pfx}: xTipoChaveDFe deve ter 1 a 255 caracteres (TSDesc255)";
-                }
-            }
-
-            if ($doc->tipoDocumento === 'docFiscalOutro') {
-                if (!preg_match('/^\d{7}$/', $doc->cMunDocFiscal ?? '')) {
-                    $errors[] = "{$pfx}: cMunDocFiscal deve ter 7 dígitos numéricos (TSNum7Dig)";
-                }
-                if (empty($doc->nDocFiscal)) {
-                    $errors[] = "{$pfx}: nDocFiscal é obrigatório para docFiscalOutro (TSDesc255)";
-                } elseif (mb_strlen($doc->nDocFiscal, 'UTF-8') > 255) {
-                    $errors[] = "{$pfx}: nDocFiscal deve ter no máximo 255 caracteres (TSDesc255)";
-                }
-                if (empty($doc->xDocFiscal)) {
-                    $errors[] = "{$pfx}: xDocFiscal é obrigatório para docFiscalOutro (TSDesc255)";
-                } elseif (mb_strlen($doc->xDocFiscal, 'UTF-8') > 255) {
-                    $errors[] = "{$pfx}: xDocFiscal deve ter no máximo 255 caracteres (TSDesc255)";
-                }
-            }
-
-            if ($doc->tipoDocumento === 'docOutro') {
-                if (empty($doc->nDoc)) {
-                    $errors[] = "{$pfx}: nDoc é obrigatório para docOutro (TSDesc255)";
-                } elseif (mb_strlen($doc->nDoc, 'UTF-8') > 255) {
-                    $errors[] = "{$pfx}: nDoc deve ter no máximo 255 caracteres (TSDesc255)";
-                }
-                if (empty($doc->xDoc)) {
-                    $errors[] = "{$pfx}: xDoc é obrigatório para docOutro (TSDesc255)";
-                } elseif (mb_strlen($doc->xDoc, 'UTF-8') > 255) {
-                    $errors[] = "{$pfx}: xDoc deve ter no máximo 255 caracteres (TSDesc255)";
+                if (!preg_match(ChaveAcesso::PADRAO, $chave)) {
+                    $errors[] = "E0907: refNFSe #{$i} deve ter 50 posições, com letras A-Z somente na inscrição federal (TSChaveNFSe)";
                 }
             }
         }
@@ -1605,8 +1794,8 @@ class DpsValidator
         $idCount = 0;
         if ($fornec->cnpj !== null) {
             $idCount++;
-            if (!preg_match('/^[0-9]{14}$/', $fornec->cnpj)) {
-                $errors[] = "{$pfx}: CNPJ do fornecedor deve ter 14 dígitos numéricos (TSCNPJ)";
+            if (!preg_match(Cnpj::PADRAO, $fornec->cnpj)) {
+                $errors[] = "{$pfx}: CNPJ do fornecedor deve ter 14 caracteres: 12 de raiz e ordem (dígitos ou letras A-Z) e 2 dígitos verificadores (TSCNPJ)";
             }
         }
         if ($fornec->cpf !== null) {
@@ -1624,7 +1813,7 @@ class DpsValidator
         if ($fornec->codigoNaoNif !== null) {
             $idCount++;
             if (!in_array($fornec->codigoNaoNif, CausaNaoNif::valores(), true)) {
-                $errors[] = "{$pfx}: cNaoNIF do fornecedor inválido — deve ser 0, 1 ou 2 (TSCodNaoNIF)";
+                $errors[] = "{$pfx}: cNaoNIF do fornecedor inválido - deve ser 0, 1 ou 2 (TSCodNaoNIF)";
             }
         }
 
@@ -1632,7 +1821,7 @@ class DpsValidator
             $errors[] = "{$pfx}: fornecedor deve ter CNPJ, CPF, NIF ou cNaoNIF (choice obrigatório)";
         }
         if ($idCount > 1) {
-            $errors[] = "{$pfx}: fornecedor — CNPJ, CPF, NIF e cNaoNIF são mutuamente exclusivos";
+            $errors[] = "{$pfx}: fornecedor - CNPJ, CPF, NIF e cNaoNIF são mutuamente exclusivos";
         }
 
         if (mb_strlen($fornec->xNome, 'UTF-8') < 1 || mb_strlen($fornec->xNome, 'UTF-8') > 150) {
@@ -1659,7 +1848,7 @@ class DpsValidator
         }
 
         if ($dif->pDifUF <= 0 && $dif->pDifMun <= 0 && $dif->pDifCBS <= 0) {
-            $errors[] = 'gDif informado mas todos os percentuais (pDifUF/pDifMun/pDifCBS) são zero — omita o grupo de diferimento';
+            $errors[] = 'gDif informado mas todos os percentuais (pDifUF/pDifMun/pDifCBS) são zero - omita o grupo de diferimento';
         }
     }
 
@@ -1729,7 +1918,7 @@ class DpsValidator
             return;
         }
 
-        if (!preg_match('/^[0-9]{50}$/', $s->chaveSubstituida)) {
+        if (!preg_match(ChaveAcesso::PADRAO, $s->chaveSubstituida)) {
             $errors[] = 'chSubstda deve ter 50 dígitos numéricos (TSChaveNFSe)';
         }
 

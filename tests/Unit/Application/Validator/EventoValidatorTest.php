@@ -53,7 +53,7 @@ final class EventoValidatorTest extends TestCase
         );
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Chave da NFSe deve ter exatamente 50 dígitos numéricos');
+        $this->expectExceptionMessage('Chave da NFSe deve ter 50 posições');
 
         $this->validator->validate($request);
     }

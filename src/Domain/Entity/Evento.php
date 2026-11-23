@@ -54,8 +54,8 @@ class Evento implements EventoInterface
             throw new \InvalidArgumentException('Chave da NFS-e substituta (chSubstituta) é obrigatória para substituição');
         }
 
-        if (!empty($this->chSubstituta) && preg_match('/^[0-9]{50}$/', $this->chSubstituta) !== 1) {
-            throw new \InvalidArgumentException('chSubstituta deve ter 50 dígitos numéricos');
+        if (!empty($this->chSubstituta) && preg_match(ChaveAcesso::PADRAO, $this->chSubstituta) !== 1) {
+            throw new \InvalidArgumentException('chSubstituta deve ter 50 posições, com letras A-Z somente na inscrição federal (posições 10 a 23)');
         }
     }
 

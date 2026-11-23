@@ -172,7 +172,7 @@ final class EventoTest extends TestCase
     public function test_substituicao_ch_substituta_invalida_throws(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('chSubstituta deve ter 50 dígitos numéricos');
+        $this->expectExceptionMessage('chSubstituta deve ter 50 posições');
 
         new Evento(
             tipo: TipoEvento::SUBSTITUICAO,

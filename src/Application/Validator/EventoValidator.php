@@ -10,6 +10,8 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoCancelamento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoRejeicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoSubstituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
 
 class EventoValidator
 {
@@ -20,8 +22,8 @@ class EventoValidator
 
         if (empty($request->chaveNfse)) {
             $errors[] = 'Chave da NFSe é obrigatória';
-        } elseif (preg_match('/^[0-9]{50}$/', $request->chaveNfse) !== 1) {
-            $errors[] = 'Chave da NFSe deve ter exatamente 50 dígitos numéricos';
+        } elseif (preg_match(ChaveAcesso::PADRAO, $request->chaveNfse) !== 1) {
+            $errors[] = 'Chave da NFSe deve ter 50 posições, com letras A-Z somente na inscrição federal (posições 10 a 23)';
         }
 
         if (empty($request->tipoEvento)) {
@@ -45,8 +47,8 @@ class EventoValidator
             $errors[] = 'Informar apenas CNPJ Autor ou CPF Autor, não ambos';
         }
 
-        if ($request->cnpjAutor !== null && preg_match('/^[0-9]{14}$/', $request->cnpjAutor) !== 1) {
-            $errors[] = 'CNPJ Autor deve ter 14 dígitos numéricos';
+        if ($request->cnpjAutor !== null && preg_match(Cnpj::PADRAO, $request->cnpjAutor) !== 1) {
+            $errors[] = 'CNPJ Autor deve ter 14 caracteres: 12 de raiz e ordem (dígitos ou letras A-Z) e 2 dígitos verificadores';
         }
 
         if ($request->cpfAutor !== null && preg_match('/^[0-9]{11}$/', $request->cpfAutor) !== 1) {
@@ -65,8 +67,8 @@ class EventoValidator
         if (isset($tipoEvento) && $tipoEvento->needsChSubstituta()) {
             if (empty($request->chSubstituta)) {
                 $errors[] = 'Chave da NFS-e substituta (chSubstituta) é obrigatória para substituição';
-            } elseif (preg_match('/^[0-9]{50}$/', $request->chSubstituta) !== 1) {
-                $errors[] = 'chSubstituta deve ter 50 dígitos numéricos';
+            } elseif (preg_match(ChaveAcesso::PADRAO, $request->chSubstituta) !== 1) {
+                $errors[] = 'chSubstituta deve ter 50 posições, com letras A-Z somente na inscrição federal (posições 10 a 23)';
             }
         }
 
@@ -116,7 +118,7 @@ class EventoValidator
         if (!empty($request->codEventoBloqueio)
             && !in_array($request->codEventoBloqueio, ['e101101', 'e105102', 'e105104', 'e105105', 'e305101'], true)
         ) {
-            $errors[] = 'codEvento (codEventoBloqueio) inválido — deve ser e101101, e105102, e105104, e105105 ou e305101 (TSCodigoEventoNFSe)';
+            $errors[] = 'codEvento (codEventoBloqueio) inválido - deve ser e101101, e105102, e105104, e105105 ou e305101 (TSCodigoEventoNFSe)';
         }
 
         // xProcAdm é TSMotivo (15–255), igual ao xMotivo.

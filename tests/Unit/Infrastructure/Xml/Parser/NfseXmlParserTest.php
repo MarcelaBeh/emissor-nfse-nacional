@@ -147,4 +147,128 @@ final class NfseXmlParserTest extends TestCase
 
         $this->assertSame([], $result);
     }
+
+    // ===== NT 009: campos renomeados e novos =====
+
+    public function test_parse_valores_da_nfse_com_vcalc_ajuste_bc_issqn(): void
+    {
+        $xml = <<<XML
+            <?xml version="1.0" encoding="UTF-8"?>
+            <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
+                <infNFSe Id="NFS35503082211444777000161123456789012345678901234567">
+                    <nNFSe>7</nNFSe>
+                    <valores>
+                        <vCalcAjusteBCISSQN>200.00</vCalcAjusteBCISSQN>
+                        <vBC>800.00</vBC>
+                        <vLiq>1000.00</vLiq>
+                    </valores>
+                </infNFSe>
+            </NFSe>
+            XML;
+
+        $result = $this->parser->parse($xml);
+
+        $this->assertSame('200.00', $result[0]['valores']['vCalcAjusteBCISSQN']);
+        $this->assertArrayNotHasKey('vCalcDR', $result[0]['valores']);
+    }
+
+    public function test_parse_dps_com_fin_nfse_e_vajustebc(): void
+    {
+        $xml = <<<XML
+            <?xml version="1.0" encoding="UTF-8"?>
+            <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
+                <infNFSe Id="NFS35503082211444777000161123456789012345678901234567">
+                    <DPS>
+                        <infDPS>
+                            <finNFSe>0</finNFSe>
+                            <valores>
+                                <vServPrest><vServ>1000.00</vServ></vServPrest>
+                                <vAjusteBC><pAjusteBCISSQN>10.00</pAjusteBCISSQN></vAjusteBC>
+                            </valores>
+                        </infDPS>
+                    </DPS>
+                </infNFSe>
+            </NFSe>
+            XML;
+
+        $dps = $this->parser->parse($xml)[0]['dps'];
+
+        $this->assertSame('0', $dps['finNFSe']);
+        $this->assertSame('10.00', $dps['valores']['vAjusteBC']['pAjusteBCISSQN']);
+        $this->assertNull($dps['valores']['vAjusteBC']['vAjusteBCISSQN']);
+        $this->assertArrayNotHasKey('vDedRed', $dps['valores']);
+    }
+
+    public function test_parse_ibscbs_da_nfse_com_ajustes_de_base_de_calculo(): void
+    {
+        $xml = <<<XML
+            <?xml version="1.0" encoding="UTF-8"?>
+            <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
+                <infNFSe Id="NFS35503082211444777000161123456789012345678901234567">
+                    <IBSCBS>
+                        <cLocalidadeIncid>3550308</cLocalidadeIncid>
+                        <xLocalidadeIncid>Sao Paulo</xLocalidadeIncid>
+                        <valores>
+                            <vBC>900.00</vBC>
+                            <vCalcAjusteBCLocImoveis>50.00</vCalcAjusteBCLocImoveis>
+                            <vCalcAjusteBCIBSCBS>100.00</vCalcAjusteBCIBSCBS>
+                        </valores>
+                        <totCIBS><vTotNF>1000.00</vTotNF></totCIBS>
+                    </IBSCBS>
+                </infNFSe>
+            </NFSe>
+            XML;
+
+        $valores = $this->parser->parse($xml)[0]['ibscbs']['valores'];
+
+        $this->assertSame('900.00', $valores['vBC']);
+        $this->assertSame('50.00', $valores['vCalcAjusteBCLocImoveis']);
+        $this->assertSame('100.00', $valores['vCalcAjusteBCIBSCBS']);
+        $this->assertArrayNotHasKey('vCalcReeRepRes', $valores);
+    }
+
+    public function test_parse_ibscbs_sem_tributacao_tolera_grupos_ausentes(): void
+    {
+        // CST 400/410/820: a NFS-e pode vir sem cLocalidadeIncid, valores, gIBS e gCBS (todos opcionais no XSD).
+        $xml = <<<XML
+            <?xml version="1.0" encoding="UTF-8"?>
+            <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
+                <infNFSe Id="NFS35503082211444777000161123456789012345678901234567">
+                    <IBSCBS>
+                        <totCIBS><vTotNF>1000.00</vTotNF></totCIBS>
+                    </IBSCBS>
+                </infNFSe>
+            </NFSe>
+            XML;
+
+        $ibscbs = $this->parser->parse($xml)[0]['ibscbs'];
+
+        $this->assertNull($ibscbs['cLocalidadeIncid']);
+        $this->assertNull($ibscbs['valores']['vBC']);
+        $this->assertNull($ibscbs['valores']['vCalcAjusteBCIBSCBS']);
+        $this->assertNull($ibscbs['totCIBS']['gIBS']);
+        $this->assertNull($ibscbs['totCIBS']['gCBS']);
+        $this->assertSame('1000.00', $ibscbs['totCIBS']['vTotNF']);
+    }
+
+    public function test_parse_nfse_com_cnpj_alfanumerico_no_emitente(): void
+    {
+        $xml = <<<XML
+            <?xml version="1.0" encoding="UTF-8"?>
+            <NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
+                <infNFSe Id="NFS35503082212ABC34501DE35123456789012345678901234567">
+                    <nNFSe>9</nNFSe>
+                    <emit>
+                        <CNPJ>12ABC34501DE35</CNPJ>
+                        <xNome>Empresa Alfa SA</xNome>
+                    </emit>
+                </infNFSe>
+            </NFSe>
+            XML;
+
+        $result = $this->parser->parse($xml)[0];
+
+        $this->assertSame('12ABC34501DE35', $result['emit']['cnpj']);
+        $this->assertSame('NFS35503082212ABC34501DE35123456789012345678901234567', $result['id']);
+    }
 }

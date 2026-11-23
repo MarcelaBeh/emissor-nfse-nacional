@@ -35,7 +35,7 @@ final class PrestadorEmitenteXmlTest extends TestCase
     public function test_prestador_emitente_omite_xnome_e_endereco(): void
     {
         $dps = $this->createDps(TipoEmitente::PRESTADOR, comEnderecoPrestador: true);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -51,7 +51,7 @@ final class PrestadorEmitenteXmlTest extends TestCase
     public function test_prestador_nao_emitente_mantem_xnome_e_endereco(): void
     {
         $dps = $this->createDps(TipoEmitente::TOMADOR, comEnderecoPrestador: true);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -66,7 +66,7 @@ final class PrestadorEmitenteXmlTest extends TestCase
     {
         // Caso real autorizado: prestador-emitente sem endereço informado.
         $dps = $this->createDps(TipoEmitente::PRESTADOR, comEnderecoPrestador: false);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 

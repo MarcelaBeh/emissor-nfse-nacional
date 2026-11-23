@@ -13,7 +13,8 @@ use PHPUnit\Framework\TestCase;
 
 final class EventoXsdValidationTest extends TestCase
 {
-    private const CHAVE_50 = '12345678901234567890123456789012345678901234567890';
+    // Chave com a estrutura real do TSIdNFSe: município (7), ambiente (1), tipo de inscrição (2 = CNPJ), CNPJ (14) e 27 dígitos.
+    private const CHAVE_50 = '35503082211444777000161123456789012345678901234567';
 
     private EventoXmlBuilder $builder;
     private XsdValidator $xsdValidator;
@@ -218,7 +219,8 @@ final class EventoXsdValidationTest extends TestCase
             tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
             cpfAgTrib: '52998224725',
-            idBloqOfic: '12345678901234567890123456789012345678901234567890123456789',
+            // TSIdNumEvento no XSD de 20/10/2026 tem 56 posições (chave + tipo), diferente das 59 de TSIdEvento; ver docs/DIVIDAS_TECNICAS.md.
+            idBloqOfic: self::CHAVE_50 . '305101',
         );
 
         $xml = $this->builder->build($evento);

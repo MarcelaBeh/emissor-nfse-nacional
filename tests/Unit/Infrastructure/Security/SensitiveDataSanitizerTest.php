@@ -88,7 +88,14 @@ final class SensitiveDataSanitizerTest extends TestCase
         $this->assertSame(42, $this->sanitizer->sanitize(42));
     }
 
-    // ===== CNPJ alfanumérico (a partir de julho de 2026): não pode vazar nos logs =====
+    public function test_sanitiza_array_aninhado(): void
+    {
+        $data = ['prestador' => ['cnpj' => '12345678000195', 'nome' => 'Empresa']];
+        $result = $this->sanitizer->sanitize($data);
+        $this->assertStringNotContainsString('12345678000195', (string) $result['prestador']['cnpj']);
+    }
+
+    // ===== CNPJ alfanumérico (NT 009): não pode vazar nos logs =====
 
     public function test_sanitiza_cnpj_alfanumerico_sem_mascara(): void
     {
@@ -106,6 +113,13 @@ final class SensitiveDataSanitizerTest extends TestCase
         $this->assertStringContainsString('**.***.***/****-**', $result);
     }
 
+    public function test_sanitiza_cnpj_alfanumerico_em_tag_xml(): void
+    {
+        $result = $this->sanitizer->sanitize('<CNPJ>12ABC34501DE35</CNPJ>');
+
+        $this->assertStringNotContainsString('12ABC34501DE35', $result);
+    }
+
     public function test_sanitiza_chave_de_acesso_com_cnpj_alfanumerico(): void
     {
         $chave = '3550308' . '2' . '2' . '12ABC34501DE35' . str_repeat('1', 27);
@@ -117,14 +131,9 @@ final class SensitiveDataSanitizerTest extends TestCase
 
     public function test_nao_mascara_palavras_maiusculas_comuns(): void
     {
+        // Sem dígitos nem 14 posições exatas, texto técnico em maiúsculas não deve ser tratado como CNPJ.
         $texto = 'ERRO NA VALIDACAO DO CERTIFICADO ICPBRASIL';
 
         $this->assertSame($texto, $this->sanitizer->sanitize($texto));
-    }
-    public function test_sanitiza_array_aninhado(): void
-    {
-        $data = ['prestador' => ['cnpj' => '12345678000195', 'nome' => 'Empresa']];
-        $result = $this->sanitizer->sanitize($data);
-        $this->assertStringNotContainsString('12345678000195', (string) $result['prestador']['cnpj']);
     }
 }

@@ -17,7 +17,7 @@ final class SensitiveDataSanitizer
         '/(?<!\d)\d{11}(?!\d)/' => '***********',
         // CNPJ numérico sem máscara: 14 dígitos isolados
         '/(?<!\d)\d{14}(?!\d)/' => '**************',
-        // CNPJ alfanumérico sem máscara (a partir de julho de 2026): 12 dígitos/letras A-Z + 2 dígitos, com ao menos uma letra
+        // CNPJ alfanumérico sem máscara (NT 009): 12 dígitos/letras A-Z + 2 dígitos, com ao menos uma letra
         '/(?<![0-9A-Za-z])(?=[0-9A-Z]*[A-Z])[0-9A-Z]{12}\d{2}(?![0-9A-Za-z])/' => '**************',
         // CPF com máscara: 000.000.000-00
         '/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/' => '***.***.***-**',

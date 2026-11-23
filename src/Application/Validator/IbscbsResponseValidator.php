@@ -9,6 +9,9 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository;
 
 final class IbscbsResponseValidator
 {
+    /** Diferença máxima aceita entre valores recalculados localmente e os devolvidos pela SEFIN (centavos de arredondamento). */
+    private const TOLERANCIA_ARREDONDAMENTO = 0.01;
+
     /** @var array<int, string> */
     private array $errors = [];
 
@@ -30,7 +33,8 @@ final class IbscbsResponseValidator
         $this->validateVCredPres($ibsData, $nfseIbscbs);
         $this->validateVDiferimento($ibsData, $nfseIbscbs);
         $this->validateGTribCompraGov($ibsData, $nfseIbscbs);
-        $this->validateVCalcReeRepRes($ibsData, $nfseIbscbs);
+        $this->validateVCalcAjusteBCIBSCBS($ibsData, $nfseIbscbs);
+        $this->validateVCalcAjusteBCLocImoveis($ibsData, $nfseIbscbs);
 
         if ($this->errors !== []) {
             throw new ValidationException(implode('; ', $this->errors));
@@ -237,41 +241,74 @@ final class IbscbsResponseValidator
     }
 
     /**
-     * E1531: vCalcReeRepRes não deve ser informado se gRefNFSe não foi informado na DPS
-     * E1533: vCalcReeRepRes deve ser informado se gRefNFSe foi informado na DPS
-     * E1534: vCalcReeRepRes < vServ (quando informado)
+     * Ajuste da base de cálculo do IBS/CBS por documentos (vAjusteBC com tpAjusteBC 101 a 105 ou 199):
+     * E1533: vCalcAjusteBCIBSCBS deve ser informado quando a DPS trouxe esses documentos
+     * E1535: vCalcAjusteBCIBSCBS deve ser igual à soma dos vAjusteAplic desses documentos
+     * E1534: vCalcAjusteBCIBSCBS deve ser menor que vServ
      *
      * @param array<string, mixed> $ibsData
      * @param array<string, mixed> $nfseIbscbs
      */
-    private function validateVCalcReeRepRes(array $ibsData, array $nfseIbscbs): void
+    private function validateVCalcAjusteBCIBSCBS(array $ibsData, array $nfseIbscbs): void
     {
-        $vCalcReeRepRes = $nfseIbscbs['valores']['vCalcReeRepRes'] ?? null;
-        $hasVCalc = $vCalcReeRepRes !== null && (float) $vCalcReeRepRes > 0.0;
+        $vCalc = $nfseIbscbs['valores']['vCalcAjusteBCIBSCBS'] ?? null;
+        // A SEFIN devolve 0.00 por padrão quando não há ajuste: zero equivale a não informado.
+        $informado = $vCalc !== null && $vCalc !== '' && (float) $vCalc > 0.0;
+        $temDocumentos = (bool) ($ibsData['temAjusteIbsCbs'] ?? false);
 
-        $hasRefNFSe = isset($ibsData['refNFSeList'])
-            && is_array($ibsData['refNFSeList'])
-            && $ibsData['refNFSeList'] !== [];
-
-        if (!$hasRefNFSe && $hasVCalc) {
-            $this->addError('E1531: vCalcReeRepRes não deve ser informado quando gRefNFSe não foi informado na DPS');
-        }
-        if ($hasRefNFSe && !$hasVCalc) {
-            $this->addError('E1533: vCalcReeRepRes deve ser informado quando gRefNFSe foi informado na DPS');
+        if ($temDocumentos && !$informado) {
+            $this->addError('E1533: vCalcAjusteBCIBSCBS deve ser informado quando a DPS trouxe documentos de ajuste de IBS/CBS (tpAjusteBC 101 a 105 ou 199)');
         }
 
-        if (!$hasVCalc) {
+        if (!$informado) {
+            return;
+        }
+
+        if ($temDocumentos && abs((float) $vCalc - (float) ($ibsData['somaAjusteIbsCbs'] ?? 0)) > self::TOLERANCIA_ARREDONDAMENTO) {
+            $this->addError('E1535: vCalcAjusteBCIBSCBS deve ser igual à soma dos valores de ajuste aplicados dos documentos da DPS (tpAjusteBC 101 a 105 ou 199)');
+        }
+
+        $vServ = $ibsData['vServ'] ?? null;
+        if ($vServ !== null && (float) $vCalc >= (float) $vServ) {
+            $this->addError('E1534: vCalcAjusteBCIBSCBS deve ser menor que o valor do serviço prestado');
+        }
+    }
+
+    /**
+     * Ajuste da base de cálculo do IBS/CBS na locação de imóveis (gAjusteBCLocImoveis):
+     * E1537: vCalcAjusteBCLocImoveis não deve ser informado se a DPS não trouxe gAjusteBCLocImoveis
+     * E1543: vCalcAjusteBCLocImoveis deve ser informado se a DPS trouxe gAjusteBCLocImoveis
+     * E1547: vCalcAjusteBCLocImoveis deve ser menor ou igual a vServ
+     * E1579: vCalcAjusteBCLocImoveis deve ser igual à soma dos ajustes x percentual de copropriedade
+     *
+     * @param array<string, mixed> $ibsData
+     * @param array<string, mixed> $nfseIbscbs
+     */
+    private function validateVCalcAjusteBCLocImoveis(array $ibsData, array $nfseIbscbs): void
+    {
+        $vCalc = $nfseIbscbs['valores']['vCalcAjusteBCLocImoveis'] ?? null;
+        // A SEFIN devolve 0.00 por padrão quando não há ajuste: zero equivale a não informado.
+        $informado = $vCalc !== null && $vCalc !== '' && (float) $vCalc > 0.0;
+        $temAjustes = (bool) ($ibsData['temAjusteLocImoveis'] ?? false);
+
+        if (!$temAjustes && $informado) {
+            $this->addError('E1537: vCalcAjusteBCLocImoveis não deve ser informado quando a DPS não trouxe gAjusteBCLocImoveis');
+        }
+        if ($temAjustes && !$informado) {
+            $this->addError('E1543: vCalcAjusteBCLocImoveis deve ser informado quando a DPS trouxe gAjusteBCLocImoveis');
+        }
+
+        if (!$informado) {
             return;
         }
 
         $vServ = $ibsData['vServ'] ?? null;
-        if ($vServ !== null) {
-            $vCalcFloat = (float) $vCalcReeRepRes;
-            $vServFloat = (float) $vServ;
+        if ($vServ !== null && (float) $vCalc > (float) $vServ) {
+            $this->addError('E1547: vCalcAjusteBCLocImoveis deve ser menor ou igual ao valor do serviço prestado');
+        }
 
-            if ($vCalcFloat >= $vServFloat) {
-                $this->addError('E1534: vCalcReeRepRes deve ser menor que o valor do serviço prestado');
-            }
+        if ($temAjustes && abs((float) $vCalc - (float) ($ibsData['somaAjusteLocImoveis'] ?? 0)) > self::TOLERANCIA_ARREDONDAMENTO) {
+            $this->addError('E1579: vCalcAjusteBCLocImoveis deve ser igual à soma dos ajustes da DPS multiplicada pelo percentual de copropriedade');
         }
     }
 }

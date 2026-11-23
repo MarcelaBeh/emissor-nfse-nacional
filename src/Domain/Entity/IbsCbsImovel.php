@@ -4,58 +4,44 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoCIB;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 
+/**
+ * Grupo `IBSCBS/imovel` (TCRTCInfoImovel): operações com bens imóveis, exceto obras.
+ *
+ * Estrutura (NT 009, item 2.6): município do imóvel, dados de locação (`gLocacao`, apenas 99.03)
+ * e até 99 unidades imobiliárias (`gUnidImob`).
+ */
 class IbsCbsImovel
 {
-    private ?CodigoCIB $cCIB;
-    private ?IbsCbsEnderecoObra $endereco;
+    public const MAX_UNIDADES = 99;
 
+    /** @param IbsCbsUnidadeImobiliaria[] $unidades */
     public function __construct(
-        private ?string $inscImobFisc = null,
-        ?CodigoCIB $cCIB = null,
-        ?IbsCbsEnderecoObra $endereco = null,
+        private CodigoMunicipio $cMun,
+        private ?IbsCbsLocacaoImovel $locacao = null,
+        private array $unidades = [],
     ) {
-        $preenchidos = 0;
-        if ($cCIB !== null) {
-            $preenchidos++;
-        }
-        if ($endereco !== null) {
-            $preenchidos++;
-        }
-
-        if ($preenchidos !== 1) {
+        if (count($unidades) > self::MAX_UNIDADES) {
             throw new \InvalidArgumentException(
-                'Imóvel deve informar exatamente um dos campos: cCIB ou endereco'
+                'imovel aceita no máximo ' . self::MAX_UNIDADES . ' unidades imobiliárias (gUnidImob)'
             );
         }
-
-        $this->cCIB = $cCIB;
-        $this->endereco = $endereco;
     }
 
-    public function getInscImobFisc(): ?string
+    public function getCMun(): CodigoMunicipio
     {
-        return $this->inscImobFisc;
+        return $this->cMun;
     }
 
-    public function getCCIB(): ?CodigoCIB
+    public function getLocacao(): ?IbsCbsLocacaoImovel
     {
-        return $this->cCIB;
+        return $this->locacao;
     }
 
-    public function getEndereco(): ?IbsCbsEnderecoObra
+    /** @return IbsCbsUnidadeImobiliaria[] */
+    public function getUnidades(): array
     {
-        return $this->endereco;
-    }
-
-    public function isPorCIB(): bool
-    {
-        return $this->cCIB !== null;
-    }
-
-    public function isPorEndereco(): bool
-    {
-        return $this->endereco !== null;
+        return $this->unidades;
     }
 }

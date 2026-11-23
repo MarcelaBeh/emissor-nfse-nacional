@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VersaoSchema;
+use MarcelaBeh\EmissorNfseNacional\Domain\Service\DpsIdService;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 
 class Dps
 {
-    private ?ChaveAcesso $chaveAcesso = null;
+    private ?string $idDps = null;
 
     public function __construct(
         private TipoAmbiente $tipoAmbiente,
@@ -33,6 +35,7 @@ class Dps
         private ?IbsCbsInfo $ibscbs = null,
         private ?MotivoEmissaoTI $cMotivoEmisTI = null,
         private ?ChaveAcesso $chNFSeRej = null,
+        private FinalidadeNfse $finNFSe = FinalidadeNfse::REGULAR,
     ) {
         $this->validate();
     }
@@ -45,6 +48,10 @@ class Dps
 
         if ($this->serie <= 0) {
             throw new \InvalidArgumentException('Série da DPS deve ser maior que zero');
+        }
+
+        if ($this->serie > 89999) {
+            throw new \InvalidArgumentException('Série da DPS deve ser no máximo 89999 (TSSerieDPS)');
         }
 
         if ($this->cMotivoEmisTI === null && $this->tipoEmissao !== TipoEmitente::PRESTADOR) {
@@ -61,42 +68,19 @@ class Dps
     }
 
     /**
-     * Gera (uma única vez) os dados do identificador `infDPS/@Id` (TSIdDPS): município (7), tipo de
-     * inscrição (1), inscrição federal (14), série (5) e número (15), mais 8 zeros de preenchimento.
-     * Não é uma chave de acesso de NFS-e: esta só existe depois da autorização.
+     * Gera (uma única vez) o identificador `infDPS/@Id` conforme TSIdDPS: "DPS" + município (7)
+     * + tipo de inscrição (1) + inscrição federal (14) + série (5) + número (15) = 45 posições.
+     * Aceita CNPJ alfanumérico e completa o CPF com zeros à esquerda.
      */
-    public function gerarChaveAcesso(): ChaveAcesso
+    public function gerarIdDps(): string
     {
-        if ($this->chaveAcesso !== null) {
-            return $this->chaveAcesso;
-        }
-
-        $documento = $this->prestador->getDocumento();
-        if ($documento === null) {
-            throw new \RuntimeException('Prestador sem CNPJ/CPF não pode gerar chave de acesso');
-        }
-
-        $docStr = $documento->__toString();
-        $tpInsc = strlen($docStr) === 14 ? '2' : '1';
-        // TSIdDPS: a inscrição federal ocupa 14 posições; o CPF (11) é completado com zeros à esquerda.
-        $docStr = str_pad($docStr, 14, '0', STR_PAD_LEFT);
-
-        $codigo = sprintf(
-            '%s%s%s%05d%015d00000000',
-            $this->codigoMunicipioEmissor->getCodigo(),
-            $tpInsc,
-            $docStr,
-            $this->serie,
-            $this->numero
-        );
-
-        $this->chaveAcesso = new ChaveAcesso($codigo);
-        return $this->chaveAcesso;
+        return $this->idDps ??= (new DpsIdService())->generate($this);
     }
 
-    public function getChaveAcesso(): ?ChaveAcesso
+    /** Identificador da DPS, ou null enquanto gerarIdDps() não foi chamado. */
+    public function getIdDps(): ?string
     {
-        return $this->chaveAcesso;
+        return $this->idDps;
     }
 
     public function getTipoAmbiente(): TipoAmbiente
@@ -182,5 +166,10 @@ class Dps
     public function getChNFSeRej(): ?ChaveAcesso
     {
         return $this->chNFSeRej;
+    }
+
+    public function getFinNFSe(): FinalidadeNfse
+    {
+        return $this->finNFSe;
     }
 }

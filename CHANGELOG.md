@@ -9,6 +9,52 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+**BREAKING.** Adequação à NT 009 v1.01 (release 1), esquemas `PRODREST-v1.01-20261020`. O XML novo só é aceito pelo XSD
+de produção restrita de 20/10/2026 e **não é compatível com o leiaute de produção atual (NT 004)**: um XML novo é
+rejeitado pelo XSD antigo e vice-versa. A data de entrada em produção não está confirmada pela SE/CGNFS-e. Quem emite
+em produção deve permanecer na linha 2.x até a confirmação.
+
+### Alterado
+- `finNFSe` passa a ser obrigatório em `infDPS` (independe do grupo IBSCBS). Entra em `DpsRequest::$finNFSe`
+  (padrão `"0"`, único valor admitido neste leiaute) e sai de `IbsCbsRequest`.
+- `xDescServ` é o último elemento de `cServ`.
+- `valores/trib/gIBSCBS` passa a conter só `cCredPres`, `gTribRegular` e `gDif`; `CST` e `cClassTrib` sobem para
+  `valores/trib`. O grupo `gIBSCBS` é omitido para os CSTs 400, 410 e 820 (sem tributação IBS/CBS) e, nesses casos,
+  `cIndOp`, `cCredPres`, `gTribRegular` e `gDif` são vedados. `IbsCbsRequest::$informarGIBSCBS` força ou suprime o grupo
+  para um CST fora dessa lista.
+- `cIndOp` passa a ser opcional em `IbsCbsRequest`.
+- Série da DPS limitada de 1 a 89999 (`TSSerieDPS`). O desvio local da NT 004 foi removido porque o XSD novo o corrigiu.
+- Resposta da NFS-e: `vCalcDR` vira `vCalcAjusteBCISSQN`; `vCalcReeRepRes` vira `vCalcAjusteBCIBSCBS`; novo
+  `vCalcAjusteBCLocImoveis`. `IbscbsResponseValidator` aplica as RNs E1533, E1534, E1535, E1537, E1543, E1547 e E1579
+  e tolera os grupos IBS/CBS ausentes. Sem grupo de tributação na DPS, a resposta não precisa trazer `IBSCBS`.
+- CNPJ alfanumérico: `Cnpj`, `ChaveAcesso`, `Dps::gerarIdDps()` e os validadores aceitam letras A-Z na inscrição
+  federal. `Cnpj` e `ChaveAcesso` não descartam mais caracteres em silêncio (só a máscara é removida).
+- `Dps` gera o `Id` pelo `DpsIdService` (`Dps::gerarIdDps()`), em vez da pseudo-chave de 50 posições.
+- `EventoValidator`, `ConsultaValidator` e `DpsValidator` aceitam a chave de acesso com inscrição alfanumérica.
+
+### Adicionado
+- `vAjusteBC`, grupo unificado de ajuste da base de cálculo: `ServicoRequest::$percentualAjusteBcIssqn`,
+  `$valorAjusteBcIssqn` e `$documentosAjusteBc` (`DocAjusteBCRequest`). Enum `TipoAjusteBC` (2, 5 a 9, 99, 101 a 105 e 199).
+- Operações com imóveis: `IbsCbsImovelRequest` reestruturado (`cMun`, `locacao`, `unidades`) com `gLocacao`,
+  `gUnidImob` (até 99) e `gAjusteBCLocImoveis`. Enum `TipoAjusteBCLocImoveis`.
+- `IbsCbsRequest::$bensMoveis` (locação de bens móveis, cTribNac 99.04.01).
+- Validações com o código da RN oficial (E0453 a E0476, E0859, E0860, E0936 a E0974 e outras) na mensagem.
+
+### Removido
+- `DocDedRedRequest`/`DocDedRed`, `IbsCbsReeRepResRequest`/`IbsCbsReeRepRes`,
+  `IbsCbsDocumentoReeRepResRequest`/`IbsCbsDocumentoReeRepRes` e `TipoReembolsoRepasseRessarcimento`: substituídos
+  por `vAjusteBC`. Os tipos de ajuste 1, 3 e 4 foram extintos pela NT e não há mapeamento automático.
+- `Dps::gerarChaveAcesso()` e `Dps::getChaveAcesso()`: use `gerarIdDps()` e `getIdDps()`.
+- `Presentation\Factory\DpsFactory`, descontinuada na v2.3.2.
+
+### Migração
+- Troque `documentosDeducao` (e `reeRepRes`) por `documentosAjusteBc`; os documentos agora exigem `vTotDoc` e
+  `vAjusteAplic` e escolhem o comprobatório (`dFeNacional`, `docFiscalOutro` ou `docOutro`).
+- Mova `finNFSe` de `IbsCbsRequest` para `DpsRequest` (ou omita, para o padrão `"0"`).
+- Reescreva `imovel`: `cMun` é obrigatório e `inscImobFisc`, `cCIB` e o endereço passam para cada unidade (`unidades`).
+  O endereço do imóvel é sempre nacional (CEP) e `xBairro` é opcional.
+- Para CNPJ alfanumérico, o documento no request deve vir em maiúsculas e sem máscara (o `DpsValidator` rejeita minúsculas).
+
 ---
 
 ## [v2.3.2] - 2026-11-23

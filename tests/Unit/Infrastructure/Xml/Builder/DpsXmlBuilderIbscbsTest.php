@@ -7,18 +7,21 @@ namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Infrastructure\Xml\Builder;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\BeneficioMunicipal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocAjusteBC;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsAjusteBCLocImoveis;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsBemMovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsLocacaoImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsUnidadeImobiliaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
@@ -27,16 +30,16 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBC;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBCLocImoveis;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
@@ -63,7 +66,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     {
         $ibscbs = $this->createIbscbs();
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -75,33 +78,10 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         $this->assertXmlContains($xml, 'cClassTrib');
     }
 
-    public function test_vserv_e_emitido_bruto_e_nao_liquido_de_descontos(): void
-    {
-        // Antes saía vServ=900.00 junto com vDescIncond=100.00 (desconto aplicado em dobro).
-        $servico = new Servico(
-            discriminacao: 'test',
-            codigoTributacao: '010101',
-            localPrestacao: new CodigoMunicipio('3550308'),
-            valorServicos: new Money(1000.00),
-            descontoIncondicionado: new Money(100.00),
-            descontoCondicionado: new Money(0),
-            aliquotaIss: 2.0,
-            totTribTipo: 'indTotTrib',
-            indTotTrib: '0',
-            codigoNbs: '12345678',
-        );
-        $dps = $this->createDpsWithIbscbs(ibscbs: $this->createIbscbs(), servico: $servico);
-        $dps->gerarChaveAcesso();
-
-        $xml = $this->builder->build($dps);
-
-        $this->assertXmlContains($xml, '<vServ>1000.00</vServ>');
-        $this->assertXmlContains($xml, '<vDescIncond>100.00</vDescIncond>');
-    }
     public function test_build_ibscbs_xml_without_ibscbs_does_not_contain_ibscbs(): void
     {
         $dps = $this->createDpsWithoutIbscbs();
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -130,7 +110,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             dest: $dest,
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -149,7 +129,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         );
         $ibscbs = $this->createIbscbs(tribRegular: $tribRegular);
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -169,7 +149,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         );
         $ibscbs = $this->createIbscbs(diferimento: $diferimento);
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -183,7 +163,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     {
         $ibscbs = $this->createIbscbs(indFinal: IndicadorFinal::SIM);
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -194,7 +174,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     {
         $ibscbs = $this->createIbscbs(indFinal: null);
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -205,7 +185,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     {
         $ibscbs = $this->createIbscbs(tpOper: TipoOperacao::FORNECIMENTO_POSTERIOR);
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -216,7 +196,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     {
         $ibscbs = $this->createIbscbs(tpEnteGov: TipoEnteGovernamental::MUNICIPIO);
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -234,7 +214,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             refNFSeList: $refs,
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -250,7 +230,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             cCredPres: new CodigoCreditoPresumido('01'),
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -285,7 +265,6 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             pDifCBS: 8.0,
         );
         $ibscbs = new IbsCbsInfo(
-            finNFSe: FinalidadeNfse::REGULAR,
             cIndOp: new CodigoIndicadorOperacao('100001'),
             indDest: IndicadorDestinacao::TERCEIRO,
             cst: new CodigoSituacaoTributaria('100'),
@@ -299,7 +278,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             diferimento: $diferimento,
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -325,7 +304,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     {
         $ibscbs = $this->createIbscbs();
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -345,100 +324,108 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             }
         }
 
-        $expectedOrder = ['finNFSe', 'cIndOp', 'indDest', 'valores'];
+        // finNFSe agora fica em infDPS; o IBSCBS comeca em cIndOp (indFinal e tpOper sao opcionais).
+        $expectedOrder = ['cIndOp', 'indDest', 'valores'];
         $this->assertSame($expectedOrder, $children);
     }
 
     public function test_build_ibscbs_xml_with_imovel_cib(): void
     {
         $imovel = new IbsCbsImovel(
-            inscImobFisc: '12345',
-            cCIB: new CodigoCIB('12345678'),
+            cMun: new CodigoMunicipio('3550308'),
+            unidades: [new IbsCbsUnidadeImobiliaria(inscImobFisc: '12345', cCIB: new CodigoCIB('12345678'))],
         );
-        $ibscbs = $this->createIbscbs(imovel: $imovel);
-        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $xml = $this->buildComIbscbs($this->createIbscbs(imovel: $imovel));
 
-        $xml = $this->builder->build($dps);
-
-        $this->assertXmlContains($xml, 'imovel');
-        $this->assertXmlContains($xml, 'inscImobFisc');
-        $this->assertXmlContains($xml, '12345');
-        $this->assertXmlContains($xml, 'cCIB');
-        $this->assertXmlContains($xml, '12345678');
+        $this->assertXmlContains($xml, '<imovel><cMun>3550308</cMun><gUnidImob>');
+        $this->assertXmlContains($xml, '<inscImobFisc>12345</inscImobFisc>');
+        $this->assertXmlContains($xml, '<cCIB>12345678</cCIB>');
     }
 
     public function test_build_ibscbs_xml_with_imovel_endereco(): void
     {
-        $endereco = new IbsCbsEnderecoObra(
+        $endereco = new IbsCbsEnderecoImovel(
             cep: '01001001',
-            endExt: null,
             xLgr: 'Rua do Imóvel',
             nro: '100',
-            xBairro: 'Centro',
             xCpl: 'Bloco B',
+            xBairro: 'Centro',
         );
-        $imovel = new IbsCbsImovel(endereco: $endereco);
-        $ibscbs = $this->createIbscbs(imovel: $imovel);
-        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $imovel = new IbsCbsImovel(
+            cMun: new CodigoMunicipio('3550308'),
+            unidades: [new IbsCbsUnidadeImobiliaria(endereco: $endereco)],
+        );
+        $xml = $this->buildComIbscbs($this->createIbscbs(imovel: $imovel));
 
-        $xml = $this->builder->build($dps);
-
-        $this->assertXmlContains($xml, 'imovel');
-        $this->assertXmlContains($xml, 'Rua do Imóvel');
-        $this->assertXmlContains($xml, '100');
-        $this->assertXmlContains($xml, 'Bloco B');
-        $this->assertXmlContains($xml, 'Centro');
+        // TCEnderImovel: CEP, xLgr, nro, xCpl, xBairro (nesta ordem).
+        $this->assertXmlContains($xml, '<end><CEP>01001001</CEP><xLgr>Rua do Imóvel</xLgr><nro>100</nro><xCpl>Bloco B</xCpl><xBairro>Centro</xBairro></end>');
     }
 
-    public function test_build_ibscbs_xml_with_g_ree_rep_res(): void
+    public function test_build_ibscbs_xml_endereco_do_imovel_omite_complemento_e_bairro_ausentes(): void
     {
-        $doc = new IbsCbsDocumentoReeRepRes(
-            tipo: 'dFeNacional',
-            dtEmiDoc: new \DateTimeImmutable('2026-01-15'),
-            dtCompDoc: new \DateTimeImmutable('2026-01-15'),
-            tpReeRepRes: TipoReembolsoRepasseRessarcimento::REPASSE_IMOVEIS_CORRETORES,
-            vlrReeRepRes: '1500.00',
-            tipoChaveDFe: '1',
-            chaveDFe: '12345678901234567890123456789012345678901234567890',
+        $imovel = new IbsCbsImovel(
+            cMun: new CodigoMunicipio('3550308'),
+            unidades: [new IbsCbsUnidadeImobiliaria(endereco: new IbsCbsEnderecoImovel('01001001', 'Rua A', '10'))],
         );
-        $reeRepRes = new IbsCbsReeRepRes([$doc]);
-        $ibscbs = $this->createIbscbs(reeRepRes: $reeRepRes);
-        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $xml = $this->buildComIbscbs($this->createIbscbs(imovel: $imovel));
 
-        $xml = $this->builder->build($dps);
+        $this->assertXmlContains($xml, '<end><CEP>01001001</CEP><xLgr>Rua A</xLgr><nro>10</nro></end>');
+    }
 
-        $this->assertXmlContains($xml, 'gReeRepRes');
-        $this->assertXmlContains($xml, 'documentos');
-        $this->assertXmlContains($xml, 'dFeNacional');
-        $this->assertXmlContains($xml, 'tipoChaveDFe');
-        $this->assertXmlContains($xml, 'chaveDFe');
-        $this->assertXmlContains($xml, 'dtEmiDoc');
-        $this->assertXmlContains($xml, 'dtCompDoc');
-        $this->assertXmlContains($xml, 'tpReeRepRes');
-        $this->assertXmlContains($xml, 'vlrReeRepRes');
-        $this->assertXmlContains($xml, '1500.00');
-        $this->assertXmlContains($xml, '2026-01-15');
-        $this->assertXmlContains($xml, '01');
+    public function test_build_ibscbs_xml_with_locacao_e_ajustes_de_locacao(): void
+    {
+        $imovel = new IbsCbsImovel(
+            cMun: new CodigoMunicipio('3550308'),
+            locacao: new IbsCbsLocacaoImovel(
+                pCopropriedade: '50.00',
+                vTotOper: '2000.00',
+                vDescIncondTot: '100.00',
+                vDescCondTot: '20.00',
+                dVencOrig: new \DateTimeImmutable('2026-12-10'),
+            ),
+            unidades: [
+                new IbsCbsUnidadeImobiliaria(
+                    cCIB: new CodigoCIB('12345678'),
+                    ajustes: [
+                        new IbsCbsAjusteBCLocImoveis(TipoAjusteBCLocImoveis::CONDOMINIO_INCLUSO, '300.00'),
+                        new IbsCbsAjusteBCLocImoveis(TipoAjusteBCLocImoveis::OUTRAS_PARCELAS, '50.00', 'Taxa de limpeza'),
+                    ],
+                ),
+            ],
+        );
+        $xml = $this->buildComIbscbs($this->createIbscbs(imovel: $imovel));
+
+        $this->assertXmlContains($xml, '<gLocacao><pCopropriedade>50.00</pCopropriedade><vTotOper>2000.00</vTotOper><vDescIncondTot>100.00</vDescIncondTot><vDescCondTot>20.00</vDescCondTot><dVencOrig>2026-12-10</dVencOrig></gLocacao>');
+        $this->assertXmlContains($xml, '<gAjusteBCLocImoveis><tpAjusteBCLocImoveis>03</tpAjusteBCLocImoveis><vAjusteBCLocImoveis>300.00</vAjusteBCLocImoveis></gAjusteBCLocImoveis>');
+        $this->assertXmlContains($xml, '<gAjusteBCLocImoveis><tpAjusteBCLocImoveis>99</tpAjusteBCLocImoveis><xTpAjusteBCLocImoveis>Taxa de limpeza</xTpAjusteBCLocImoveis><vAjusteBCLocImoveis>50.00</vAjusteBCLocImoveis></gAjusteBCLocImoveis>');
+    }
+
+    public function test_build_ibscbs_xml_with_bens_moveis(): void
+    {
+        $bens = [
+            new IbsCbsBemMovel('84713012', 'Notebook', '2'),
+            new IbsCbsBemMovel('87032100', 'Veículo', '1'),
+        ];
+        $xml = $this->buildComIbscbs($this->createIbscbs(bensMoveis: $bens));
+
+        $this->assertXmlContains($xml, '<bensMoveis><cNCMBemMovel>84713012</cNCMBemMovel><xNCMBemMovel>Notebook</xNCMBemMovel><qtdNCMBemMovel>2</qtdNCMBemMovel></bensMoveis>');
+        $this->assertSame(2, substr_count($xml, '<bensMoveis>'));
     }
 
     public function test_build_ibscbs_xml_with_imovel_in_correct_position(): void
     {
         $imovel = new IbsCbsImovel(
-            cCIB: new CodigoCIB('12345678'),
+            cMun: new CodigoMunicipio('3550308'),
+            unidades: [new IbsCbsUnidadeImobiliaria(cCIB: new CodigoCIB('12345678'))],
         );
         $dest = new IbsCbsDest(xNome: 'Dest');
         $ibscbs = $this->createIbscbs(
             indDest: IndicadorDestinacao::TERCEIRO,
             dest: $dest,
             imovel: $imovel,
+            bensMoveis: [new IbsCbsBemMovel('84713012', 'Notebook', '1')],
         );
-        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
-
-        $xml = $this->builder->build($dps);
+        $xml = $this->buildComIbscbs($ibscbs);
 
         $dom = new \DOMDocument();
         $dom->loadXML($xml);
@@ -451,15 +438,28 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             }
         }
 
-        $destIdx = array_search('dest', $children, true);
-        $imovelIdx = array_search('imovel', $children, true);
-        $valoresIdx = array_search('valores', $children, true);
+        // TCRTCInfoIBSCBS: ... indDest, dest, imovel, bensMoveis, valores.
+        $this->assertSame(['cIndOp', 'indDest', 'dest', 'imovel', 'bensMoveis', 'valores'], $children);
+    }
 
-        $this->assertNotFalse($destIdx, 'dest deve estar presente');
-        $this->assertNotFalse($imovelIdx, 'imovel deve estar presente');
-        $this->assertNotFalse($valoresIdx, 'valores deve estar presente');
-        $this->assertLessThan($valoresIdx, $imovelIdx, 'imovel deve vir antes de valores');
-        $this->assertGreaterThan($destIdx, $imovelIdx, 'imovel deve vir depois de dest');
+    public function test_build_ibscbs_xml_with_documentos_de_ajuste_de_ibscbs(): void
+    {
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::REPASSE_INTERMEDIACAO_IMOVEIS,
+            vTotDoc: '1500.00',
+            vAjusteAplic: '1200.00',
+            tipoDocumento: DocAjusteBC::DOC_DFE_NACIONAL,
+            dtEmiDoc: new \DateTimeImmutable('2026-01-15'),
+            dtCompDoc: new \DateTimeImmutable('2026-01-10'),
+            tipoChaveDFe: '1',
+            chaveDFe: '35503082211444777000161123456789012345678901234567',
+        );
+        $servico = $this->createServicoComAjuste(docs: [$doc]);
+        $xml = $this->buildComIbscbs($this->createIbscbs(), $servico);
+
+        // Os documentos de reembolso/repasse agora ficam em valores/vAjusteBC (grupo unificado).
+        $this->assertStringNotContainsString('gReeRepRes', $xml);
+        $this->assertXmlContains($xml, '<vAjusteBC><documentos><docAjusteBC><tpAjusteBC>101</tpAjusteBC><vTotDoc>1500.00</vTotDoc><vAjusteAplic>1200.00</vAjusteAplic><dtEmiDoc>2026-01-15</dtEmiDoc><dtCompDoc>2026-01-10</dtCompDoc><dFeNacional><tipoChaveDFe>1</tipoChaveDFe><chaveDFe>35503082211444777000161123456789012345678901234567</chaveDFe></dFeNacional></docAjusteBC></documentos></vAjusteBC>');
     }
 
     public function test_build_xml_with_obra(): void
@@ -516,7 +516,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             ),
             servico: $servico,
         );
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -586,7 +586,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             ),
             servico: $servico,
         );
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -616,7 +616,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             codigoPaisPrestacao: 'US',
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -640,7 +640,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             codigoTributacaoMunicipal: '123',
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -664,7 +664,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             codigoInternoContribuinte: 'INT001',
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -688,7 +688,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             valorRecebido: 800.00,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -723,7 +723,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             comExterior: $comExterior,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -759,7 +759,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             atvEvento: $atvEvento,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -793,7 +793,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             infoCompl: $infoCompl,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -808,41 +808,174 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         $this->assertXmlContains($xml, 'Observações complementares');
     }
 
-    public function test_build_xml_with_documentos_deducao(): void
+    public function test_build_xml_with_documentos_ajuste_bc(): void
     {
-        $doc = new DocDedRed(
-            tipoDocumento: 'chNFe',
-            dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
-            chaveNFe: '12345678901234567890123456789012345678901234',
-            tipoDeducaoReducao: '1',
-            valorDedutivel: '3000.00',
-            valorDeducao: '3000.00',
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::MATERIAIS,
+            vTotDoc: '3000.00',
+            vAjusteAplic: '3000.00',
+            tipoDocumento: DocAjusteBC::DOC_OUTRO,
+            dtEmiDoc: new \DateTimeImmutable('2026-05-15'),
+            nDoc: 'REC-001',
+            xDoc: 'Recibo de materiais',
         );
+        $xml = $this->buildComIbscbs($this->createIbscbs(), $this->createServicoComAjuste(docs: [$doc]));
+
+        $this->assertStringNotContainsString('vDedRed', $xml);
+        $this->assertXmlContains($xml, '<vAjusteBC><documentos><docAjusteBC><tpAjusteBC>2</tpAjusteBC><vTotDoc>3000.00</vTotDoc><vAjusteAplic>3000.00</vAjusteAplic><dtEmiDoc>2026-05-15</dtEmiDoc><docOutro><nDoc>REC-001</nDoc><xDoc>Recibo de materiais</xDoc></docOutro></docAjusteBC></documentos></vAjusteBC>');
+    }
+
+    public function test_build_xml_with_ajuste_percentual_e_documentos(): void
+    {
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::OUTROS_REEMBOLSOS,
+            vTotDoc: '500.00',
+            vAjusteAplic: '500.00',
+            tipoDocumento: DocAjusteBC::DOC_FISCAL_OUTRO,
+            xTpAjusteBC: 'Reembolso de despesas diversas',
+            cMunDocFiscal: '3550308',
+            nDocFiscal: '123',
+            xDocFiscal: 'NFS municipal',
+        );
+        $xml = $this->buildComIbscbs($this->createIbscbs(), $this->createServicoComAjuste(docs: [$doc], pct: 10.0));
+
+        // choice (pAjusteBCISSQN) vem antes de documentos; xTpAjusteBC logo após tpAjusteBC.
+        $this->assertXmlContains($xml, '<vAjusteBC><pAjusteBCISSQN>10.00</pAjusteBCISSQN><documentos>');
+        $this->assertXmlContains($xml, '<tpAjusteBC>199</tpAjusteBC><xTpAjusteBC>Reembolso de despesas diversas</xTpAjusteBC>');
+        $this->assertXmlContains($xml, '<docFiscalOutro><cMunDocFiscal>3550308</cMunDocFiscal><nDocFiscal>123</nDocFiscal><xDocFiscal>NFS municipal</xDocFiscal></docFiscalOutro>');
+    }
+
+    public function test_build_xml_with_ajuste_por_valor_padrao(): void
+    {
+        $xml = $this->buildComIbscbs($this->createIbscbs(), $this->createServicoComAjuste(valor: 250.0));
+
+        $this->assertXmlContains($xml, '<vAjusteBC><vAjusteBCISSQN>250.00</vAjusteBCISSQN></vAjusteBC>');
+    }
+
+    public function test_build_xml_sem_ajuste_nao_emite_vajustebc(): void
+    {
+        $xml = $this->buildComIbscbs($this->createIbscbs());
+
+        $this->assertStringNotContainsString('vAjusteBC', $xml);
+    }
+
+    // ===== NT 009: posições e estrutura novas =====
+
+    public function test_fin_nfse_e_emitida_em_infdps_mesmo_sem_ibscbs(): void
+    {
+        $dps = $this->createDpsWithoutIbscbs();
+        $dps->gerarIdDps();
+        $xml = $this->builder->build($dps);
+
+        $this->assertStringNotContainsString('IBSCBS', $xml);
+        $this->assertXmlContains($xml, '<finNFSe>0</finNFSe>');
+    }
+
+    public function test_infdps_segue_a_ordem_do_xsd_com_fin_nfse_antes_de_clocemi(): void
+    {
+        $dps = $this->createDpsWithoutIbscbs();
+        $dps->gerarIdDps();
+        $xml = $this->builder->build($dps);
+
+        $dom = new \DOMDocument();
+        $dom->loadXML($xml);
+        $infDps = $dom->getElementsByTagName('infDPS')->item(0);
+
+        $filhos = [];
+        foreach ($infDps->childNodes as $filho) {
+            if ($filho instanceof \DOMElement) {
+                $filhos[] = $filho->localName;
+            }
+        }
+
+        $this->assertSame(
+            ['tpAmb', 'dhEmi', 'verAplic', 'serie', 'nDPS', 'dCompet', 'tpEmit', 'finNFSe', 'cLocEmi', 'prest', 'toma', 'serv', 'valores'],
+            $filhos
+        );
+    }
+
+    public function test_xdescserv_e_o_ultimo_elemento_de_cserv(): void
+    {
+        $dps = $this->createDpsWithoutIbscbs();
+        $dps->gerarIdDps();
+        $xml = $this->builder->build($dps);
+
+        $dom = new \DOMDocument();
+        $dom->loadXML($xml);
+        $cServ = $dom->getElementsByTagName('cServ')->item(0);
+
+        $filhos = [];
+        foreach ($cServ->childNodes as $filho) {
+            if ($filho instanceof \DOMElement) {
+                $filhos[] = $filho->localName;
+            }
+        }
+
+        $this->assertSame('xDescServ', end($filhos));
+        $this->assertSame('cTribNac', $filhos[0]);
+    }
+
+    public function test_vserv_e_emitido_bruto_e_nao_liquido_de_descontos(): void
+    {
+        // Antes saía vServ=900.00 junto com vDescIncond=100.00 (desconto aplicado em dobro).
         $servico = new Servico(
             discriminacao: 'test',
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
-            valorServicos: new Money(5000.00),
-            descontoIncondicionado: new Money(0),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(100.00),
             descontoCondicionado: new Money(0),
-            aliquotaIss: 5.0,
+            aliquotaIss: 2.0,
             totTribTipo: 'indTotTrib',
             indTotTrib: '0',
             codigoNbs: '12345678',
-            documentosDeducao: [$doc],
         );
-        $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $xml = $this->buildComIbscbs($this->createIbscbs(), $servico);
 
-        $xml = $this->builder->build($dps);
+        $this->assertXmlContains($xml, '<vServ>1000.00</vServ>');
+        $this->assertXmlContains($xml, '<vDescIncond>100.00</vDescIncond>');
+    }
 
-        $this->assertXmlContains($xml, 'vDedRed');
-        $this->assertXmlContains($xml, 'docDedRed');
-        $this->assertXmlContains($xml, 'chNFe');
-        $this->assertXmlContains($xml, 'tpDedRed');
-        $this->assertXmlContains($xml, 'dtEmiDoc');
-        $this->assertXmlContains($xml, 'vDedutivelRedutivel');
-        $this->assertXmlContains($xml, 'vDeducaoReducao');
+    public function test_trib_emite_cst_e_cclasstrib_antes_do_grupo_gibscbs(): void
+    {
+        $xml = $this->buildComIbscbs($this->createIbscbs(cCredPres: new CodigoCreditoPresumido('01')));
+
+        $this->assertXmlContains($xml, '<valores><trib><CST>100</CST><cClassTrib>100123</cClassTrib><gIBSCBS><cCredPres>01</cCredPres></gIBSCBS></trib></valores>');
+    }
+
+    public function test_gibscbs_vazio_e_emitido_quando_ha_tributacao_sem_detalhes(): void
+    {
+        // ind_gIBSCBS = 1 sem cCredPres/gTribRegular/gDif: o grupo é obrigatório (RN E0960), ainda que vazio.
+        $xml = $this->buildComIbscbs($this->createIbscbs());
+
+        $this->assertXmlContains($xml, '<trib><CST>100</CST><cClassTrib>100123</cClassTrib><gIBSCBS/></trib>');
+    }
+
+    public function test_gibscbs_e_cindop_sao_omitidos_para_cst_sem_tributacao(): void
+    {
+        $ibscbs = new IbsCbsInfo(
+            indDest: IndicadorDestinacao::TOMADOR,
+            cst: new CodigoSituacaoTributaria('400'),
+            cClassTrib: new CodigoClassificacaoTributaria('400001'),
+        );
+        $xml = $this->buildComIbscbs($ibscbs);
+
+        $this->assertXmlContains($xml, '<trib><CST>400</CST><cClassTrib>400001</cClassTrib></trib>');
+        $this->assertStringNotContainsString('gIBSCBS', $xml);
+        $this->assertStringNotContainsString('cIndOp', $xml);
+    }
+
+    public function test_informar_grupo_true_forca_gibscbs_em_cst_da_lista(): void
+    {
+        $ibscbs = new IbsCbsInfo(
+            indDest: IndicadorDestinacao::TOMADOR,
+            cst: new CodigoSituacaoTributaria('400'),
+            cClassTrib: new CodigoClassificacaoTributaria('400001'),
+            informarGrupoTributacao: true,
+        );
+        $xml = $this->buildComIbscbs($ibscbs);
+
+        $this->assertXmlContains($xml, '<gIBSCBS/>');
     }
 
     public function test_build_xml_with_exig_susp(): void
@@ -865,7 +998,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             exigSusp: $exigSusp,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -892,7 +1025,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             beneficioMunicipal: $bm,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -926,7 +1059,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             tribFederal: $tribFed,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -957,7 +1090,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             vTotTribMun: 50.00,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -982,7 +1115,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             pTotTribMun: 3.0,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -1008,7 +1141,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             indTotTrib: '0',
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -1031,7 +1164,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             pTotTribSN: 15.0,
         );
         $dps = $this->createDpsWithIbscbs(servico: $servico);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -1051,10 +1184,9 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         ?IbsCbsDiferimento $diferimento = null,
         ?array $refNFSeList = null,
         ?IbsCbsImovel $imovel = null,
-        ?IbsCbsReeRepRes $reeRepRes = null,
+        ?array $bensMoveis = null,
     ): IbsCbsInfo {
         return new IbsCbsInfo(
-            finNFSe: FinalidadeNfse::REGULAR,
             cIndOp: new CodigoIndicadorOperacao('100001'),
             indDest: $indDest,
             cst: new CodigoSituacaoTributaria('100'),
@@ -1068,7 +1200,35 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
             diferimento: $diferimento,
             refNFSeList: $refNFSeList,
             imovel: $imovel,
-            reeRepRes: $reeRepRes,
+            bensMoveis: $bensMoveis,
+        );
+    }
+
+    private function buildComIbscbs(IbsCbsInfo $ibscbs, ?Servico $servico = null): string
+    {
+        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs, servico: $servico);
+        $dps->gerarIdDps();
+
+        return $this->builder->build($dps);
+    }
+
+    /** @param DocAjusteBC[]|null $docs */
+    private function createServicoComAjuste(?array $docs = null, ?float $pct = null, ?float $valor = null): Servico
+    {
+        return new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(5000.00),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+            codigoNbs: '12345678',
+            documentosAjusteBc: $docs,
+            percentualAjusteBcIssqn: $pct,
+            valorAjusteBcIssqn: $valor,
         );
     }
 
@@ -1092,7 +1252,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         );
         $ibscbs = $this->createIbscbs();
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs, intermediario: $intermediario);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -1110,7 +1270,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         );
         $ibscbs = $this->createIbscbs();
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs, substituicao: $substituicao);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -1122,7 +1282,7 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     public function test_build_xml_without_intermediario(): void
     {
         $dps = $this->createDpsWithIbscbs();
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 

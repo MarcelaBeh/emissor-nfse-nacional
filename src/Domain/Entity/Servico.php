@@ -19,7 +19,7 @@ class Servico
     private Money $valorIss;
 
     /**
-     * @param DocDedRed[]|null $documentosDeducao
+     * @param DocAjusteBC[]|null $documentosAjusteBc
      */
     public function __construct(
         private string $discriminacao,
@@ -41,9 +41,9 @@ class Servico
         private ?ComExterior $comExterior = null,
         private ?AtvEvento $atvEvento = null,
         private ?InfoCompl $infoCompl = null,
-        private ?array $documentosDeducao = null,
-        private ?float $percentualDeducao = null,
-        private ?float $valorDeducaoPadrao = null,
+        private ?array $documentosAjusteBc = null,
+        private ?float $percentualAjusteBcIssqn = null,
+        private ?float $valorAjusteBcIssqn = null,
         private ?int $tipoImunidade = null,
         private ?ExigSusp $exigSusp = null,
         private ?BeneficioMunicipal $beneficioMunicipal = null,
@@ -64,13 +64,13 @@ class Servico
 
     private function calcularValores(Money $valorServicos): void
     {
-        $valorDeducoes = $this->calcularValorDeducao($valorServicos);
+        $valorDeducoes = $this->calcularAjusteBaseIssqn($valorServicos);
         $reducaoBM = $this->calcularReducaoBeneficioMunicipal($valorServicos);
         $descontoIncond = $this->descontoIncondicionado ?? new Money(0);
         $descontoCond = $this->descontoCondicionado ?? new Money(0);
 
         $this->valorServicos = $valorServicos;
-        // Fórmula oficial (RN E1295): vBC = vServ - vDescIncond - deduções - benefício municipal.
+        // Fórmula oficial (RN E1295): vBC = vServ - vDescIncond - ajustes - benefício municipal.
         $this->baseCalculo = $valorServicos
             ->subtract($descontoIncond)
             ->subtract($valorDeducoes)
@@ -84,29 +84,31 @@ class Servico
     }
 
     /**
-     * Valor monetário da dedução/redução que reduz a base de cálculo do ISS,
-     * derivado do grupo oficial <vDedRed> (choice: pDR | vDR | documentos).
+     * Valor monetário do ajuste (dedução/redução) que reduz a base de cálculo do ISSQN,
+     * derivado do grupo oficial <vAjusteBC>: percentual OU valor padrão (choice) somado aos
+     * documentos cujo tipo repercute no ISSQN (tabela AJUSTE_BC_REPERCUSSÃO; o tipo 105,
+     * glosa de serviços de saúde, afeta apenas o IBS/CBS).
+     *
+     * É uma estimativa local: a repercussão efetiva depende de o município de incidência
+     * autorizar o ajuste, e o valor oficial vem em `vCalcAjusteBCISSQN` na NFS-e.
      */
-    private function calcularValorDeducao(Money $valorServicos): Money
+    private function calcularAjusteBaseIssqn(Money $valorServicos): Money
     {
-        if ($this->percentualDeducao !== null) {
-            return $valorServicos->percentage($this->percentualDeducao);
+        $total = new Money(0);
+
+        if ($this->percentualAjusteBcIssqn !== null) {
+            $total = $total->add($valorServicos->percentage($this->percentualAjusteBcIssqn));
+        } elseif ($this->valorAjusteBcIssqn !== null) {
+            $total = $total->add(new Money($this->valorAjusteBcIssqn));
         }
 
-        if ($this->valorDeducaoPadrao !== null) {
-            return new Money($this->valorDeducaoPadrao);
-        }
-
-        if ($this->documentosDeducao !== null) {
-            $total = 0.0;
-            foreach ($this->documentosDeducao as $doc) {
-                $total += (float) $doc->getValorDeducao();
+        foreach ($this->documentosAjusteBc ?? [] as $doc) {
+            if ($doc->getTpAjusteBC()->ajustaBaseIssqn()) {
+                $total = $total->add(new Money($doc->getVAjusteAplic()));
             }
-
-            return new Money($total);
         }
 
-        return new Money(0);
+        return $total;
     }
 
     /**
@@ -271,20 +273,27 @@ class Servico
         return $this->infoCompl;
     }
 
-    /** @return DocDedRed[]|null */
-    public function getDocumentosDeducao(): ?array
+    /** @return DocAjusteBC[]|null */
+    public function getDocumentosAjusteBc(): ?array
     {
-        return $this->documentosDeducao;
+        return $this->documentosAjusteBc;
     }
 
-    public function getPercentualDeducao(): ?float
+    public function getPercentualAjusteBcIssqn(): ?float
     {
-        return $this->percentualDeducao;
+        return $this->percentualAjusteBcIssqn;
     }
 
-    public function getValorDeducaoPadrao(): ?float
+    public function getValorAjusteBcIssqn(): ?float
     {
-        return $this->valorDeducaoPadrao;
+        return $this->valorAjusteBcIssqn;
+    }
+
+    public function temAjusteBC(): bool
+    {
+        return $this->percentualAjusteBcIssqn !== null
+            || $this->valorAjusteBcIssqn !== null
+            || $this->documentosAjusteBc !== null;
     }
 
     public function getTipoImunidade(): ?int

@@ -6,10 +6,11 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\DTO\Request;
 
 final readonly class IbsCbsImovelRequest
 {
+    /** @param IbsCbsUnidadeImobiliariaRequest[] $unidades */
     public function __construct(
-        public ?string $inscImobFisc = null,
-        public ?string $cCIB = null,
-        public ?IbsCbsEnderecoObraRequest $endereco = null,
+        public string $cMun,
+        public ?IbsCbsLocacaoImovelRequest $locacao = null,
+        public array $unidades = [],
     ) {
     }
 }

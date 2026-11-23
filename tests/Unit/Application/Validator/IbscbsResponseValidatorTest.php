@@ -38,7 +38,7 @@ final class IbscbsResponseValidatorTest extends TestCase
         $ibsData = ['tpEnteGov' => '1', 'cCredPres' => null, 'diferimento' => []];
         $nfseIbscbs = [
             'pRedutor' => '10.00',
-            'valores' => ['vCalcReeRepRes' => null],
+            'valores' => ['vCalcAjusteBCIBSCBS' => null],
             'totCIBS' => [
                 'gIBS' => null,
                 'gCBS' => null,
@@ -307,40 +307,131 @@ final class IbscbsResponseValidatorTest extends TestCase
         $this->validator->validate($ibsData, $nfse);
     }
 
-    // --- E1534: vCalcReeRepRes < vServ ---
+    // --- vCalcAjusteBCIBSCBS: E1533, E1534, E1535 ---
 
-    public function test_v_calc_ree_rep_res_menor_que_v_serv_passes(): void
+    public function test_v_calc_ajuste_ibscbs_ausente_sem_documentos_passes(): void
     {
-        $ibsData = ['vServ' => '1000.00', 'refNFSeList' => ['chave']];
-        $nfse = $this->makeNfse(vCalcReeRepRes: '500.00');
-        $this->validator->validate($ibsData, $nfse);
+        $ibsData = ['vServ' => '1000.00', 'temAjusteIbsCbs' => false];
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCIBSCBS: null));
         $this->expectNotToPerformAssertions();
     }
 
-    public function test_v_calc_ree_rep_res_igual_v_serv_throws(): void
+    public function test_v_calc_ajuste_ibscbs_zero_sem_documentos_passes(): void
     {
-        $ibsData = ['vServ' => '1000.00', 'refNFSeList' => ['chave']];
-        $nfse = $this->makeNfse(vCalcReeRepRes: '1000.00');
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('E1534');
-        $this->validator->validate($ibsData, $nfse);
-    }
-
-    public function test_v_calc_ree_rep_res_maior_v_serv_throws(): void
-    {
-        $ibsData = ['vServ' => '1000.00', 'refNFSeList' => ['chave']];
-        $nfse = $this->makeNfse(vCalcReeRepRes: '1500.00');
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('E1534');
-        $this->validator->validate($ibsData, $nfse);
-    }
-
-    public function test_v_calc_ree_rep_res_ausente_nao_valida(): void
-    {
-        $ibsData = ['vServ' => '1000.00'];
-        $nfse = $this->makeNfse(vCalcReeRepRes: null);
-        $this->validator->validate($ibsData, $nfse);
+        // A SEFIN devolve 0.00 por padrão quando não há ajuste: zero não conta como informado.
+        $ibsData = ['vServ' => '1000.00', 'temAjusteIbsCbs' => false];
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCIBSCBS: '0.00'));
         $this->expectNotToPerformAssertions();
+    }
+
+    public function test_v_calc_ajuste_ibscbs_igual_a_soma_dos_documentos_passes(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteIbsCbs' => true, 'somaAjusteIbsCbs' => 500.0];
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCIBSCBS: '500.00'));
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_v_calc_ajuste_ibscbs_aceita_diferenca_de_um_centavo(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteIbsCbs' => true, 'somaAjusteIbsCbs' => 500.0];
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCIBSCBS: '500.01'));
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_v_calc_ajuste_ibscbs_ausente_com_documentos_throws(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteIbsCbs' => true, 'somaAjusteIbsCbs' => 500.0];
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1533');
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCIBSCBS: null));
+    }
+
+    public function test_v_calc_ajuste_ibscbs_zero_com_documentos_throws(): void
+    {
+        // Com documentos de ajuste na DPS espera-se valor maior que zero; zero equivale a ausente.
+        $ibsData = ['vServ' => '1000.00', 'temAjusteIbsCbs' => true, 'somaAjusteIbsCbs' => 500.0];
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1533');
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCIBSCBS: '0.00'));
+    }
+
+    public function test_v_calc_ajuste_ibscbs_diferente_da_soma_throws(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteIbsCbs' => true, 'somaAjusteIbsCbs' => 500.0];
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1535');
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCIBSCBS: '400.00'));
+    }
+
+    public function test_v_calc_ajuste_ibscbs_igual_ou_maior_que_vserv_throws(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteIbsCbs' => true, 'somaAjusteIbsCbs' => 1000.0];
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1534');
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCIBSCBS: '1000.00'));
+    }
+
+    // --- vCalcAjusteBCLocImoveis: E1537, E1543, E1547, E1579 ---
+
+    public function test_v_calc_loc_imoveis_ausente_sem_ajustes_passes(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteLocImoveis' => false];
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCLocImoveis: null));
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_v_calc_loc_imoveis_zero_sem_ajustes_passes(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteLocImoveis' => false];
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCLocImoveis: '0.00'));
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_v_calc_loc_imoveis_igual_ao_esperado_passes(): void
+    {
+        $ibsData = ['vServ' => '500.00', 'temAjusteLocImoveis' => true, 'somaAjusteLocImoveis' => 50.0];
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCLocImoveis: '50.00'));
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_v_calc_loc_imoveis_igual_a_vserv_passes(): void
+    {
+        // E1547 admite igualdade (menor ou igual), diferente de E1534.
+        $ibsData = ['vServ' => '500.00', 'temAjusteLocImoveis' => true, 'somaAjusteLocImoveis' => 500.0];
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCLocImoveis: '500.00'));
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_v_calc_loc_imoveis_sem_ajustes_na_dps_throws(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteLocImoveis' => false];
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1537');
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCLocImoveis: '50.00'));
+    }
+
+    public function test_v_calc_loc_imoveis_ausente_com_ajustes_na_dps_throws(): void
+    {
+        $ibsData = ['vServ' => '1000.00', 'temAjusteLocImoveis' => true, 'somaAjusteLocImoveis' => 50.0];
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1543');
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCLocImoveis: null));
+    }
+
+    public function test_v_calc_loc_imoveis_maior_que_vserv_throws(): void
+    {
+        $ibsData = ['vServ' => '100.00', 'temAjusteLocImoveis' => true, 'somaAjusteLocImoveis' => 150.0];
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1547');
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCLocImoveis: '150.00'));
+    }
+
+    public function test_v_calc_loc_imoveis_diferente_do_esperado_throws(): void
+    {
+        $ibsData = ['vServ' => '500.00', 'temAjusteLocImoveis' => true, 'somaAjusteLocImoveis' => 50.0];
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('E1579');
+        $this->validator->validate($ibsData, $this->makeNfse(vCalcAjusteBCLocImoveis: '75.00'));
     }
 
     // --- Múltiplos erros ---
@@ -504,78 +595,13 @@ final class IbscbsResponseValidatorTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    // --- E1531/E1533: vCalcReeRepRes x gRefNFSe ---
-
-    public function test_v_calc_ree_rep_res_ausente_sem_g_ref_nfse_passes(): void
-    {
-        $ibsData = ['refNFSeList' => null];
-        $nfse = $this->makeNfse(vCalcReeRepRes: null);
-        $this->validator->validate($ibsData, $nfse);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_v_calc_ree_rep_res_presente_com_g_ref_nfse_passes(): void
-    {
-        $ibsData = ['refNFSeList' => ['12345678901234567890123456789012345678901234567890']];
-        $nfse = $this->makeNfse(vCalcReeRepRes: '500.00');
-        $this->validator->validate($ibsData, $nfse);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_v_calc_ree_rep_res_presente_sem_g_ref_nfse_throws(): void
-    {
-        $ibsData = ['refNFSeList' => null];
-        $nfse = $this->makeNfse(vCalcReeRepRes: '500.00');
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('E1531');
-        $this->validator->validate($ibsData, $nfse);
-    }
-
-    public function test_v_calc_ree_rep_res_ausente_com_g_ref_nfse_throws(): void
-    {
-        $ibsData = ['refNFSeList' => ['12345678901234567890123456789012345678901234567890']];
-        $nfse = $this->makeNfse(vCalcReeRepRes: null);
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('E1533');
-        $this->validator->validate($ibsData, $nfse);
-    }
-
-    public function test_v_calc_ree_rep_res_com_g_ref_nfse_vazio_equivale_sem(): void
-    {
-        $ibsData = ['refNFSeList' => []];
-        $nfse = $this->makeNfse(vCalcReeRepRes: '500.00');
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('E1531');
-        $this->validator->validate($ibsData, $nfse);
-    }
-
-    public function test_v_calc_ree_rep_res_zero_sem_g_ref_nfse_passes(): void
-    {
-        // A SEFIN devolve vCalcReeRepRes=0.00 por padrão mesmo sem gRefNFSe na DPS.
-        // Zero não é "informado" — não deve disparar E1531 (falso positivo).
-        $ibsData = ['refNFSeList' => null];
-        $nfse = $this->makeNfse(vCalcReeRepRes: '0.00');
-        $this->validator->validate($ibsData, $nfse);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_v_calc_ree_rep_res_zero_com_g_ref_nfse_throws(): void
-    {
-        // Com gRefNFSe na DPS, espera-se vCalcReeRepRes > 0; zero equivale a ausente → E1533.
-        $ibsData = ['refNFSeList' => ['12345678901234567890123456789012345678901234567890']];
-        $nfse = $this->makeNfse(vCalcReeRepRes: '0.00');
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('E1533');
-        $this->validator->validate($ibsData, $nfse);
-    }
-
     // --- Regressão: emissão real (cClassTrib=010002, SEFIN cStat=100) ---
 
     public function test_emissao_real_cclasstrib_sem_reducao_e_vcalc_zero_passes(): void
     {
         // Reproduz a NFS-e real que a SEFIN aceitou (cStat=100) mas a lib rejeitava:
         // - cClassTrib=010002 tem pRedIBS/pRedCBS=0.0 na tabela oficial (SEM redução) → SEFIN não retorna pRedAliq*
-        // - DPS sem gRefNFSe, mas SEFIN devolve vCalcReeRepRes=0.00 por padrão
+        // - DPS sem documentos de ajuste, mas SEFIN devolve vCalcAjusteBCIBSCBS=0.00 por padrão
         // - DPS sem tpEnteGov, sem cCredPres, sem diferimento
         $validator = new IbscbsResponseValidator(
             new FileCstClassTribRepository(__DIR__ . '/../../../../storage/cClassTrib.json'),
@@ -585,7 +611,6 @@ final class IbscbsResponseValidatorTest extends TestCase
             'cClassTrib' => '010002',
             'tpEnteGov' => null,
             'cCredPres' => null,
-            'refNFSeList' => null,
             'vServ' => '1.00',
         ];
 
@@ -593,7 +618,7 @@ final class IbscbsResponseValidatorTest extends TestCase
             'pRedutor' => null,
             'valores' => [
                 'vBC' => '0.95',
-                'vCalcReeRepRes' => '0.00',
+                'vCalcAjusteBCIBSCBS' => '0.00',
                 'uf' => ['pIBSUF' => '0.00', 'pAliqEfetUF' => '0.00'],
                 'mun' => ['pIBSMun' => '0.00', 'pAliqEfetMun' => '0.00'],
                 'fed' => ['pCBS' => '0.00', 'pAliqEfetCBS' => '0.00'],
@@ -621,7 +646,8 @@ final class IbscbsResponseValidatorTest extends TestCase
         ?string $vDifMun = null,
         ?string $vDifCBS = null,
         ?array $gTribCompraGov = null,
-        ?string $vCalcReeRepRes = null,
+        ?string $vCalcAjusteBCIBSCBS = null,
+        ?string $vCalcAjusteBCLocImoveis = null,
         ?string $pRedAliqUF = null,
         ?string $pRedAliqMun = null,
         ?string $pRedAliqCBS = null,
@@ -658,7 +684,8 @@ final class IbscbsResponseValidatorTest extends TestCase
             'pRedutor' => $pRedutor,
             'valores' => [
                 'vBC' => '1000.00',
-                'vCalcReeRepRes' => $vCalcReeRepRes,
+                'vCalcAjusteBCIBSCBS' => $vCalcAjusteBCIBSCBS,
+                'vCalcAjusteBCLocImoveis' => $vCalcAjusteBCLocImoveis,
                 'uf' => $uf,
                 'mun' => $mun,
                 'fed' => $fed,

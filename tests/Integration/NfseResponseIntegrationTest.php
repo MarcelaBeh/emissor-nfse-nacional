@@ -91,30 +91,31 @@ final class NfseResponseIntegrationTest extends TestCase
         $this->validatorWithRepo->validate($ibsData, $ibscbs);
     }
 
-    public function test_parse_and_validate_nfse_with_v_calc_ree_rep_res(): void
+    public function test_parse_and_validate_nfse_with_v_calc_ajuste_bc_ibscbs(): void
     {
-        $xml = $this->createNfseResponseWithReeRepRes();
+        $xml = $this->createNfseResponseWithAjusteBCIBSCBS();
         $parsed = $this->parser->parse($xml);
 
         $this->assertCount(1, $parsed);
         $ibscbs = $parsed[0]['ibscbs'];
 
-        $this->assertSame('500.00', $ibscbs['valores']['vCalcReeRepRes']);
+        $this->assertSame('500.00', $ibscbs['valores']['vCalcAjusteBCIBSCBS']);
 
         $ibsData = [
             'tpEnteGov' => null,
             'cClassTrib' => '100123',
             'cCredPres' => null,
             'vServ' => '1000.00',
-            'refNFSeList' => ['12345678901234567890123456789012345678901234567890'],
+            'temAjusteIbsCbs' => true,
+            'somaAjusteIbsCbs' => 500.0,
         ];
 
         $this->validatorWithRepo->validate($ibsData, $ibscbs);
     }
 
-    public function test_parse_throws_when_v_calc_ree_rep_res_exceeds_v_serv(): void
+    public function test_parse_throws_when_v_calc_ajuste_bc_ibscbs_exceeds_v_serv(): void
     {
-        $xml = $this->createNfseResponseWithReeRepRes(vCalcReeRepRes: '1000.00');
+        $xml = $this->createNfseResponseWithAjusteBCIBSCBS(vCalcAjusteBCIBSCBS: '1000.00');
         $parsed = $this->parser->parse($xml);
 
         $ibsData = [
@@ -122,7 +123,8 @@ final class NfseResponseIntegrationTest extends TestCase
             'cClassTrib' => '100123',
             'cCredPres' => null,
             'vServ' => '1000.00',
-            'refNFSeList' => ['12345678901234567890123456789012345678901234567890'],
+            'temAjusteIbsCbs' => true,
+            'somaAjusteIbsCbs' => 1000.0,
         ];
 
         $this->expectException(ValidationException::class);
@@ -282,7 +284,7 @@ final class NfseResponseIntegrationTest extends TestCase
             . '</infNFSe></NFSe>';
     }
 
-    private function createNfseResponseWithReeRepRes(string $vCalcReeRepRes = '500.00'): string
+    private function createNfseResponseWithAjusteBCIBSCBS(string $vCalcAjusteBCIBSCBS = '500.00'): string
     {
         $ufXml = '<uf><pIBSUF>10.00</pIBSUF><pAliqEfetUF>10.00</pAliqEfetUF></uf>';
         $munXml = '<mun><pIBSMun>5.00</pIBSMun><pAliqEfetMun>5.00</pAliqEfetMun></mun>';
@@ -300,7 +302,7 @@ final class NfseResponseIntegrationTest extends TestCase
             . '<cLocalidadeIncid>3550308</cLocalidadeIncid>'
             . '<xLocalidadeIncid>Sao Paulo</xLocalidadeIncid>'
             . '<valores><vBC>1000.00</vBC>'
-            . "<vCalcReeRepRes>{$vCalcReeRepRes}</vCalcReeRepRes>"
+            . "<vCalcAjusteBCIBSCBS>{$vCalcAjusteBCIBSCBS}</vCalcAjusteBCIBSCBS>"
             . $ufXml . $munXml . $fedXml
             . '</valores>'
             . '<totCIBS>'
@@ -383,7 +385,7 @@ final class NfseResponseIntegrationTest extends TestCase
         ?string $vDifMun = null,
         ?string $vDifCBS = null,
         ?array $gTribCompraGov = null,
-        ?string $vCalcReeRepRes = null,
+        ?string $vCalcAjusteBCIBSCBS = null,
     ): string {
         $gIbsCredPresXml = '';
         if ($gIbsCredPres !== null) {
@@ -409,9 +411,9 @@ final class NfseResponseIntegrationTest extends TestCase
                 . '</gTribCompraGov>';
         }
 
-        $reeRepResXml = '';
-        if ($vCalcReeRepRes !== null) {
-            $reeRepResXml = "<vCalcReeRepRes>{$vCalcReeRepRes}</vCalcReeRepRes>";
+        $ajusteXml = '';
+        if ($vCalcAjusteBCIBSCBS !== null) {
+            $ajusteXml = "<vCalcAjusteBCIBSCBS>{$vCalcAjusteBCIBSCBS}</vCalcAjusteBCIBSCBS>";
         }
 
         $vDifUFXml = $vDifUF !== null ? "<vDifUF>{$vDifUF}</vDifUF>" : '';
@@ -424,7 +426,7 @@ final class NfseResponseIntegrationTest extends TestCase
             . ($pRedutor !== null ? "<pRedutor>{$pRedutor}</pRedutor>" : '')
             . '<valores>'
             . '<vBC>1000.00</vBC>'
-            . $reeRepResXml
+            . $ajusteXml
             . '<uf><pIBSUF>10.00</pIBSUF><pAliqEfetUF>10.00</pAliqEfetUF></uf>'
             . '<mun><pIBSMun>5.00</pIBSMun><pAliqEfetMun>5.00</pAliqEfetMun></mun>'
             . '<fed><pCBS>8.00</pCBS><pAliqEfetCBS>8.00</pAliqEfetCBS></fed>'

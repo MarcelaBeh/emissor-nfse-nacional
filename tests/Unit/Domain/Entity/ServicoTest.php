@@ -7,12 +7,13 @@ namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Domain\Entity;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\BeneficioMunicipal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocAjusteBC;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBC;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
@@ -44,12 +45,12 @@ final class ServicoTest extends TestCase
         $this->assertNull($servico->getComExterior());
         $this->assertNull($servico->getAtvEvento());
         $this->assertNull($servico->getInfoCompl());
-        $this->assertNull($servico->getDocumentosDeducao());
+        $this->assertNull($servico->getDocumentosAjusteBc());
     }
 
     public function test_calculates_valor_total(): void
     {
-        // Dedução informada via <vDR> (valorDeducaoPadrao) deve reduzir a base de cálculo.
+        // vBC = vServ - vDescIncond - ajuste: 2000 - 50 - 200 = 1750 (RN E1295).
         $servico = new Servico(
             discriminacao: 'test',
             codigoTributacao: '010101',
@@ -58,51 +59,84 @@ final class ServicoTest extends TestCase
             descontoIncondicionado: new Money(50.00),
             descontoCondicionado: new Money(30.00),
             aliquotaIss: 5.0,
-            valorDeducaoPadrao: 200.00,
+            valorAjusteBcIssqn: 200.00,
         );
 
-        // vBC = vServ - vDescIncond - dedução: 2000 - 50 - 200 = 1750 (RN E1295).
         $this->assertSame(1920.00, $servico->getValorTotal()->getValue());
         $this->assertSame(1750.00, $servico->getBaseCalculo()->getValue());
         $this->assertSame(87.50, $servico->getValorIss()->getValue());
     }
 
-    public function test_deducao_percentual_reduz_base_calculo(): void
+    public function test_valor_servicos_e_o_valor_bruto_e_valor_total_e_o_liquido_de_descontos(): void
     {
-        // <pDR>: 10% de 2000 = 200 de dedução → BC = 1800.
+        // O vServ da DPS é o bruto; o valor líquido de descontos é outro número (não pode ser enviado como vServ).
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(100.00),
+            descontoCondicionado: new Money(50.00),
+            aliquotaIss: 2.0,
+        );
+
+        $this->assertSame(1000.00, $servico->getValorServicos()->getValue());
+        $this->assertSame(850.00, $servico->getValorTotal()->getValue());
+    }
+
+    public function test_desconto_incondicionado_reduz_a_base_de_calculo_do_issqn(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(100.00),
+            aliquotaIss: 2.0,
+        );
+
+        $this->assertSame(900.00, $servico->getBaseCalculo()->getValue());
+        $this->assertSame(18.00, $servico->getValorIss()->getValue());
+    }
+
+    public function test_desconto_condicionado_nao_reduz_a_base_de_calculo_do_issqn(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoCondicionado: new Money(100.00),
+            aliquotaIss: 2.0,
+        );
+
+        $this->assertSame(1000.00, $servico->getBaseCalculo()->getValue());
+    }
+
+    public function test_ajuste_percentual_reduz_base_calculo(): void
+    {
+        // pAjusteBCISSQN: 10% de 2000 = 200 de ajuste, BC = 1800.
         $servico = new Servico(
             discriminacao: 'test',
             codigoTributacao: '010101',
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(2000.00),
             aliquotaIss: 5.0,
-            percentualDeducao: 10.0,
+            percentualAjusteBcIssqn: 10.0,
         );
 
         $this->assertSame(1800.00, $servico->getBaseCalculo()->getValue());
         $this->assertSame(90.00, $servico->getValorIss()->getValue());
+        $this->assertTrue($servico->temAjusteBC());
     }
 
-    public function test_deducao_por_documentos_soma_reduz_base_calculo(): void
+    public function test_ajuste_por_documentos_soma_apenas_os_tipos_que_repercutem_no_issqn(): void
     {
-        // Σ vDeducaoReducao = 150 + 50 = 200 → BC = 1800.
+        // 200 (materiais) + 100 (reembolso de publicidade) ajustam o ISSQN; 80 (glosa de saúde, 105) não.
         $docs = [
-            new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed(
-                tipoDocumento: 'nDoc',
-                dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
-                numeroDoc: 'A',
-                tipoDeducaoReducao: '1',
-                valorDedutivel: '150.00',
-                valorDeducao: '150.00',
-            ),
-            new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed(
-                tipoDocumento: 'nDoc',
-                dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
-                numeroDoc: 'B',
-                tipoDeducaoReducao: '1',
-                valorDedutivel: '50.00',
-                valorDeducao: '50.00',
-            ),
+            $this->docAjuste(TipoAjusteBC::MATERIAIS, '200.00'),
+            $this->docAjuste(TipoAjusteBC::REEMBOLSO_PUBLICIDADE_MIDIA, '100.00'),
+            $this->docAjuste(TipoAjusteBC::GLOSA_SERVICOS_SAUDE, '80.00'),
         ];
 
         $servico = new Servico(
@@ -111,11 +145,38 @@ final class ServicoTest extends TestCase
             localPrestacao: new CodigoMunicipio('3550308'),
             valorServicos: new Money(2000.00),
             aliquotaIss: 5.0,
-            documentosDeducao: $docs,
+            documentosAjusteBc: $docs,
         );
 
-        $this->assertSame(1800.00, $servico->getBaseCalculo()->getValue());
-        $this->assertSame(90.00, $servico->getValorIss()->getValue());
+        $this->assertSame(1700.00, $servico->getBaseCalculo()->getValue());
+        $this->assertSame(85.00, $servico->getValorIss()->getValue());
+    }
+
+    public function test_ajuste_por_valor_e_documentos_acumulam(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(2000.00),
+            aliquotaIss: 5.0,
+            documentosAjusteBc: [$this->docAjuste(TipoAjusteBC::REEMBOLSO_PUBLICIDADE_PRODUCAO_EXTERNA, '100.00')],
+            valorAjusteBcIssqn: 300.00,
+        );
+
+        $this->assertSame(1600.00, $servico->getBaseCalculo()->getValue());
+    }
+
+    private function docAjuste(TipoAjusteBC $tipo, string $valor): DocAjusteBC
+    {
+        return new DocAjusteBC(
+            tpAjusteBC: $tipo,
+            vTotDoc: $valor,
+            vAjusteAplic: $valor,
+            tipoDocumento: DocAjusteBC::DOC_OUTRO,
+            nDoc: 'D-1',
+            xDoc: 'Documento',
+        );
     }
 
     public function test_beneficio_municipal_valor_reduz_base_calculo(): void
@@ -283,16 +344,9 @@ final class ServicoTest extends TestCase
         $this->assertSame('teste complementar', $servico->getInfoCompl()->getInfoComplementar());
     }
 
-    public function test_create_with_documentos_deducao(): void
+    public function test_create_with_documentos_ajuste_bc(): void
     {
-        $doc = new DocDedRed(
-            tipoDocumento: 'chNFe',
-            chaveNFe: '12345678901234567890123456789012345678901234',
-            tipoDeducaoReducao: '1',
-            dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
-            valorDedutivel: '1000.00',
-            valorDeducao: '1000.00',
-        );
+        $doc = $this->docAjuste(TipoAjusteBC::MATERIAIS, '500.00');
         $servico = new Servico(
             discriminacao: 'test',
             codigoTributacao: '010101',
@@ -301,11 +355,11 @@ final class ServicoTest extends TestCase
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
-            documentosDeducao: [$doc],
+            documentosAjusteBc: [$doc],
         );
 
-        $this->assertCount(1, $servico->getDocumentosDeducao());
-        $this->assertSame($doc, $servico->getDocumentosDeducao()[0]);
+        $this->assertCount(1, $servico->getDocumentosAjusteBc());
+        $this->assertSame($doc, $servico->getDocumentosAjusteBc()[0]);
     }
 
     public function test_create_with_exig_susp_muni_beneficio_trib(): void
@@ -368,52 +422,6 @@ final class ServicoTest extends TestCase
             descontoCondicionado: new Money(0),
             aliquotaIss: 5.0,
         );
-    }
-
-    public function test_valor_servicos_e_o_valor_bruto_e_valor_total_e_o_liquido_de_descontos(): void
-    {
-        // O vServ da DPS é o bruto; o valor líquido de descontos é outro número (não pode ser enviado como vServ).
-        $servico = new Servico(
-            discriminacao: 'test',
-            codigoTributacao: '010101',
-            localPrestacao: new CodigoMunicipio('3550308'),
-            valorServicos: new Money(1000.00),
-            descontoIncondicionado: new Money(100.00),
-            descontoCondicionado: new Money(50.00),
-            aliquotaIss: 2.0,
-        );
-
-        $this->assertSame(1000.00, $servico->getValorServicos()->getValue());
-        $this->assertSame(850.00, $servico->getValorTotal()->getValue());
-    }
-
-    public function test_desconto_incondicionado_reduz_a_base_de_calculo_do_issqn(): void
-    {
-        $servico = new Servico(
-            discriminacao: 'test',
-            codigoTributacao: '010101',
-            localPrestacao: new CodigoMunicipio('3550308'),
-            valorServicos: new Money(1000.00),
-            descontoIncondicionado: new Money(100.00),
-            aliquotaIss: 2.0,
-        );
-
-        $this->assertSame(900.00, $servico->getBaseCalculo()->getValue());
-        $this->assertSame(18.00, $servico->getValorIss()->getValue());
-    }
-
-    public function test_desconto_condicionado_nao_reduz_a_base_de_calculo_do_issqn(): void
-    {
-        $servico = new Servico(
-            discriminacao: 'test',
-            codigoTributacao: '010101',
-            localPrestacao: new CodigoMunicipio('3550308'),
-            valorServicos: new Money(1000.00),
-            descontoCondicionado: new Money(100.00),
-            aliquotaIss: 2.0,
-        );
-
-        $this->assertSame(1000.00, $servico->getBaseCalculo()->getValue());
     }
 
     public function test_discriminacao_de_2000_caracteres_acentuados_e_aceita(): void

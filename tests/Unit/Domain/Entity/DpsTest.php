@@ -9,12 +9,12 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VersaoSchema;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
-use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
@@ -106,67 +106,45 @@ final class DpsTest extends TestCase
         $this->assertNull($dps->getIbsCbs());
     }
 
-    public function test_gerar_chave_acesso_with_cnpj(): void
+    public function test_gerar_id_dps_com_cnpj(): void
     {
         $dps = $this->createDps();
-        $chave = $dps->gerarChaveAcesso();
+        $id = $dps->gerarIdDps();
 
-        $this->assertInstanceOf(ChaveAcesso::class, $chave);
-        $this->assertSame(50, strlen($chave->getChave()));
-        $this->assertSame($chave, $dps->getChaveAcesso());
+        // TSIdDPS: "DPS" + município (7) + tipo de inscrição (1) + inscrição (14) + série (5) + número (15).
+        $this->assertSame('DPS' . '3550308' . '2' . '11444777000161' . '00001' . '000000000000123', $id);
+        $this->assertSame(45, strlen($id));
+        $this->assertSame($id, $dps->getIdDps());
     }
 
-    public function test_gerar_chave_acesso_returns_same_instance(): void
+    public function test_gerar_id_dps_retorna_o_mesmo_valor_em_chamadas_repetidas(): void
     {
         $dps = $this->createDps();
-        $chave1 = $dps->gerarChaveAcesso();
-        $chave2 = $dps->gerarChaveAcesso();
 
-        $this->assertSame($chave1, $chave2);
+        $this->assertSame($dps->gerarIdDps(), $dps->gerarIdDps());
     }
 
-    public function test_gerar_chave_acesso_with_cpf_completa_a_inscricao_com_zeros(): void
+    public function test_gerar_id_dps_com_cnpj_alfanumerico(): void
     {
-        // Antes lançava InvalidChaveAcessoException (47 posições) e o prestador CPF não conseguia emitir.
-        $prestador = new Prestador(
-            documento: new Cpf('52998224725'),
-            inscricaoMunicipal: null,
-            razaoSocial: 'Prestador CPF',
-            telefone: null,
-            email: null,
-            endereco: $this->createEndereco(),
-            regimeTributario: RegimeTributario::SIMPLES_NACIONAL,
-        );
+        $dps = $this->createDpsComPrestador(new Cnpj('12ABC34501DE35'));
+        $id = $dps->gerarIdDps();
 
-        $dps = new Dps(
-            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
-            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
-            versaoAplicacao: '1.0.0',
-            serie: 1,
-            numero: 1,
-            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmitente::PRESTADOR,
-            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
-            prestador: $prestador,
-            tomador: $this->createTomador(),
-            servico: $this->createServico(),
-        );
-
-        $chave = $dps->gerarChaveAcesso()->getChave();
-
-        // TSIdDPS: município (7) + tipo 1 (CPF) + inscrição de 14 posições (3 zeros + CPF) + série (5) + número (15).
-        $this->assertSame(50, strlen($chave));
-        $this->assertSame('3550308' . '1' . '00052998224725' . '00001' . '000000000000001', substr($chave, 0, 42));
-        $this->assertSame('00000000', substr($chave, 42));
+        $this->assertSame('DPS' . '3550308' . '2' . '12ABC34501DE35' . '00001' . '000000000000001', $id);
+        $this->assertMatchesRegularExpression('/^DPS[0-9]{7}(1[0-9]{14}|2[0-9A-Z]{14})[0-9]{20}$/', $id);
     }
 
-    public function test_gerar_chave_acesso_with_cnpj_mantem_a_inscricao_de_14_posicoes(): void
+    public function test_gerar_id_dps_com_cpf_completa_a_inscricao_com_zeros(): void
     {
-        $chave = $this->createDps()->gerarChaveAcesso()->getChave();
+        $dps = $this->createDpsComPrestador(new Cpf('52998224725'));
+        $id = $dps->gerarIdDps();
 
-        $this->assertSame('3550308' . '2' . '11444777000161' . '00001' . '000000000000123', substr($chave, 0, 42));
+        // CPF: tipo 1 e inscrição de 14 posições, com 3 zeros à esquerda (TSIdDPS).
+        $this->assertSame('DPS' . '3550308' . '1' . '00052998224725' . '00001' . '000000000000001', $id);
+        $this->assertSame(45, strlen($id));
+        $this->assertMatchesRegularExpression('/^DPS[0-9]{7}(1[0-9]{14}|2[0-9A-Z]{14})[0-9]{20}$/', $id);
     }
-    public function test_gerar_chave_acesso_throws_when_prestador_has_no_documento(): void
+
+    public function test_gerar_id_dps_lanca_excecao_quando_prestador_nao_tem_documento(): void
     {
         $prestador = new Prestador(
             documento: null,
@@ -179,23 +157,16 @@ final class DpsTest extends TestCase
             nif: '123456789',
         );
 
-        $dps = new Dps(
-            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
-            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
-            versaoAplicacao: '1.0.0',
-            serie: 1,
-            numero: 1,
-            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmitente::PRESTADOR,
-            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
-            prestador: $prestador,
-            tomador: $this->createTomador(),
-            servico: $this->createServico(),
-        );
+        $dps = $this->novaDps(prestador: $prestador);
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Prestador sem CNPJ/CPF');
-        $dps->gerarChaveAcesso();
+        $this->expectExceptionMessage('Prestador deve ter CNPJ ou CPF');
+        $dps->gerarIdDps();
+    }
+
+    public function test_finalidade_padrao_e_nfse_regular(): void
+    {
+        $this->assertSame(FinalidadeNfse::REGULAR, $this->createDps()->getFinNFSe());
     }
 
     public function test_invalid_serie_throws_exception(): void
@@ -203,19 +174,20 @@ final class DpsTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Série da DPS deve ser maior que zero');
 
-        new Dps(
-            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
-            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
-            versaoAplicacao: '1.0.0',
-            serie: 0,
-            numero: 1,
-            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmitente::PRESTADOR,
-            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
-            prestador: $this->createPrestador(),
-            tomador: $this->createTomador(),
-            servico: $this->createServico(),
-        );
+        $this->novaDps(serie: 0);
+    }
+
+    public function test_serie_acima_da_faixa_do_xsd_lanca_excecao(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Série da DPS deve ser no máximo 89999');
+
+        $this->novaDps(serie: 90000);
+    }
+
+    public function test_serie_maxima_do_xsd_e_aceita(): void
+    {
+        $this->assertSame(89999, $this->novaDps(serie: 89999)->getSerie());
     }
 
     public function test_invalid_numero_throws_exception(): void
@@ -223,19 +195,7 @@ final class DpsTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Número da DPS deve ser maior que zero');
 
-        new Dps(
-            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
-            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
-            versaoAplicacao: '1.0.0',
-            serie: 1,
-            numero: -1,
-            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmitente::PRESTADOR,
-            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
-            prestador: $this->createPrestador(),
-            tomador: $this->createTomador(),
-            servico: $this->createServico(),
-        );
+        $this->novaDps(numero: -1);
     }
 
     public function test_getters(): void
@@ -254,9 +214,40 @@ final class DpsTest extends TestCase
         $this->assertSame('3550308', $dps->getCodigoMunicipioEmissor()->getCodigo());
     }
 
-    public function test_chave_acesso_is_null_before_generation(): void
+    public function test_id_dps_e_nulo_antes_da_geracao(): void
     {
-        $dps = $this->createDps();
-        $this->assertNull($dps->getChaveAcesso());
+        $this->assertNull($this->createDps()->getIdDps());
+    }
+
+    private function createDpsComPrestador(Cnpj|Cpf $documento): Dps
+    {
+        $prestador = new Prestador(
+            documento: $documento,
+            inscricaoMunicipal: null,
+            razaoSocial: 'Prestador de teste',
+            telefone: null,
+            email: null,
+            endereco: $this->createEndereco(),
+            regimeTributario: RegimeTributario::SIMPLES_NACIONAL,
+        );
+
+        return $this->novaDps(prestador: $prestador, numero: 1);
+    }
+
+    private function novaDps(int $serie = 1, int $numero = 123, ?Prestador $prestador = null): Dps
+    {
+        return new Dps(
+            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
+            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
+            versaoAplicacao: '1.0.0',
+            serie: $serie,
+            numero: $numero,
+            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
+            tipoEmissao: TipoEmitente::PRESTADOR,
+            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
+            prestador: $prestador ?? $this->createPrestador(),
+            tomador: $this->createTomador(),
+            servico: $this->createServico(),
+        );
     }
 }

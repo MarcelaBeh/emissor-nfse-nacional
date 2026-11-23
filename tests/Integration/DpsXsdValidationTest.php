@@ -7,20 +7,22 @@ namespace MarcelaBeh\EmissorNfseNacional\Tests\Integration;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\AtvEvento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\BeneficioMunicipal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ComExterior;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocAjusteBC;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\ExigSusp;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsAjusteBCLocImoveis;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsBemMovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoExterior;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsFornecedor;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsLocacaoImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsUnidadeImobiliaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\InfoCompl;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
@@ -29,16 +31,16 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Servico;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Substituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Tomador;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\TribFederal;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBC;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBCLocImoveis;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoOperacao;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cep;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
@@ -48,9 +50,11 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoCreditoPresumido;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoIndicadorOperacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoSituacaoTributaria;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\XsdValidator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class DpsXsdValidationTest extends TestCase
@@ -67,7 +71,7 @@ final class DpsXsdValidationTest extends TestCase
     public function test_dps_basic_with_ibscbs_validates_against_xsd(): void
     {
         $dps = $this->createDpsWithIbscbs();
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -78,12 +82,12 @@ final class DpsXsdValidationTest extends TestCase
     public function test_dps_with_imovel_cib_validates_against_xsd(): void
     {
         $imovel = new IbsCbsImovel(
-            inscImobFisc: '12345',
-            cCIB: new CodigoCIB('12345678'),
+            cMun: new CodigoMunicipio('3550308'),
+            unidades: [new IbsCbsUnidadeImobiliaria(inscImobFisc: '12345', cCIB: new CodigoCIB('12345678'))],
         );
         $ibscbs = $this->createIbscbs(imovel: $imovel);
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -93,18 +97,20 @@ final class DpsXsdValidationTest extends TestCase
 
     public function test_dps_with_imovel_endereco_validates_against_xsd(): void
     {
-        $enderecoImovel = new IbsCbsEnderecoObra(
+        $enderecoImovel = new IbsCbsEnderecoImovel(
             cep: '01001001',
-            endExt: null,
             xLgr: 'Rua do Imóvel',
             nro: '100',
-            xBairro: 'Centro',
             xCpl: 'Bloco B',
+            xBairro: 'Centro',
         );
-        $imovel = new IbsCbsImovel(endereco: $enderecoImovel);
+        $imovel = new IbsCbsImovel(
+            cMun: new CodigoMunicipio('3550308'),
+            unidades: [new IbsCbsUnidadeImobiliaria(endereco: $enderecoImovel)],
+        );
         $ibscbs = $this->createIbscbs(imovel: $imovel);
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -136,7 +142,7 @@ final class DpsXsdValidationTest extends TestCase
             servico: $servico,
             ibscbs: $this->createIbscbs(),
         );
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -172,7 +178,7 @@ final class DpsXsdValidationTest extends TestCase
             servico: $servico,
             ibscbs: $this->createIbscbs(),
         );
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -180,49 +186,37 @@ final class DpsXsdValidationTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    public function test_dps_with_g_ree_rep_res_validates_against_xsd(): void
+    public function test_dps_with_documento_de_ajuste_dfe_nacional_validates_against_xsd(): void
     {
-        $doc = new IbsCbsDocumentoReeRepRes(
-            tipo: 'dFeNacional',
+        // tpAjusteBC 101 (reembolso/repasse que repercute no IBS/CBS) com a chave de uma NFS-e.
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::REPASSE_INTERMEDIACAO_IMOVEIS,
+            vTotDoc: '1500.00',
+            vAjusteAplic: '1200.00',
+            tipoDocumento: DocAjusteBC::DOC_DFE_NACIONAL,
             dtEmiDoc: new \DateTimeImmutable('2026-01-15'),
-            dtCompDoc: new \DateTimeImmutable('2026-01-15'),
-            tpReeRepRes: TipoReembolsoRepasseRessarcimento::REPASSE_IMOVEIS_CORRETORES,
-            vlrReeRepRes: '1500.00',
+            dtCompDoc: new \DateTimeImmutable('2026-01-10'),
             tipoChaveDFe: '1',
-            chaveDFe: '12345678901234567890123456789012345678901234567890',
+            chaveDFe: '35503082211444777000161123456789012345678901234567',
         );
-        $reeRepRes = new IbsCbsReeRepRes([$doc]);
-        $ibscbs = $this->createIbscbs(reeRepRes: $reeRepRes);
-        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
 
-        $xml = $this->builder->build($dps);
-        $this->xsdValidator->validate($xml, 'DPS');
-
-        $this->expectNotToPerformAssertions();
+        $this->assertDpsValida($this->createDps(servico: $this->servicoComAjuste(docs: [$doc]), ibscbs: $this->createIbscbs()));
     }
 
-    public function test_dps_g_ree_rep_res_com_fornec_valida_no_xsd(): void
+    public function test_dps_with_documento_de_ajuste_com_fornec_cnaonif_validates_against_xsd(): void
     {
-        // Regressão bugs 1-3 (auditoria NT 004): o grupo fornec (com cNaoNIF)
-        // deve gerar XML válido contra o XSD — prova no nível do schema, não só do validador.
-        $doc = new IbsCbsDocumentoReeRepRes(
-            tipo: 'docOutro',
-            dtEmiDoc: new \DateTimeImmutable('2026-01-15'),
-            dtCompDoc: new \DateTimeImmutable('2026-01-15'),
-            tpReeRepRes: TipoReembolsoRepasseRessarcimento::REPASSE_IMOVEIS_CORRETORES,
-            vlrReeRepRes: '1500.00',
+        // Regressão (auditoria NT 004): fornec com cNaoNIF gera XML válido, agora dentro de docAjusteBC.
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::REPASSE_INTERMEDIACAO_IMOVEIS,
+            vTotDoc: '1500.00',
+            vAjusteAplic: '1500.00',
+            tipoDocumento: DocAjusteBC::DOC_OUTRO,
+            fornec: new IbsCbsFornecedor(codigoNaoNif: '1', xNome: 'Fornecedor Estrangeiro Lda'),
             nDoc: 'DOC-1',
             xDoc: 'Documento não fiscal',
-            fornec: new IbsCbsFornecedor(
-                codigoNaoNif: '1',
-                xNome: 'Fornecedor Estrangeiro Lda',
-            ),
         );
-        $reeRepRes = new IbsCbsReeRepRes([$doc]);
-        $ibscbs = $this->createIbscbs(reeRepRes: $reeRepRes);
-        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps = $this->createDps(servico: $this->servicoComAjuste(docs: [$doc]), ibscbs: $this->createIbscbs());
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         self::assertStringContainsString('<fornec>', $xml);
@@ -230,32 +224,218 @@ final class DpsXsdValidationTest extends TestCase
         $this->xsdValidator->validate($xml, 'DPS');
     }
 
-    public function test_dps_imovel_endext_valida_no_xsd(): void
+    public function test_dps_with_documento_doc_fiscal_outro_validates_against_xsd(): void
     {
-        // Regressão bug 10 (auditoria NT 004): imóvel com endExt gera XML válido no XSD.
-        $endExt = new IbsCbsEnderecoExterior(
-            cEndPost: '1100-001',
-            xCidade: 'Lisboa',
-            xEstProvReg: 'Lisboa',
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::OUTROS_REEMBOLSOS,
+            vTotDoc: '500.00',
+            vAjusteAplic: '500.00',
+            tipoDocumento: DocAjusteBC::DOC_FISCAL_OUTRO,
+            xTpAjusteBC: 'Reembolso de despesas diversas',
+            cMunDocFiscal: '3550308',
+            nDocFiscal: '123',
+            xDocFiscal: 'NFS municipal',
         );
-        $imovel = new IbsCbsImovel(
-            endereco: new IbsCbsEnderecoObra(
-                cep: null,
-                endExt: $endExt,
-                xLgr: 'Rua Augusta',
-                nro: '50',
-                xBairro: 'Baixa',
-            ),
-        );
-        $ibscbs = $this->createIbscbs(imovel: $imovel);
-        $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
 
-        $xml = $this->builder->build($dps);
-        self::assertStringContainsString('<endExt>', $xml);
-        $this->xsdValidator->validate($xml, 'DPS');
+        $this->assertDpsValida($this->createDps(servico: $this->servicoComAjuste(docs: [$doc]), ibscbs: $this->createIbscbs()));
     }
 
+    public function test_dps_with_ajuste_percentual_e_documento_validates_against_xsd(): void
+    {
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::GLOSA_SERVICOS_SAUDE,
+            vTotDoc: '800.00',
+            vAjusteAplic: '800.00',
+            tipoDocumento: DocAjusteBC::DOC_DFE_NACIONAL,
+            tipoChaveDFe: '9',
+            xTipoChaveDFe: 'Documento eletrônico de glosa',
+            chaveDFe: 'GLOSA-2026-0001',
+        );
+
+        $this->assertDpsValida($this->createDps(servico: $this->servicoComAjuste(docs: [$doc], pct: 10.0), ibscbs: $this->createIbscbs()));
+    }
+
+    public function test_dps_with_ajuste_por_valor_padrao_validates_against_xsd(): void
+    {
+        $this->assertDpsValida($this->createDps(servico: $this->servicoComAjuste(valor: 250.0), ibscbs: $this->createIbscbs()));
+    }
+
+    public function test_dps_locacao_com_ajustes_validates_against_xsd(): void
+    {
+        $imovel = new IbsCbsImovel(
+            cMun: new CodigoMunicipio('3550308'),
+            locacao: new IbsCbsLocacaoImovel(
+                pCopropriedade: '50.00',
+                vTotOper: '2000.00',
+                vDescIncondTot: '100.00',
+                vDescCondTot: '20.00',
+                dVencOrig: new \DateTimeImmutable('2026-12-10'),
+            ),
+            unidades: [
+                new IbsCbsUnidadeImobiliaria(
+                    inscImobFisc: '12345',
+                    cCIB: new CodigoCIB('12345678'),
+                    ajustes: [
+                        new IbsCbsAjusteBCLocImoveis(TipoAjusteBCLocImoveis::CONDOMINIO_INCLUSO, '300.00'),
+                        new IbsCbsAjusteBCLocImoveis(TipoAjusteBCLocImoveis::OUTRAS_PARCELAS, '50.00', 'Taxa de limpeza'),
+                    ],
+                ),
+                new IbsCbsUnidadeImobiliaria(
+                    endereco: new IbsCbsEnderecoImovel(cep: '01001001', xLgr: 'Rua B', nro: '20'),
+                ),
+            ],
+        );
+
+        $this->assertDpsValida($this->createDpsWithIbscbs(ibscbs: $this->createIbscbs(imovel: $imovel)));
+    }
+
+    public function test_dps_bens_moveis_validates_against_xsd(): void
+    {
+        $bens = [
+            new IbsCbsBemMovel('84713012', 'Notebook', '2'),
+            new IbsCbsBemMovel('87032100', 'Veículo', '1'),
+        ];
+
+        $this->assertDpsValida($this->createDpsWithIbscbs(ibscbs: $this->createIbscbs(bensMoveis: $bens)));
+    }
+
+    #[DataProvider('cstSemTributacao')]
+    public function test_dps_cst_sem_grupo_de_tributacao_validates_against_xsd(string $cst): void
+    {
+        // CST 400/410/820: sem cIndOp e sem gIBSCBS (NT 009, item 2.16).
+        $ibscbs = new IbsCbsInfo(
+            indDest: IndicadorDestinacao::TOMADOR,
+            cst: new CodigoSituacaoTributaria($cst),
+            cClassTrib: new CodigoClassificacaoTributaria($cst . '001'),
+        );
+
+        $this->assertDpsValida($this->createDpsWithIbscbs(ibscbs: $ibscbs));
+    }
+
+    /** @return array<string, array{string}> */
+    public static function cstSemTributacao(): array
+    {
+        return ['isencao' => ['400'], 'imunidade' => ['410'], 'documento especifico' => ['820']];
+    }
+
+    public function test_dps_gibscbs_vazio_validates_against_xsd(): void
+    {
+        // ind_gIBSCBS = 1 sem detalhes: o grupo <gIBSCBS/> vazio é válido no XSD.
+        $xml = $this->assertDpsValida($this->createDpsWithIbscbs());
+
+        self::assertStringContainsString('<gIBSCBS/>', $xml);
+    }
+
+    public function test_dps_fin_nfse_em_infdps_sem_ibscbs_validates_against_xsd(): void
+    {
+        $xml = $this->assertDpsValida($this->createDps(ibscbs: null));
+
+        self::assertStringContainsString('<finNFSe>0</finNFSe>', $xml);
+        self::assertStringNotContainsString('IBSCBS', $xml);
+    }
+
+    public function test_dps_prestador_e_tomador_com_cnpj_alfanumerico_validates_against_xsd(): void
+    {
+        // TSCNPJ [0-9A-Z]{14} e TSIdDPS com inscrição alfanumérica (NT 009, item 2.1).
+        $dps = $this->createDpsComDocumentos(new Cnpj('12ABC34501DE35'), new Cnpj('11444777000161'));
+
+        $xml = $this->assertDpsValida($dps);
+
+        self::assertStringContainsString('<CNPJ>12ABC34501DE35</CNPJ>', $xml);
+        self::assertMatchesRegularExpression('/Id="DPS3550308212ABC34501DE35[0-9]{20}"/', $xml);
+    }
+
+    public function test_dps_prestador_cpf_gera_id_valido_no_xsd(): void
+    {
+        // Regressão: antes o prestador CPF não conseguia gerar a chave (47 posições) e a emissão falhava.
+        $dps = $this->createDpsComDocumentos(new Cpf('52998224725'), new Cnpj('11444777000161'));
+
+        $xml = $this->assertDpsValida($dps);
+
+        self::assertMatchesRegularExpression('/Id="DPS35503081' . '00052998224725' . '[0-9]{20}"/', $xml);
+    }
+
+    public function test_dps_descricao_de_2000_caracteres_acentuados_validates_against_xsd(): void
+    {
+        // TSDesc2000 limita em caracteres (xs:maxLength). 2000 "ç" ocupam 4000 bytes em UTF-8 e o
+        // XSD aceita; a biblioteca recusava por medir bytes com strlen().
+        $descricao = str_repeat('ç', 2000);
+        $servico = new Servico(
+            discriminacao: $descricao,
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 2.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+        );
+
+        $xml = $this->assertDpsValida($this->createDps(servico: $servico, ibscbs: null));
+
+        self::assertStringContainsString("<xDescServ>{$descricao}</xDescServ>", $xml);
+    }
+
+    public function test_dps_descricao_de_2001_caracteres_e_rejeitada_pelo_xsd(): void
+    {
+        // Contraprova: o limite do XSD é 2000 caracteres, nem um a mais. Constrói o XML sem passar
+        // pela validação da entidade para exercitar somente o esquema.
+        $xml = $this->xmlComDescricao(str_repeat('ç', 2000));
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        $this->expectException(\MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Exception\XmlValidationException::class);
+        $this->xsdValidator->validate($this->xmlComDescricao(str_repeat('ç', 2001)), 'DPS');
+    }
+
+    private function xmlComDescricao(string $descricao): string
+    {
+        $servico = new Servico(
+            discriminacao: 'x',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 2.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+        );
+        $dps = $this->createDps(servico: $servico, ibscbs: null);
+        $dps->gerarIdDps();
+
+        // Troca o texto direto no XML: só o esquema decide aqui.
+        return str_replace('<xDescServ>x</xDescServ>', "<xDescServ>{$descricao}</xDescServ>", $this->builder->build($dps));
+    }
+
+    public function test_dps_serie_de_5_digitos_validates_against_xsd(): void
+    {
+        $dps = $this->createDps(ibscbs: null, serie: 89999);
+
+        $xml = $this->assertDpsValida($dps);
+
+        self::assertStringContainsString('<serie>89999</serie>', $xml);
+    }
+
+    public function test_dps_vserv_bruto_com_desconto_validates_against_xsd(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'Serviço com desconto',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(100.00),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 2.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+        );
+
+        $xml = $this->assertDpsValida($this->createDps(servico: $servico, ibscbs: null));
+
+        self::assertStringContainsString('<vServ>1000.00</vServ>', $xml);
+        self::assertStringContainsString('<vDescIncond>100.00</vDescIncond>', $xml);
+    }
     public function test_dps_with_destinatario_terceiro_validates_against_xsd(): void
     {
         $enderecoDest = $this->createEndereco();
@@ -271,7 +451,7 @@ final class DpsXsdValidationTest extends TestCase
             dest: $dest,
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -305,7 +485,7 @@ final class DpsXsdValidationTest extends TestCase
             dest: $dest,
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         self::assertStringContainsString('<endExt>', $xml);
@@ -329,7 +509,7 @@ final class DpsXsdValidationTest extends TestCase
             diferimento: $diferimento,
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -348,7 +528,7 @@ final class DpsXsdValidationTest extends TestCase
             refNFSeList: $refs,
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -375,24 +555,13 @@ final class DpsXsdValidationTest extends TestCase
             pDifCBS: 8.0,
         );
         $imovel = new IbsCbsImovel(
-            inscImobFisc: '12345',
-            cCIB: new CodigoCIB('87654321'),
+            cMun: new CodigoMunicipio('3550308'),
+            unidades: [new IbsCbsUnidadeImobiliaria(inscImobFisc: '12345', cCIB: new CodigoCIB('87654321'))],
         );
-        $doc = new IbsCbsDocumentoReeRepRes(
-            tipo: 'dFeNacional',
-            dtEmiDoc: new \DateTimeImmutable('2026-01-15'),
-            dtCompDoc: new \DateTimeImmutable('2026-01-15'),
-            tpReeRepRes: TipoReembolsoRepasseRessarcimento::REPASSE_IMOVEIS_CORRETORES,
-            vlrReeRepRes: '1500.00',
-            tipoChaveDFe: '1',
-            chaveDFe: '12345678901234567890123456789012345678901234567890',
-        );
-        $reeRepRes = new IbsCbsReeRepRes([$doc]);
         $refs = [
             new ChaveAcesso('12345678901234567890123456789012345678901234567890'),
         ];
         $ibscbs = new IbsCbsInfo(
-            finNFSe: FinalidadeNfse::REGULAR,
             cIndOp: new CodigoIndicadorOperacao('100001'),
             indDest: IndicadorDestinacao::TERCEIRO,
             cst: new CodigoSituacaoTributaria('100'),
@@ -406,10 +575,9 @@ final class DpsXsdValidationTest extends TestCase
             diferimento: $diferimento,
             refNFSeList: $refs,
             imovel: $imovel,
-            reeRepRes: $reeRepRes,
         );
         $dps = $this->createDpsWithIbscbs(ibscbs: $ibscbs);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -417,105 +585,10 @@ final class DpsXsdValidationTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    public function test_dps_prestador_cpf_gera_id_valido_no_xsd(): void
-    {
-        // Regressão: antes o prestador CPF não conseguia gerar a chave (47 posições) e a emissão falhava.
-        $dps = new Dps(
-            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
-            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
-            versaoAplicacao: '1.0.0',
-            serie: 1,
-            numero: 123,
-            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
-            tipoEmissao: TipoEmitente::PRESTADOR,
-            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
-            prestador: new Prestador(
-                documento: new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf('52998224725'),
-                inscricaoMunicipal: null,
-                razaoSocial: 'Prestador CPF',
-                telefone: null,
-                email: null,
-                endereco: $this->createEndereco(),
-                regimeTributario: RegimeTributario::SIMPLES_NACIONAL,
-            ),
-            tomador: new Tomador(
-                documento: new Cnpj('33444555000181'),
-                razaoSocial: 'Tomador Ltda',
-                telefone: null,
-                email: null,
-                endereco: $this->createEndereco(),
-            ),
-            servico: new Servico(
-                discriminacao: 'Serviço de teste',
-                codigoTributacao: '010101',
-                localPrestacao: new CodigoMunicipio('3550308'),
-                valorServicos: new Money(1000.00),
-                descontoIncondicionado: new Money(0),
-                descontoCondicionado: new Money(0),
-                aliquotaIss: 2.0,
-                totTribTipo: 'indTotTrib',
-                indTotTrib: '0',
-            ),
-        );
-        $dps->gerarChaveAcesso();
-
-        $xml = $this->builder->build($dps);
-        $this->xsdValidator->validate($xml, 'DPS');
-
-        self::assertMatchesRegularExpression('/Id="DPS35503081' . '00052998224725' . '[0-9]{20}"/', $xml);
-    }
-
-    public function test_dps_descricao_de_2000_caracteres_acentuados_validates_against_xsd(): void
-    {
-        // TSDesc2000 limita em caracteres (xs:maxLength). 2000 "ç" ocupam 4000 bytes em UTF-8 e o
-        // XSD aceita; a biblioteca recusava por medir bytes com strlen().
-        $descricao = str_repeat('ç', 2000);
-        $servico = new Servico(
-            discriminacao: $descricao,
-            codigoTributacao: '010101',
-            localPrestacao: new CodigoMunicipio('3550308'),
-            valorServicos: new Money(1000.00),
-            descontoIncondicionado: new Money(0),
-            descontoCondicionado: new Money(0),
-            aliquotaIss: 2.0,
-            totTribTipo: 'indTotTrib',
-            indTotTrib: '0',
-        );
-        $dps = $this->createDps(servico: $servico);
-        $dps->gerarChaveAcesso();
-
-        $xml = $this->builder->build($dps);
-        $this->xsdValidator->validate($xml, 'DPS');
-
-        self::assertStringContainsString("<xDescServ>{$descricao}</xDescServ>", $xml);
-    }
-
-    public function test_dps_vserv_bruto_com_desconto_validates_against_xsd(): void
-    {
-        $servico = new Servico(
-            discriminacao: 'Serviço com desconto',
-            codigoTributacao: '010101',
-            localPrestacao: new CodigoMunicipio('3550308'),
-            valorServicos: new Money(1000.00),
-            descontoIncondicionado: new Money(100.00),
-            descontoCondicionado: new Money(0),
-            aliquotaIss: 2.0,
-            totTribTipo: 'indTotTrib',
-            indTotTrib: '0',
-        );
-        $dps = $this->createDps(servico: $servico);
-        $dps->gerarChaveAcesso();
-
-        $xml = $this->builder->build($dps);
-        $this->xsdValidator->validate($xml, 'DPS');
-
-        self::assertStringContainsString('<vServ>1000.00</vServ>', $xml);
-        self::assertStringContainsString('<vDescIncond>100.00</vDescIncond>', $xml);
-    }
     public function test_dps_without_ibscbs_validates_against_xsd(): void
     {
         $dps = $this->createDps();
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -526,7 +599,7 @@ final class DpsXsdValidationTest extends TestCase
     public function test_dps_xml_element_order_matches_xsd(): void
     {
         $dps = $this->createDpsWithIbscbs();
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -541,7 +614,7 @@ final class DpsXsdValidationTest extends TestCase
             }
         }
 
-        $expectedOrder = ['tpAmb', 'dhEmi', 'verAplic', 'serie', 'nDPS', 'dCompet', 'tpEmit', 'cLocEmi'];
+        $expectedOrder = ['tpAmb', 'dhEmi', 'verAplic', 'serie', 'nDPS', 'dCompet', 'tpEmit', 'finNFSe', 'cLocEmi'];
         foreach ($expectedOrder as $i => $tag) {
             $this->assertSame($tag, $children[$i] ?? null, "Position $i should be $tag");
         }
@@ -563,7 +636,7 @@ final class DpsXsdValidationTest extends TestCase
     public function test_dps_xml_element_order_without_ibscbs_matches_xsd(): void
     {
         $dps = $this->createDps();
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -590,7 +663,7 @@ final class DpsXsdValidationTest extends TestCase
     public function test_dps_xml_has_correct_namespace(): void
     {
         $dps = $this->createDpsWithIbscbs();
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -630,7 +703,7 @@ final class DpsXsdValidationTest extends TestCase
             comExterior: $comExterior,
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -660,7 +733,7 @@ final class DpsXsdValidationTest extends TestCase
             atvEvento: $atvEvento,
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -690,7 +763,7 @@ final class DpsXsdValidationTest extends TestCase
             infoCompl: $infoCompl,
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -698,15 +771,16 @@ final class DpsXsdValidationTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    public function test_dps_with_documentos_deducao_validates_against_xsd(): void
+    public function test_dps_with_documentos_ajuste_validates_against_xsd(): void
     {
-        $doc = new DocDedRed(
-            tipoDocumento: 'chNFe',
-            dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
-            chaveNFe: '12345678901234567890123456789012345678901234',
-            tipoDeducaoReducao: '1',
-            valorDedutivel: '3000.00',
-            valorDeducao: '3000.00',
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::MATERIAIS,
+            vTotDoc: '3000.00',
+            vAjusteAplic: '3000.00',
+            tipoDocumento: DocAjusteBC::DOC_DFE_NACIONAL,
+            dtEmiDoc: new \DateTimeImmutable('2026-05-15'),
+            tipoChaveDFe: '2',
+            chaveDFe: '352605' . '11444777000161' . str_repeat('1', 24),
         );
         $servico = new Servico(
             discriminacao: 'test',
@@ -719,10 +793,10 @@ final class DpsXsdValidationTest extends TestCase
             totTribTipo: 'indTotTrib',
             indTotTrib: '0',
             codigoNbs: '123456789',
-            documentosDeducao: [$doc],
+            documentosAjusteBc: [$doc],
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -749,7 +823,7 @@ final class DpsXsdValidationTest extends TestCase
             beneficioMunicipal: $bm,
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -777,7 +851,7 @@ final class DpsXsdValidationTest extends TestCase
             beneficioMunicipal: $bm,
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
 
@@ -814,7 +888,7 @@ final class DpsXsdValidationTest extends TestCase
             tribFederal: $tribFed,
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -838,7 +912,7 @@ final class DpsXsdValidationTest extends TestCase
             codigoPaisPrestacao: 'US',
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -869,13 +943,14 @@ final class DpsXsdValidationTest extends TestCase
             numeroPedido: 'PED-001',
             infoComplementar: 'Observações',
         );
-        $doc = new DocDedRed(
-            tipoDocumento: 'chNFe',
-            dataEmissaoDoc: new \DateTimeImmutable('2026-05-15'),
-            chaveNFe: '12345678901234567890123456789012345678901234',
-            tipoDeducaoReducao: '1',
-            valorDedutivel: '3000.00',
-            valorDeducao: '3000.00',
+        $doc = new DocAjusteBC(
+            tpAjusteBC: TipoAjusteBC::MATERIAIS,
+            vTotDoc: '3000.00',
+            vAjusteAplic: '3000.00',
+            tipoDocumento: DocAjusteBC::DOC_DFE_NACIONAL,
+            dtEmiDoc: new \DateTimeImmutable('2026-05-15'),
+            tipoChaveDFe: '2',
+            chaveDFe: '352605' . '11444777000161' . str_repeat('1', 24),
         );
         $exigSusp = new ExigSusp(tipoSuspensao: 1, numeroProcesso: '000000000000000000000000012345');
         $bm = new BeneficioMunicipal(numeroBeneficio: '00000000000001');
@@ -900,7 +975,7 @@ final class DpsXsdValidationTest extends TestCase
             comExterior: $comExterior,
             atvEvento: $atvEvento,
             infoCompl: $infoCompl,
-            documentosDeducao: [$doc],
+            documentosAjusteBc: [$doc],
             exigSusp: $exigSusp,
             beneficioMunicipal: $bm,
             tribFederal: $tribFed,
@@ -910,7 +985,7 @@ final class DpsXsdValidationTest extends TestCase
             pTotTribMun: 3.0,
         );
         $dps = $this->createDps(servico: $servico, ibscbs: $this->createIbscbs());
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -937,7 +1012,7 @@ final class DpsXsdValidationTest extends TestCase
             endereco: $endereco,
         );
         $dps = $this->createDps(ibscbs: $this->createIbscbs(), intermediario: $intermediario);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -954,7 +1029,7 @@ final class DpsXsdValidationTest extends TestCase
             descricaoMotivo: 'Cancelamento da NFSe anterior',
         );
         $dps = $this->createDps(ibscbs: $this->createIbscbs(), substituicao: $substituicao);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         $xml = $this->builder->build($dps);
         $this->xsdValidator->validate($xml, 'DPS');
@@ -964,7 +1039,7 @@ final class DpsXsdValidationTest extends TestCase
 
     private function createIbscbs(
         ?IbsCbsImovel $imovel = null,
-        ?IbsCbsReeRepRes $reeRepRes = null,
+        ?array $bensMoveis = null,
         ?IbsCbsTribRegular $tribRegular = null,
         ?IbsCbsDiferimento $diferimento = null,
         ?IndicadorFinal $indFinal = null,
@@ -976,7 +1051,6 @@ final class DpsXsdValidationTest extends TestCase
         ?array $refNFSeList = null,
     ): IbsCbsInfo {
         return new IbsCbsInfo(
-            finNFSe: FinalidadeNfse::REGULAR,
             cIndOp: new CodigoIndicadorOperacao('100001'),
             indDest: $indDest,
             cst: new CodigoSituacaoTributaria('100'),
@@ -990,7 +1064,7 @@ final class DpsXsdValidationTest extends TestCase
             diferimento: $diferimento,
             refNFSeList: $refNFSeList,
             imovel: $imovel,
-            reeRepRes: $reeRepRes,
+            bensMoveis: $bensMoveis,
         );
     }
 
@@ -1013,6 +1087,9 @@ final class DpsXsdValidationTest extends TestCase
         ?Substituicao $substituicao = null,
         ?MotivoEmissaoTI $cMotivoEmisTI = null,
         ?ChaveAcesso $chNFSeRej = null,
+        int $serie = 1,
+        Cnpj|Cpf|null $prestadorDocumento = null,
+        Cnpj|Cpf|null $tomadorDocumento = null,
     ): Dps {
         $endereco = $this->createEndereco();
         $cnpj = new Cnpj('11444777000161');
@@ -1021,13 +1098,13 @@ final class DpsXsdValidationTest extends TestCase
             tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
             dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
             versaoAplicacao: '1.0.0',
-            serie: 1,
+            serie: $serie,
             numero: 123,
             dataCompetencia: new \DateTimeImmutable('2026-06-01'),
             tipoEmissao: TipoEmitente::PRESTADOR,
             codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
             prestador: new Prestador(
-                documento: $cnpj,
+                documento: $prestadorDocumento ?? $cnpj,
                 inscricaoMunicipal: '123456',
                 razaoSocial: 'Prestador Ltda',
                 telefone: null,
@@ -1036,7 +1113,7 @@ final class DpsXsdValidationTest extends TestCase
                 regimeTributario: RegimeTributario::SIMPLES_NACIONAL,
             ),
             tomador: new Tomador(
-                documento: new Cnpj('33444555000181'),
+                documento: $tomadorDocumento ?? new Cnpj('33444555000181'),
                 razaoSocial: 'Tomador Ltda',
                 telefone: null,
                 email: null,
@@ -1065,5 +1142,39 @@ final class DpsXsdValidationTest extends TestCase
     private function createDpsWithIbscbs(?IbsCbsInfo $ibscbs = null): Dps
     {
         return $this->createDps(ibscbs: $ibscbs ?? $this->createIbscbs());
+    }
+    private function assertDpsValida(Dps $dps): string
+    {
+        $dps->gerarIdDps();
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+        $this->addToAssertionCount(1);
+
+        return $xml;
+    }
+
+    private function createDpsComDocumentos(Cnpj|Cpf $prestador, Cnpj|Cpf $tomador): Dps
+    {
+        return $this->createDps(prestadorDocumento: $prestador, tomadorDocumento: $tomador);
+    }
+
+    /** @param DocAjusteBC[]|null $docs */
+    private function servicoComAjuste(?array $docs = null, ?float $pct = null, ?float $valor = null): Servico
+    {
+        return new Servico(
+            discriminacao: 'Serviço com ajuste de base de cálculo',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(5000.00),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+            codigoNbs: '123456789',
+            documentosAjusteBc: $docs,
+            percentualAjusteBcIssqn: $pct,
+            valorAjusteBcIssqn: $valor,
+        );
     }
 }

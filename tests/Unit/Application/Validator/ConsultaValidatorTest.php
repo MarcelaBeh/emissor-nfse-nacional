@@ -34,7 +34,7 @@ final class ConsultaValidatorTest extends TestCase
         $request = new ConsultaRequest(chave: '1234567890');
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Chave de acesso deve ter exatamente 50 dígitos numéricos');
+        $this->expectExceptionMessage('Chave de acesso deve ter 50 posições');
 
         $this->validator->validate($request);
     }

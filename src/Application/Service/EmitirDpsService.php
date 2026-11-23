@@ -10,18 +10,20 @@ use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocAjusteBC;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Dps;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Endereco;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsAjusteBCLocImoveis;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsBemMovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDiferimento;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsDocumentoReeRepRes;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoExterior;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoObra;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsEnderecoImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsFornecedor;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsInfo;
-use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsReeRepRes;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsLocacaoImovel;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsTribRegular;
+use MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsUnidadeImobiliaria;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Intermediario;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Obra;
 use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Prestador;
@@ -32,6 +34,8 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoEmissaoTI;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBC;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAjusteBCLocImoveis;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoAmbiente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEmitente;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
@@ -85,7 +89,7 @@ class EmitirDpsService
             $this->validator->validate($request);
 
             $dps = $this->criarDpsFromRequest($request);
-            $dps->gerarChaveAcesso();
+            $dps->gerarIdDps();
 
             $xml = $this->xmlBuilder->build($dps);
 
@@ -369,9 +373,9 @@ class EmitirDpsService
             comExterior: $this->criarComExterior($request->servico->comExterior),
             atvEvento: $this->criarAtvEvento($request->servico->atvEvento),
             infoCompl: $this->criarInfoCompl($request->servico->infoCompl),
-            documentosDeducao: $this->criarDocumentosDeducao($request->servico->documentosDeducao),
-            percentualDeducao: $request->servico->percentualDeducao,
-            valorDeducaoPadrao: $request->servico->valorDeducaoPadrao,
+            documentosAjusteBc: $this->criarDocumentosAjusteBc($request->servico->documentosAjusteBc),
+            percentualAjusteBcIssqn: $request->servico->percentualAjusteBcIssqn,
+            valorAjusteBcIssqn: $request->servico->valorAjusteBcIssqn,
             tipoImunidade: $request->servico->tipoImunidade,
             exigSusp: $this->criarExigSusp($request->servico->exigSusp),
             beneficioMunicipal: $this->criarBeneficioMunicipal($request->servico->beneficioMunicipal),
@@ -460,51 +464,24 @@ class EmitirDpsService
                 );
             }
 
-            $imovel = null;
-            if ($req->imovel !== null) {
-                $im = $req->imovel;
-                $endObra = null;
-                if ($im->endereco !== null) {
-                    $e = $im->endereco;
-                    $endExt = null;
-                    if ($e->endExt !== null) {
-                        $endExt = new IbsCbsEnderecoExterior(
-                            cEndPost: $e->endExt->cEndPost,
-                            xCidade: $e->endExt->xCidade,
-                            xEstProvReg: $e->endExt->xEstProvReg,
-                        );
-                    }
-                    $endObra = new IbsCbsEnderecoObra(
-                        cep: $e->cep,
-                        endExt: $endExt,
-                        xLgr: $e->xLgr,
-                        nro: $e->nro,
-                        xCpl: $e->xCpl,
-                        xBairro: $e->xBairro,
-                    );
-                }
-                $imovel = new IbsCbsImovel(
-                    inscImobFisc: $im->inscImobFisc,
-                    cCIB: $im->cCIB !== null ? new CodigoCIB($im->cCIB) : null,
-                    endereco: $endObra,
-                );
-            }
+            $imovel = $req->imovel !== null ? $this->criarImovel($req->imovel) : null;
 
-            $reeRepRes = null;
-            if ($req->reeRepRes !== null) {
-                $docs = array_map(
-                    fn ($dReq) => $this->criarDocumentoReeRepRes($dReq),
-                    $req->reeRepRes->documentos,
-                );
-                $reeRepRes = new IbsCbsReeRepRes($docs);
-            }
+            $bensMoveis = $req->bensMoveis !== null
+                ? array_map(
+                    fn ($b) => new IbsCbsBemMovel(
+                        cNCMBemMovel: $b->cNCMBemMovel,
+                        xNCMBemMovel: $b->xNCMBemMovel,
+                        qtdNCMBemMovel: $b->qtdNCMBemMovel,
+                    ),
+                    $req->bensMoveis,
+                )
+                : null;
 
             $ibscbs = new IbsCbsInfo(
-                finNFSe: FinalidadeNfse::from($req->finNFSe),
-                cIndOp: new CodigoIndicadorOperacao($req->cIndOp),
                 indDest: IndicadorDestinacao::from($req->indDest),
                 cst: new CodigoSituacaoTributaria($req->cst),
                 cClassTrib: new CodigoClassificacaoTributaria($req->cClassTrib),
+                cIndOp: $req->cIndOp !== null ? new CodigoIndicadorOperacao($req->cIndOp) : null,
                 indFinal: $req->indFinal !== null ? IndicadorFinal::from($req->indFinal) : null,
                 tpOper: $req->tpOper !== null ? TipoOperacao::from($req->tpOper) : null,
                 tpEnteGov: $req->tpEnteGov !== null ? TipoEnteGovernamental::from($req->tpEnteGov) : null,
@@ -514,7 +491,8 @@ class EmitirDpsService
                 diferimento: $diferimento,
                 refNFSeList: $refNFSeList,
                 imovel: $imovel,
-                reeRepRes: $reeRepRes,
+                bensMoveis: $bensMoveis,
+                informarGrupoTributacao: $req->informarGIBSCBS,
             );
         }
 
@@ -535,39 +513,53 @@ class EmitirDpsService
             ibscbs: $ibscbs,
             cMotivoEmisTI: $request->cMotivoEmisTI !== null ? MotivoEmissaoTI::from($request->cMotivoEmisTI) : null,
             chNFSeRej: $request->chNFSeRej !== null ? new ChaveAcesso($request->chNFSeRej) : null,
+            finNFSe: FinalidadeNfse::from($request->finNFSe),
         );
     }
 
-    private function criarDocumentoReeRepRes(\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDocumentoReeRepResRequest $dReq): IbsCbsDocumentoReeRepRes
+    private function criarImovel(\MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsImovelRequest $req): IbsCbsImovel
     {
-        $fornec = null;
-        if ($dReq->fornec !== null) {
-            $f = $dReq->fornec;
-            $fornec = new IbsCbsFornecedor(
-                cnpj: $f->cnpj !== null ? new Cnpj($f->cnpj) : null,
-                cpf: $f->cpf !== null ? new Cpf($f->cpf) : null,
-                nif: $f->nif !== null ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Nif($f->nif) : null,
-                codigoNaoNif: $f->codigoNaoNif,
-                xNome: $f->xNome,
+        $locacao = null;
+        if ($req->locacao !== null) {
+            $l = $req->locacao;
+            $locacao = new IbsCbsLocacaoImovel(
+                pCopropriedade: $l->pCopropriedade,
+                vTotOper: $l->vTotOper,
+                vDescIncondTot: $l->vDescIncondTot,
+                vDescCondTot: $l->vDescCondTot,
+                dVencOrig: $l->dVencOrig !== null ? new \DateTimeImmutable($l->dVencOrig) : null,
             );
         }
 
-        return new IbsCbsDocumentoReeRepRes(
-            tipo: $dReq->tipoDocumento,
-            dtEmiDoc: new \DateTimeImmutable($dReq->dtEmiDoc),
-            dtCompDoc: new \DateTimeImmutable($dReq->dtCompDoc),
-            tpReeRepRes: \MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento::from($dReq->tpReeRepRes),
-            vlrReeRepRes: (string) $dReq->vlrReeRepRes,
-            fornec: $fornec,
-            xTpReeRepRes: $dReq->xTpReeRepRes,
-            tipoChaveDFe: $dReq->tipoChaveDFe,
-            xTipoChaveDFe: $dReq->xTipoChaveDFe,
-            chaveDFe: $dReq->chaveDFe,
-            cMunDocFiscal: $dReq->cMunDocFiscal,
-            nDocFiscal: $dReq->nDocFiscal,
-            xDocFiscal: $dReq->xDocFiscal,
-            nDoc: $dReq->nDoc,
-            xDoc: $dReq->xDoc,
+        $unidades = array_map(
+            fn ($u) => new IbsCbsUnidadeImobiliaria(
+                inscImobFisc: $u->inscImobFisc,
+                cCIB: $u->cCIB !== null ? new CodigoCIB($u->cCIB) : null,
+                endereco: $u->endereco !== null
+                    ? new IbsCbsEnderecoImovel(
+                        cep: $u->endereco->cep,
+                        xLgr: $u->endereco->xLgr,
+                        nro: $u->endereco->nro,
+                        xCpl: $u->endereco->xCpl,
+                        xBairro: $u->endereco->xBairro,
+                    )
+                    : null,
+                ajustes: array_map(
+                    fn ($a) => new IbsCbsAjusteBCLocImoveis(
+                        tpAjusteBCLocImoveis: TipoAjusteBCLocImoveis::from($a->tpAjusteBCLocImoveis),
+                        vAjusteBCLocImoveis: $a->vAjusteBCLocImoveis,
+                        xTpAjusteBCLocImoveis: $a->xTpAjusteBCLocImoveis,
+                    ),
+                    $u->ajustes,
+                ),
+            ),
+            $req->unidades,
+        );
+
+        return new IbsCbsImovel(
+            cMun: new CodigoMunicipio($req->cMun),
+            locacao: $locacao,
+            unidades: $unidades,
         );
     }
 
@@ -593,7 +585,7 @@ class EmitirDpsService
 
     /**
      * Garante que um campo obrigatório do XSD foi informado pelo cliente.
-     * A biblioteca nunca presume valores fiscais — ausência é erro, não default.
+     * A biblioteca nunca presume valores fiscais - ausência é erro, não default.
      *
      * @template T
      * @param T|null $valor
@@ -666,44 +658,43 @@ class EmitirDpsService
     }
 
     /**
-     * @param \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocDedRedRequest[]|null $reqs
-     * @return array<int, \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed>|null
+     * @param \MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocAjusteBCRequest[]|null $reqs
+     * @return array<int, DocAjusteBC>|null
      */
-    private function criarDocumentosDeducao(?array $reqs): ?array
+    private function criarDocumentosAjusteBc(?array $reqs): ?array
     {
         if ($reqs === null) {
             return null;
         }
 
-        // Campos obrigatórios do XSD (TCDocDedRed): a lib não presume tipo de documento,
-        // tipo de dedução, data nem valores fiscais. O DpsValidator já rejeita ausências.
+        // Campos obrigatórios do XSD (TCDocAjusteBC): a lib não presume tipo de ajuste,
+        // tipo de documento nem valores fiscais. O DpsValidator já rejeita ausências.
         return array_map(
-            fn ($d) => new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\DocDedRed(
-                tipoDocumento: $this->exigir($d->tipoDocumento, 'tipoDocumento (docDedRed)'),
-                chaveNFSe: $d->chaveNFSe,
-                chaveNFe: $d->chaveNFe,
-                codigoMunicipioNFSe: $d->codigoMunicipioNFSe,
-                numeroNFSe: $d->numeroNFSe,
-                codigoVerificacaoNFSe: $d->codigoVerificacaoNFSe,
-                numeroNFS: $d->numeroNFS,
-                modeloNFS: $d->modeloNFS,
-                serieNFS: $d->serieNFS,
-                numeroDocFiscal: $d->numeroDocFiscal,
-                numeroDoc: $d->numeroDoc,
-                tipoDeducaoReducao: $this->exigir($d->tipoDeducaoReducao, 'tpDedRed'),
-                descricaoOutrasDeducoes: $d->descricaoOutrasDeducoes,
-                dataEmissaoDoc: new \DateTimeImmutable($this->exigir($d->dataEmissaoDoc, 'dtEmiDoc')),
-                valorDedutivel: $this->exigir($d->valorDedutivel, 'vDedutivelRedutivel'),
-                valorDeducao: $this->exigir($d->valorDeducao, 'vDeducaoReducao'),
-                fornecedor: $d->fornecedor !== null
-                    ? new \MarcelaBeh\EmissorNfseNacional\Domain\Entity\IbsCbsFornecedor(
-                        cnpj: $d->fornecedor->cnpj !== null ? new Cnpj($d->fornecedor->cnpj) : null,
-                        cpf: $d->fornecedor->cpf !== null ? new Cpf($d->fornecedor->cpf) : null,
-                        nif: $d->fornecedor->nif !== null ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Nif($d->fornecedor->nif) : null,
-                        codigoNaoNif: $d->fornecedor->codigoNaoNif,
-                        xNome: $d->fornecedor->xNome,
+            fn ($d) => new DocAjusteBC(
+                tpAjusteBC: TipoAjusteBC::from($this->exigir($d->tpAjusteBC, 'tpAjusteBC')),
+                vTotDoc: $this->exigir($d->vTotDoc, 'vTotDoc'),
+                vAjusteAplic: $this->exigir($d->vAjusteAplic, 'vAjusteAplic'),
+                tipoDocumento: $this->exigir($d->tipoDocumento, 'tipoDocumento (docAjusteBC)'),
+                xTpAjusteBC: $d->xTpAjusteBC,
+                dtEmiDoc: $d->dtEmiDoc !== null ? new \DateTimeImmutable($d->dtEmiDoc) : null,
+                dtCompDoc: $d->dtCompDoc !== null ? new \DateTimeImmutable($d->dtCompDoc) : null,
+                fornec: $d->fornec !== null
+                    ? new IbsCbsFornecedor(
+                        cnpj: $d->fornec->cnpj !== null ? new Cnpj($d->fornec->cnpj) : null,
+                        cpf: $d->fornec->cpf !== null ? new Cpf($d->fornec->cpf) : null,
+                        nif: $d->fornec->nif !== null ? new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Nif($d->fornec->nif) : null,
+                        codigoNaoNif: $d->fornec->codigoNaoNif,
+                        xNome: $d->fornec->xNome,
                     )
                     : null,
+                tipoChaveDFe: $d->tipoChaveDFe,
+                xTipoChaveDFe: $d->xTipoChaveDFe,
+                chaveDFe: $d->chaveDFe,
+                cMunDocFiscal: $d->cMunDocFiscal,
+                nDocFiscal: $d->nDocFiscal,
+                xDocFiscal: $d->xDocFiscal,
+                nDoc: $d->nDoc,
+                xDoc: $d->xDoc,
             ),
             $reqs,
         );
@@ -818,7 +809,10 @@ class EmitirDpsService
                 if (!empty($parsedList)) {
                     $xmlParsed = $parsedList[0];
 
-                    if ($dps->getIbscbs() !== null) {
+                    // Sem grupo de tributação IBS/CBS na DPS (ind_gIBSCBS = 0) não há valores de IBS/CBS
+                    // a conferir: as RNs vedam a maioria dos campos do grupo, então não se exige nem
+                    // se valida o grupo IBSCBS da resposta.
+                    if ($dps->getIbscbs() !== null && $dps->getIbscbs()->temGrupoTributacao()) {
                         // A DPS enviou IBS/CBS: a resposta DEVE trazer o grupo IBSCBS. Ausência
                         // (chave presente com valor null, ou ausente) é divergência, não silêncio.
                         $respIbscbs = $xmlParsed['ibscbs'] ?? null;
@@ -844,11 +838,11 @@ class EmitirDpsService
         $chaveReal = null;
         $numeroNfse = null;
         if (is_array($xmlParsed)) {
-            // O atributo Id do infNFSe segue TSIdNFSe: "NFS" + 50 dígitos (53 posições).
-            // Só extrai a chave (os 50 dígitos) quando o formato confere; id malformado
-            // não vira chave inválida silenciosa.
+            // O atributo Id do infNFSe segue TSIdNFSe: "NFS" + 50 posições (53 no total), com
+            // a inscrição federal alfanumérica nas posições 10 a 23. Só extrai a chave quando o
+            // formato confere; id malformado não vira chave inválida silenciosa.
             $id = $xmlParsed['id'] ?? null;
-            if (is_string($id) && preg_match('/^NFS([0-9]{50})$/', $id, $m) === 1) {
+            if (is_string($id) && preg_match('/^NFS([0-9]{9}[0-9A-Z]{14}[0-9]{27})$/', $id, $m) === 1) {
                 $chaveReal = $m[1];
             }
             $numero = $xmlParsed['numero'] ?? null;
@@ -889,15 +883,33 @@ class EmitirDpsService
             ];
         }
 
-        if ($ibscbs->hasRefNFSe()) {
-            $refList = $ibscbs->getRefNFSeList();
-            if ($refList !== null) {
-                $data['refNFSeList'] = array_map(
-                    fn ($chave) => $chave->getChave(),
-                    $refList,
-                );
+        // Documentos de ajuste que repercutem no IBS/CBS (tpAjusteBC 101 a 105 e 199).
+        $somaAjusteIbsCbs = 0.0;
+        $temAjusteIbsCbs = false;
+        foreach ($dps->getServico()->getDocumentosAjusteBc() ?? [] as $doc) {
+            if ($doc->getTpAjusteBC()->ajustaBaseIbsCbs()) {
+                $temAjusteIbsCbs = true;
+                $somaAjusteIbsCbs += (float) $doc->getVAjusteAplic();
             }
         }
+        $data['temAjusteIbsCbs'] = $temAjusteIbsCbs;
+        $data['somaAjusteIbsCbs'] = round($somaAjusteIbsCbs, 2);
+
+        // Ajustes da locação de imóveis: soma de gAjusteBCLocImoveis x percentual de copropriedade.
+        $somaAjusteLocImoveis = 0.0;
+        $temAjusteLocImoveis = false;
+        $imovel = $ibscbs->getImovel();
+        if ($imovel !== null) {
+            $fator = $imovel->getLocacao() !== null ? (float) $imovel->getLocacao()->getPCopropriedade() / 100 : 0.0;
+            foreach ($imovel->getUnidades() as $unidade) {
+                foreach ($unidade->getAjustes() as $ajuste) {
+                    $temAjusteLocImoveis = true;
+                    $somaAjusteLocImoveis += (float) $ajuste->getVAjusteBCLocImoveis() * $fator;
+                }
+            }
+        }
+        $data['temAjusteLocImoveis'] = $temAjusteLocImoveis;
+        $data['somaAjusteLocImoveis'] = round($somaAjusteLocImoveis, 2);
 
         return $data;
     }

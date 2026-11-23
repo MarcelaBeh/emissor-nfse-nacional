@@ -137,9 +137,9 @@ class EmitirDpsService
         // 1. Validar input (void; lança exceção em caso de erro)
         $this->validator->validate($request);
 
-        // 2. Construir a entidade Dps a partir do request e gerar a chave
+        // 2. Construir a entidade Dps a partir do request e gerar o Id da DPS (TSIdDPS)
         $dps = $this->criarDpsFromRequest($request);
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         // 3. Construir XML
         $xml = $this->xmlBuilder->build($dps);

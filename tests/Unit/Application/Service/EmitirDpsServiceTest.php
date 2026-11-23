@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Application\Service;
 
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TomadorRequest;
@@ -205,7 +206,7 @@ final class EmitirDpsServiceTest extends TestCase
 
     public function test_executar_id_malformado_nao_gera_chave_e_nao_inventa_fallback(): void
     {
-        // Se o Id da NFS-e não bater TSIdNFSe (NFS + 50 dígitos), não vira chave inválida
+        // Se o Id da NFS-e não bater TSIdNFSe (NFS + 50 posições), não vira chave inválida
         // silenciosa e a lib também não inventa uma chave a partir da DPS: fica null.
         $request = $this->createValidDpsRequest();
         $xml = '<?xml version="1.0"?><DPS><infDPS Id="' . self::CHAVE_50 . '"></infDPS></DPS>';
@@ -225,6 +226,87 @@ final class EmitirDpsServiceTest extends TestCase
         $this->assertTrue($response->success);
         $this->assertNull($response->chaveAcesso);
         $this->assertNull($response->numero);
+    }
+
+    public function test_executar_extrai_chave_com_cnpj_alfanumerico_do_id_da_nfse(): void
+    {
+        // TSIdNFSe (NT 009): "NFS" + 9 dígitos + inscrição federal alfanumérica (14) + 27 dígitos.
+        $chave = '35503082' . '2' . '12ABC34501DE35' . str_repeat('1', 27);
+        $this->assertSame(50, strlen($chave));
+
+        $request = $this->createValidDpsRequest();
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
+        $responseXml = '<?xml version="1.0"?><NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01"></NFSe>';
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn('<DPS></DPS>');
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildDpsPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiConnector->expects($this->once())->method('post')->willReturn(['success' => true, 'data' => $responseXml]);
+        $this->nfseXmlParser->expects($this->once())->method('parse')->willReturn([['id' => 'NFS' . $chave, 'numero' => '7']]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertSame($chave, $response->chaveAcesso);
+    }
+
+    public function test_executar_cst_sem_tributacao_nao_exige_grupo_ibscbs_na_resposta(): void
+    {
+        // CST 400: sem ind_gIBSCBS não há valores de IBS/CBS a conferir (as RNs vedam o detalhamento),
+        // então uma emissão autorizada sem o grupo IBSCBS na resposta não pode virar erro.
+        $request = $this->comIbscbs(new IbsCbsRequest(indDest: '0', cst: '400', cClassTrib: '400001'));
+        $this->prepararEmissao([['id' => 'NFS' . self::CHAVE_50, 'numero' => '7', 'ibscbs' => null]]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertTrue($response->success);
+        $this->assertSame(self::CHAVE_50, $response->chaveAcesso);
+    }
+
+    public function test_executar_cst_com_tributacao_exige_grupo_ibscbs_na_resposta(): void
+    {
+        $request = $this->comIbscbs(new IbsCbsRequest(indDest: '0', cst: '100', cClassTrib: '100123', cIndOp: '100001'));
+        $this->prepararEmissao([['id' => 'NFS' . self::CHAVE_50, 'numero' => '7', 'ibscbs' => null]]);
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('não contém o grupo IBSCBS');
+
+        $this->service->executar($request);
+    }
+
+    private function comIbscbs(IbsCbsRequest $ibscbs): DpsRequest
+    {
+        $base = $this->createValidDpsRequest();
+
+        return new DpsRequest(
+            tipoAmbiente: $base->tipoAmbiente,
+            dataEmissao: $base->dataEmissao,
+            versaoAplicacao: $base->versaoAplicacao,
+            serie: $base->serie,
+            numero: $base->numero,
+            dataCompetencia: $base->dataCompetencia,
+            tipoEmissao: $base->tipoEmissao,
+            codigoMunicipioEmissor: $base->codigoMunicipioEmissor,
+            prestador: $base->prestador,
+            servico: $base->servico,
+            tomador: $base->tomador,
+            ibscbs: $ibscbs,
+        );
+    }
+
+    /** @param list<array<string, mixed>> $respostaParseada */
+    private function prepararEmissao(array $respostaParseada): void
+    {
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn('<DPS></DPS>');
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildDpsPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiConnector->expects($this->once())->method('post')->willReturn(['success' => true, 'data' => '<NFSe/>']);
+        $this->nfseXmlParser->expects($this->once())->method('parse')->willReturn($respostaParseada);
     }
 
     public function test_executar_erro_sefin_extrai_codigo_e_descricao(): void

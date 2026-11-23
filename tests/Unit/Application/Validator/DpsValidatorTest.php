@@ -7,17 +7,12 @@ namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Application\Validator;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\AtvEventoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\BeneficioMunicipalRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ComExteriorRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocDedRedRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ExigSuspRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDestRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDiferimentoRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDocumentoReeRepResRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsEnderecoExteriorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsEnderecoObraRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsFornecedorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsImovelRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsReeRepResRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsTribRegularRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ObraRequest;
@@ -67,8 +62,38 @@ final class DpsValidatorTest extends TestCase
         $request = $this->createValidDpsRequest(serie: 100000);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('serie deve ser numérico de 1 a 5 dígitos');
+        $this->expectExceptionMessage('serie deve estar entre 1 e 89999');
         $this->validator->validate($request);
+    }
+
+    /** @return array<string, array{int, bool}> */
+    public static function seriesProvider(): array
+    {
+        return [
+            'minima' => [1, true],
+            'ultima das faixas de 4 digitos' => [9999, true],
+            'primeira de 5 digitos' => [10000, true],
+            'maxima aceita pelo XSD' => [89999, true],
+            'faixa 9xxxx nao aceita pelo XSD' => [90000, false],
+            'limite superior do campo' => [99999, false],
+            'zero' => [0, false],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('seriesProvider')]
+    public function test_serie_segue_a_faixa_do_tsseriedps(int $serie, bool $valida): void
+    {
+        // TSSerieDPS (XSD NT 009): [0-9]{1,4}|[0-8][0-9]{4}. O builder emite sempre 5 posições com
+        // zeros à esquerda, que cabem em [0-8][0-9]{4} para 1 a 89999.
+        $request = $this->createValidDpsRequest(serie: $serie);
+
+        if (!$valida) {
+            $this->expectException(ValidationException::class);
+            $this->expectExceptionMessage('serie deve estar entre 1 e 89999');
+        }
+
+        $this->validator->validate($request);
+        $this->addToAssertionCount(1);
     }
 
     // ===== Tamanho de texto em caracteres, não em bytes (XSD maxLength conta caracteres) =====
@@ -86,7 +111,9 @@ final class DpsValidatorTest extends TestCase
     public function test_descricao_de_1500_caracteres_acentuados_e_aceita(): void
     {
         // Menos de 2000 caracteres, mas 3000 bytes: antes era recusada por contar bytes.
-        $this->validator->validate($this->createValidDpsRequest(discriminacao: str_repeat('ã', 1500)));
+        $descricao = str_repeat('ã', 1500);
+
+        $this->validator->validate($this->createValidDpsRequest(discriminacao: $descricao));
         $this->addToAssertionCount(1);
     }
 
@@ -129,6 +156,7 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
         $this->addToAssertionCount(1);
     }
+
     public function test_invalid_numero_throws(): void
     {
         $request = $this->createValidDpsRequest(numero: 0);
@@ -351,24 +379,6 @@ final class DpsValidatorTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('E1508');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_fin_nfse_empty_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(finNFSe: '');
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('finNFSe é obrigatória');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_fin_nfse_not_zero_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(finNFSe: '1');
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('finNFSe inválido');
         $this->validator->validate($request);
     }
 
@@ -1257,7 +1267,7 @@ final class DpsValidatorTest extends TestCase
 
     public function test_docref_obrigatorio_quando_emitido_por_tomador_throws(): void
     {
-        // docRef é obrigatório quando tpEmit=2 (Tomador) — XSD documenta a regra contextual.
+        // docRef é obrigatório quando tpEmit=2 (Tomador) - XSD documenta a regra contextual.
         $request = $this->createValidDpsRequest(
             tipoEmissao: 2,
         );
@@ -1464,147 +1474,6 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
-    public function test_documentos_deducao_valid_passes(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(
-                        tipoDocumento: 'chNFe',
-                        chaveNFe: '12345678901234567890123456789012345678901234',
-                        tipoDeducaoReducao: '1',
-                        dataEmissaoDoc: '2026-05-15',
-                        valorDedutivel: '1000.00',
-                        valorDeducao: '1000.00',
-                    ),
-                ],
-                totTribTipo: 'indTotTrib',
-                indTotTrib: '0',
-                tribISSQN: '1',
-                tpRetISSQN: '1',
-            ),
-        );
-
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_documentos_deducao_missing_required_fields_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    // tpDedRed, dtEmiDoc, vDedutivelRedutivel e vDeducaoReducao ausentes
-                    new DocDedRedRequest(
-                        tipoDocumento: 'chNFe',
-                        chaveNFe: '12345678901234567890123456789012345678901234',
-                    ),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('tpDedRed é obrigatório');
-        $this->validator->validate($request);
-    }
-
-    public function test_documentos_deducao_invalid_decimal_pattern_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(
-                        tipoDocumento: 'chNFe',
-                        chaveNFe: '12345678901234567890123456789012345678901234',
-                        tipoDeducaoReducao: '1',
-                        dataEmissaoDoc: '2026-05-15',
-                        valorDedutivel: '1000.5', // apenas 1 casa decimal — viola TSDec15V2
-                        valorDeducao: '1000.00',
-                    ),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('vDedutivelRedutivel deve seguir o padrão decimal');
-        $this->validator->validate($request);
-    }
-
-    public function test_documentos_deducao_value_greater_than_dedutivel_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(
-                        tipoDocumento: 'chNFe',
-                        chaveNFe: '12345678901234567890123456789012345678901234',
-                        tipoDeducaoReducao: '1',
-                        dataEmissaoDoc: '2026-05-15',
-                        valorDedutivel: '1000.00',
-                        valorDeducao: '1500.00', // maior que o dedutível
-                    ),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('vDeducaoReducao deve ser menor ou igual a vDedutivelRedutivel');
-        $this->validator->validate($request);
-    }
-
-    public function test_deducao_vdr_excedendo_valor_servico_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                valorDeducaoPadrao: 1500.0, // dedução > serviço → BC negativa
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('vDR não pode exceder vServ');
-        $this->validator->validate($request);
-    }
-
     public function test_desconto_incondicionado_negativo_throws(): void
     {
         $request = $this->createValidDpsRequest(
@@ -1666,181 +1535,6 @@ final class DpsValidatorTest extends TestCase
 
         $this->validator->validate($request);
         $this->expectNotToPerformAssertions();
-    }
-
-    public function test_documentos_deducao_invalid_tipo_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(tipoDocumento: 'invalid'),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('tipoDocumento inválido');
-        $this->validator->validate($request);
-    }
-
-    public function test_documentos_deducao_ch_nfse_missing_chave_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(tipoDocumento: 'chNFSe'),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('chNFSe');
-        $this->validator->validate($request);
-    }
-
-    public function test_documentos_deducao_ch_nfse_invalid_pattern_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(
-                        tipoDocumento: 'chNFSe',
-                        chaveNFSe: '12345', // too short, needs 50 digits
-                    ),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('chNFSe deve ter 50 dígitos numéricos');
-        $this->validator->validate($request);
-    }
-
-    public function test_documentos_deducao_ch_nfe_invalid_pattern_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(
-                        tipoDocumento: 'chNFe',
-                        chaveNFe: '12345', // too short, needs 44 digits
-                    ),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('chNFe deve ter 44 dígitos numéricos');
-        $this->validator->validate($request);
-    }
-
-    public function test_documentos_deducao_n_doc_fisc_missing_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(tipoDocumento: 'nDocFisc'),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('nDocFisc');
-        $this->validator->validate($request);
-    }
-
-    public function test_documentos_deducao_tp_ded_red_invalid_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(
-                        tipoDocumento: 'nDoc',
-                        numeroDoc: 'REC-001',
-                        tipoDeducaoReducao: 'invalid',
-                    ),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('tpDedRed');
-        $this->validator->validate($request);
-    }
-
-    public function test_documentos_deducao_tp99_missing_desc_throws(): void
-    {
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: [
-                    new DocDedRedRequest(
-                        tipoDocumento: 'nDoc',
-                        numeroDoc: 'REC-001',
-                        tipoDeducaoReducao: '99',
-                    ),
-                ],
-            ),
-        );
-
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('xDescOutDed');
-        $this->validator->validate($request);
     }
 
     public function test_exig_susp_valid_passes(): void
@@ -2079,7 +1773,7 @@ final class DpsValidatorTest extends TestCase
 
     public function test_tot_trib_v_tot_trib_missing_fields_throws(): void
     {
-        // vTotTrib exige vTotTribFed/Est/Mun (TCTribTotalMonet) — a lib não presume valores.
+        // vTotTrib exige vTotTribFed/Est/Mun (TCTribTotalMonet) - a lib não presume valores.
         $request = $this->createValidDpsRequest(
             servico: new ServicoRequest(
                 discriminacao: 'test',
@@ -2192,78 +1886,6 @@ final class DpsValidatorTest extends TestCase
 
     // ===== Regressão auditoria NT 004 (v2.2.3): conformidade IBS/CBS contra XSD v1.01 =====
 
-    public function test_nt004_cib_aceita_alfanumerico_de_8_chars(): void
-    {
-        // TSCodCIB = string length=8 SEM pattern de dígitos: 'AB12CD34' é válido.
-        $request = $this->createValidDpsRequestWithIbscbs(
-            imovel: new IbsCbsImovelRequest(cCIB: 'AB12CD34'),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_nt004_fornec_sem_identificador_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'docOutro',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '01',
-                    vlrReeRepRes: 100.00,
-                    nDoc: 'DOC-1',
-                    xDoc: 'Documento',
-                    fornec: new IbsCbsFornecedorRequest(xNome: 'Fornecedor Sem Doc'),
-                ),
-            ]),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('fornecedor deve ter CNPJ, CPF, NIF ou cNaoNIF');
-        $this->validator->validate($request);
-    }
-
-    public function test_nt004_fornec_cnaonif_invalido_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'docOutro',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '01',
-                    vlrReeRepRes: 100.00,
-                    nDoc: 'DOC-1',
-                    xDoc: 'Documento',
-                    fornec: new IbsCbsFornecedorRequest(codigoNaoNif: '9', xNome: 'Forn'),
-                ),
-            ]),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('cNaoNIF do fornecedor inválido');
-        $this->validator->validate($request);
-    }
-
-    public function test_nt004_fornec_valido_passa(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'docOutro',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '01',
-                    vlrReeRepRes: 100.00,
-                    nDoc: 'DOC-1',
-                    xDoc: 'Documento',
-                    fornec: new IbsCbsFornecedorRequest(cnpj: '11444777000161', xNome: 'Fornecedor Ltda'),
-                ),
-            ]),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
     public function test_nt004_dest_endereco_sem_cep_throws(): void
     {
         // Bug 7: antes a lib fabricava CEP '00000000'. Agora exige CEP no endNac.
@@ -2304,27 +1926,6 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
-    public function test_nt004_imovel_endext_valido_passa(): void
-    {
-        // Bug 10: endExt do imóvel agora é validado; campos válidos devem passar.
-        $request = $this->createValidDpsRequestWithIbscbs(
-            imovel: new IbsCbsImovelRequest(
-                endereco: new IbsCbsEnderecoObraRequest(
-                    endExt: new IbsCbsEnderecoExteriorRequest(
-                        cEndPost: 'AB-12345',
-                        xCidade: 'Lisboa',
-                        xEstProvReg: 'Lisboa',
-                    ),
-                    xLgr: 'Rua do Imóvel',
-                    nro: '100',
-                    xBairro: 'Baixa',
-                ),
-            ),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
     public function test_nt004_refnfse_acima_de_99_throws(): void
     {
         // XSD: refNFSe maxOccurs=99 (gRefNFSe). 100 chaves deve falhar.
@@ -2335,60 +1936,6 @@ final class DpsValidatorTest extends TestCase
         );
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('no máximo 99 refNFSe');
-        $this->validator->validate($request);
-    }
-
-    public function test_nt004_docdedred_acima_de_1000_throws(): void
-    {
-        // XSD: docDedRed maxOccurs=1000. 1001 documentos deve falhar.
-        $doc = new DocDedRedRequest(
-            tipoDocumento: 'chNFe',
-            chaveNFe: '12345678901234567890123456789012345678901234',
-            tipoDeducaoReducao: '1',
-            dataEmissaoDoc: '2026-05-15',
-            valorDedutivel: '1000.00',
-            valorDeducao: '1000.00',
-        );
-        $request = $this->createValidDpsRequest(
-            servico: new ServicoRequest(
-                discriminacao: 'test',
-                codigoTributacao: '010101',
-                codigoMunicipioPrestacao: '3550308',
-                valorServicos: 1000.0,
-                descontoIncondicionado: 0,
-                descontoCondicionado: 0,
-                aliquotaIss: 5.0,
-                codigoNbs: '123456789',
-                documentosDeducao: array_fill(0, 1001, $doc),
-                totTribTipo: 'indTotTrib',
-                indTotTrib: '0',
-                tribISSQN: '1',
-                tpRetISSQN: '1',
-            ),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('no máximo 1000 documentos');
-        $this->validator->validate($request);
-    }
-
-    public function test_nt004_imovel_endext_cidade_vazia_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            imovel: new IbsCbsImovelRequest(
-                endereco: new IbsCbsEnderecoObraRequest(
-                    endExt: new IbsCbsEnderecoExteriorRequest(
-                        cEndPost: 'AB-12345',
-                        xCidade: '',
-                        xEstProvReg: 'Lisboa',
-                    ),
-                    xLgr: 'Rua do Imóvel',
-                    nro: '100',
-                    xBairro: 'Baixa',
-                ),
-            ),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('xCidade do endExt do imóvel');
         $this->validator->validate($request);
     }
 
@@ -2501,6 +2048,7 @@ final class DpsValidatorTest extends TestCase
         ?ObraRequest $obra = null,
         ?ServicoRequest $servico = null,
         ?TomadorRequest $tomador = null,
+        string $finNFSe = '0',
     ): DpsRequest {
         return new DpsRequest(
             tipoAmbiente: $tipoAmbiente,
@@ -2557,6 +2105,7 @@ final class DpsValidatorTest extends TestCase
                 tpRetISSQN: '1',
             ),
             ibscbs: $ibscbs,
+            finNFSe: $finNFSe,
         );
     }
 
@@ -2627,224 +2176,10 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
-    public function test_ibscbs_imovel_with_cib_passes(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            imovel: new IbsCbsImovelRequest(
-                inscImobFisc: '12345',
-                cCIB: '12345678',
-            ),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_ibscbs_imovel_with_endereco_passes(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            imovel: new IbsCbsImovelRequest(
-                endereco: new IbsCbsEnderecoObraRequest(
-                    cep: '01001001',
-                    xLgr: 'Rua Teste',
-                    nro: '123',
-                    xBairro: 'Centro',
-                ),
-            ),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_ibscbs_imovel_without_cib_or_endereco_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            imovel: new IbsCbsImovelRequest(),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('cCIB ou end');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_imovel_with_cib_and_endereco_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            imovel: new IbsCbsImovelRequest(
-                cCIB: '12345678',
-                endereco: new IbsCbsEnderecoObraRequest(
-                    xLgr: 'Rua',
-                    nro: '1',
-                    xBairro: 'Centro',
-                ),
-            ),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('mutuamente exclusivos');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_imovel_invalid_cib_format_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            imovel: new IbsCbsImovelRequest(cCIB: '1234567'),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('8 caracteres');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_ree_rep_res_valid_passes(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'dFeNacional',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '01',
-                    vlrReeRepRes: 1000.00,
-                    tipoChaveDFe: '1',
-                    chaveDFe: '12345678901234567890123456789012345678901234567890',
-                ),
-            ]),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_ibscbs_ree_rep_res_empty_documentos_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([]),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('ao menos um documento');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_ree_rep_res_tp99_with_descricao_passes(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'dFeNacional',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '99',
-                    vlrReeRepRes: 1000.00,
-                    tipoChaveDFe: '1',
-                    chaveDFe: '11111111111111111111111111111111111111111111111111',
-                    xTpReeRepRes: 'Outros reembolsos diversos',
-                ),
-            ]),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_ibscbs_ree_rep_res_invalid_invalid_date_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'dFeNacional',
-                    dtEmiDoc: '2026/01/15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '01',
-                    vlrReeRepRes: 1000.00,
-                    tipoChaveDFe: '1',
-                    chaveDFe: '11111111111111111111111111111111111111111111111111',
-                ),
-            ]),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('AAAA-MM-DD');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_ree_rep_res_vlr_negativo_throws(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'dFeNacional',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '01',
-                    vlrReeRepRes: -100.00,
-                    tipoChaveDFe: '1',
-                    chaveDFe: '11111111111111111111111111111111111111111111111111',
-                ),
-            ]),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('maior que zero');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_ree_rep_res_tp99_requires_descricao(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'dFeNacional',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '99',
-                    vlrReeRepRes: 500.00,
-                    tipoChaveDFe: '1',
-                    chaveDFe: '11111111111111111111111111111111111111111111111111',
-                ),
-            ]),
-        );
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('xTpReeRepRes');
-        $this->validator->validate($request);
-    }
-
-    public function test_ibscbs_ree_rep_res_doc_fiscal_outro_valid(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'docFiscalOutro',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '02',
-                    vlrReeRepRes: 750.00,
-                    cMunDocFiscal: '3550308',
-                    nDocFiscal: 'NF-123',
-                    xDocFiscal: 'Nota fiscal',
-                ),
-            ]),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
-    public function test_ibscbs_ree_rep_res_doc_outro_valid(): void
-    {
-        $request = $this->createValidDpsRequestWithIbscbs(
-            reeRepRes: new IbsCbsReeRepResRequest([
-                new IbsCbsDocumentoReeRepResRequest(
-                    tipoDocumento: 'docOutro',
-                    dtEmiDoc: '2026-01-15',
-                    dtCompDoc: '2026-01-15',
-                    tpReeRepRes: '03',
-                    vlrReeRepRes: 300.00,
-                    nDoc: 'REC-001',
-                    xDoc: 'Recibo',
-                ),
-            ]),
-        );
-        $this->validator->validate($request);
-        $this->expectNotToPerformAssertions();
-    }
-
     private function createValidDpsRequestWithIbscbs(
         string $dataCompetencia = '2026-06-01',
         ?string $codigoNbs = '123456789',
-        string $finNFSe = '0',
-        string $cIndOp = '100001',
+        ?string $cIndOp = '100001',
         string $indDest = '0',
         string $cst = '100',
         string $cClassTrib = '100123',
@@ -2857,17 +2192,19 @@ final class DpsValidatorTest extends TestCase
         ?IbsCbsDiferimentoRequest $diferimento = null,
         ?array $refNFSeList = null,
         ?IbsCbsImovelRequest $imovel = null,
-        ?IbsCbsReeRepResRequest $reeRepRes = null,
+        ?array $bensMoveis = null,
+        ?bool $informarGIBSCBS = null,
+        ?ServicoRequest $servico = null,
     ): DpsRequest {
         return $this->createValidDpsRequest(
             dataCompetencia: $dataCompetencia,
             codigoNbs: $codigoNbs,
+            servico: $servico,
             ibscbs: new IbsCbsRequest(
-                finNFSe: $finNFSe,
-                cIndOp: $cIndOp,
                 indDest: $indDest,
                 cst: $cst,
                 cClassTrib: $cClassTrib,
+                cIndOp: $cIndOp,
                 indFinal: $indFinal,
                 tpOper: $tpOper,
                 tpEnteGov: $tpEnteGov,
@@ -2877,7 +2214,8 @@ final class DpsValidatorTest extends TestCase
                 diferimento: $diferimento,
                 refNFSeList: $refNFSeList,
                 imovel: $imovel,
-                reeRepRes: $reeRepRes,
+                bensMoveis: $bensMoveis,
+                informarGIBSCBS: $informarGIBSCBS,
             ),
         );
     }

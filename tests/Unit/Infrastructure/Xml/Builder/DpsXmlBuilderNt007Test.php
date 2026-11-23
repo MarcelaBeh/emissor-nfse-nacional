@@ -72,7 +72,7 @@ final class DpsXmlBuilderNt007Test extends TestCase
     public function test_piscofins_sem_cst_lanca_excecao(): void
     {
         // CST é obrigatório no grupo piscofins (TCTribOutrosPisCofins). Informar pAliqPis
-        // sem CST não pode gerar <piscofins> sem CST — a lib falha alto.
+        // sem CST não pode gerar <piscofins> sem CST - a lib falha alto.
         $tribFederal = new TribFederal(
             pisCofinsAliquotaPis: 1.65, // sem pisCofinsCst
         );
@@ -168,7 +168,7 @@ final class DpsXmlBuilderNt007Test extends TestCase
             ),
             servico: $servico ?? $this->createServico('indTotTrib', tribFederal: $tribFederal),
         );
-        $dps->gerarChaveAcesso();
+        $dps->gerarIdDps();
 
         return $dps;
     }

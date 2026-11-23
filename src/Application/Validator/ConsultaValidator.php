@@ -6,6 +6,7 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\Validator;
 
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ConsultaRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 
 class ConsultaValidator
 {
@@ -15,8 +16,8 @@ class ConsultaValidator
             throw new ValidationException('Chave de acesso é obrigatória');
         }
 
-        if (!preg_match('/^[0-9]{50}$/', $request->chave)) {
-            throw new ValidationException('Chave de acesso deve ter exatamente 50 dígitos numéricos');
+        if (!preg_match(ChaveAcesso::PADRAO, $request->chave)) {
+            throw new ValidationException('Chave de acesso deve ter 50 posições, com letras A-Z somente na inscrição federal (posições 10 a 23)');
         }
     }
 }

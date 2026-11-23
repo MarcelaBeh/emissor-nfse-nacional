@@ -26,8 +26,8 @@ final readonly class ServicoRequest
         public ?ComExteriorRequest $comExterior = null,
         public ?AtvEventoRequest $atvEvento = null,
         public ?InfoComplRequest $infoCompl = null,
-        /** @var DocDedRedRequest[]|null */
-        public ?array $documentosDeducao = null,
+        /** @var DocAjusteBCRequest[]|null */
+        public ?array $documentosAjusteBc = null,
         public ?int $tipoImunidade = null,
         public ?ExigSuspRequest $exigSusp = null,
         public ?BeneficioMunicipalRequest $beneficioMunicipal = null,
@@ -38,8 +38,10 @@ final readonly class ServicoRequest
         public ?float $pTotTribMun = null,
         public ?string $indTotTrib = null,
         public ?float $pTotTribSN = null,
-        public ?float $percentualDeducao = null,
-        public ?float $valorDeducaoPadrao = null,
+        /** pAjusteBCISSQN: percentual padrão de ajuste da base de cálculo do ISSQN (0 a 100). */
+        public ?float $percentualAjusteBcIssqn = null,
+        /** vAjusteBCISSQN: valor monetário padrão de ajuste da base de cálculo do ISSQN. */
+        public ?float $valorAjusteBcIssqn = null,
         public ?float $vTotTribFed = null,
         public ?float $vTotTribEst = null,
         public ?float $vTotTribMun = null,

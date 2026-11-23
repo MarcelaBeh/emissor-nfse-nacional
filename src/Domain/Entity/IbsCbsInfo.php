@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace MarcelaBeh\EmissorNfseNacional\Domain\Entity;
 
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\FinalidadeNfse;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorDestinacao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\IndicadorFinal;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEnteGovernamental;
@@ -17,13 +16,30 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoSituacaoTributaria;
 
 class IbsCbsInfo
 {
-    /** @param ChaveAcesso[] $refNFSeList */
+    /**
+     * CSTs para os quais o indicador `ind_gIBSCBS` é 0 (não há detalhamento de tributação IBS/CBS),
+     * conforme a NT 009 v1.01, item 2.16: 400 (isenção), 410 (imunidade/não incidência) e
+     * 820 (tributação em documento específico).
+     *
+     * A lista é a que a NT cita nominalmente; o indicador completo vem da Tabela CST/cClassTrib
+     * (calculadora IBS/CBS). Para um CST fora desta lista, o chamador pode forçar a decisão com
+     * `$informarGrupoTributacao`.
+     */
+    public const CST_SEM_GRUPO_TRIBUTACAO = ['400', '410', '820'];
+
+    public const MAX_BENS_MOVEIS = 1000;
+
+    /**
+     * @param ChaveAcesso[]|null $refNFSeList
+     * @param IbsCbsBemMovel[]|null $bensMoveis
+     * @param bool|null $informarGrupoTributacao força (true) ou suprime (false) o grupo gIBSCBS;
+     *                                           null decide pelo CST informado
+     */
     public function __construct(
-        private FinalidadeNfse $finNFSe,
-        private CodigoIndicadorOperacao $cIndOp,
         private IndicadorDestinacao $indDest,
         private CodigoSituacaoTributaria $cst,
         private CodigoClassificacaoTributaria $cClassTrib,
+        private ?CodigoIndicadorOperacao $cIndOp = null,
         private ?IndicadorFinal $indFinal = null,
         private ?TipoOperacao $tpOper = null,
         private ?TipoEnteGovernamental $tpEnteGov = null,
@@ -33,16 +49,38 @@ class IbsCbsInfo
         private ?IbsCbsDiferimento $diferimento = null,
         private ?array $refNFSeList = null,
         private ?IbsCbsImovel $imovel = null,
-        private ?IbsCbsReeRepRes $reeRepRes = null,
+        private ?array $bensMoveis = null,
+        private ?bool $informarGrupoTributacao = null,
     ) {
+        if ($bensMoveis !== null && count($bensMoveis) > self::MAX_BENS_MOVEIS) {
+            throw new \InvalidArgumentException(
+                'bensMoveis aceita no máximo ' . self::MAX_BENS_MOVEIS . ' ocorrências'
+            );
+        }
+
+        if (!$this->temGrupoTributacao()
+            && ($cCredPres !== null || $tribRegular !== null || $diferimento !== null)) {
+            throw new \InvalidArgumentException(
+                'cCredPres, gTribRegular e gDif não podem ser informados quando não há grupo de '
+                . 'tributação IBS/CBS (CST ' . $cst->getCodigo() . ', ind_gIBSCBS = 0)'
+            );
+        }
     }
 
-    public function getFinNFSe(): FinalidadeNfse
+    /**
+     * Indica se o grupo `valores/trib/gIBSCBS` deve ser emitido. Quando exigido (ind_gIBSCBS = 1)
+     * ele é emitido ainda que vazio; quando vedado (ind_gIBSCBS = 0), é omitido (RN E0960/E0961).
+     */
+    public function temGrupoTributacao(): bool
     {
-        return $this->finNFSe;
+        if ($this->informarGrupoTributacao !== null) {
+            return $this->informarGrupoTributacao;
+        }
+
+        return !in_array($this->cst->getCodigo(), self::CST_SEM_GRUPO_TRIBUTACAO, true);
     }
 
-    public function getCIndOp(): CodigoIndicadorOperacao
+    public function getCIndOp(): ?CodigoIndicadorOperacao
     {
         return $this->cIndOp;
     }
@@ -113,8 +151,9 @@ class IbsCbsInfo
         return $this->imovel;
     }
 
-    public function getReeRepRes(): ?IbsCbsReeRepRes
+    /** @return IbsCbsBemMovel[]|null */
+    public function getBensMoveis(): ?array
     {
-        return $this->reeRepRes;
+        return $this->bensMoveis;
     }
 }

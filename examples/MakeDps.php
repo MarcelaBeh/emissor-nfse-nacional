@@ -12,19 +12,21 @@ require __DIR__ . '/../vendor/autoload.php';
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDestRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDiferimentoRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsDocumentoReeRepResRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsEnderecoObraRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsAjusteBCLocImoveisRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsBemMovelRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsEnderecoImovelRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsImovelRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsReeRepResRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsLocacaoImovelRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsTribRegularRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsUnidadeImobiliariaRequest;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\RegimeTributario;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ObraRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\AtvEventoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\BeneficioMunicipalRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ComExteriorRequest;
-use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocDedRedRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DocAjusteBCRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ExigSuspRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\InfoComplRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
@@ -81,7 +83,6 @@ $repo = new FileCstClassTribRepository(__DIR__ . '/../storage/cClassTrib.json');
 
 // 3a. IBS/CBS básico (obrigatório para contribuintes IBS/CBS)
 $ibscbs = new IbsCbsRequest(
-    finNFSe: '0',
     cIndOp: '100001',
     indDest: '0',
     cst: '100',
@@ -95,12 +96,10 @@ $ibscbs = new IbsCbsRequest(
     diferimento: null,
     refNFSeList: null,
     imovel: null,
-    reeRepRes: null,
 );
 
 // 3b. Com destinatário terceiro (indDest=1)
 $ibscbsComDest = new IbsCbsRequest(
-    finNFSe: '0',
     cIndOp: '100001',
     indDest: '1',
     cst: '100',
@@ -121,7 +120,6 @@ $ibscbsComDest = new IbsCbsRequest(
 
 // 3c. Com gRefNFSe (tpOper=2 ou 3)
 $ibscbsComRef = new IbsCbsRequest(
-    finNFSe: '0',
     cIndOp: '100001',
     indDest: '0',
     cst: '100',
@@ -134,7 +132,6 @@ $ibscbsComRef = new IbsCbsRequest(
 
 // 3d. Com gTribRegular e gDif
 $ibscbsCompleto = new IbsCbsRequest(
-    finNFSe: '0',
     cIndOp: '100001',
     indDest: '0',
     cst: '100',
@@ -150,67 +147,92 @@ $ibscbsCompleto = new IbsCbsRequest(
     ),
 );
 
-// 3e. Com imóvel (cCIB)
+// 3e. Com imóvel identificado pelo CIB (NT 009: cMun + unidades imobiliárias)
 $ibscbsComImovel = new IbsCbsRequest(
-    finNFSe: '0',
-    cIndOp: '100001',
+    cIndOp: '020101',
     indDest: '0',
     cst: '100',
     cClassTrib: '100123',
     imovel: new IbsCbsImovelRequest(
-        inscImobFisc: '12345',
-        cCIB: '12345678',
+        cMun: '3550308',
+        unidades: [
+            new IbsCbsUnidadeImobiliariaRequest(inscImobFisc: '12345', cCIB: '12345678'),
+        ],
     ),
 );
 
-// 3f. Com imóvel (endereço)
-$ibscbsComImovelEnd = new IbsCbsRequest(
-    finNFSe: '0',
-    cIndOp: '100001',
+// 3f. Locação de imóvel (cTribNac 99.03): gLocacao, endereço da unidade e ajustes da base de cálculo.
+// Neste caso vServ = pCopropriedade x vTotOper (50% de 2000,00 = 1000,00).
+$ibscbsLocacao = new IbsCbsRequest(
+    cIndOp: '020101',
     indDest: '0',
     cst: '100',
     cClassTrib: '100123',
     imovel: new IbsCbsImovelRequest(
-        endereco: new IbsCbsEnderecoObraRequest(
-            cep: '01001001',
-            xLgr: 'Rua do Imóvel',
-            nro: '100',
-            xCpl: 'Apto 42',
-            xBairro: 'Centro',
+        cMun: '3550308',
+        locacao: new IbsCbsLocacaoImovelRequest(
+            pCopropriedade: '50.00',
+            vTotOper: '2000.00',
+            dVencOrig: '2026-12-10',
         ),
+        unidades: [
+            new IbsCbsUnidadeImobiliariaRequest(
+                endereco: new IbsCbsEnderecoImovelRequest(
+                    cep: '01001001',
+                    xLgr: 'Rua do Imóvel',
+                    nro: '100',
+                    xCpl: 'Apto 42',
+                    xBairro: 'Centro',
+                ),
+                ajustes: [
+                    new IbsCbsAjusteBCLocImoveisRequest(tpAjusteBCLocImoveis: '03', vAjusteBCLocImoveis: '300.00'),
+                ],
+            ),
+        ],
     ),
 );
 
-// 3g. Com gReeRepRes (reembolso/repasse/ressarcimento)
-$ibscbsComReeRepRes = new IbsCbsRequest(
-    finNFSe: '0',
+// 3g. Locação de bens móveis (cTribNac 99.04.01): grupo bensMoveis
+$ibscbsBensMoveis = new IbsCbsRequest(
     cIndOp: '100001',
     indDest: '0',
     cst: '100',
     cClassTrib: '100123',
-    reeRepRes: new IbsCbsReeRepResRequest([
-        new IbsCbsDocumentoReeRepResRequest(
-            tipoDocumento: 'dFeNacional',
-            dtEmiDoc: '2026-01-15',
-            dtCompDoc: '2026-01-15',
-            tpReeRepRes: '01',
-            vlrReeRepRes: 1500.00,
-            tipoChaveDFe: '1',
-            chaveDFe: '12345678901234567890123456789012345678901234567890',
-        ),
-        new IbsCbsDocumentoReeRepResRequest(
-            tipoDocumento: 'docOutro',
-            dtEmiDoc: '2026-02-01',
-            dtCompDoc: '2026-02-01',
-            tpReeRepRes: '99',
-            vlrReeRepRes: 800.00,
-            nDoc: 'REC-2026-001',
-            xDoc: 'Reembolso de despesas diversas',
-            xTpReeRepRes: 'Outros reembolsos',
-        ),
-    ]),
+    bensMoveis: [
+        new IbsCbsBemMovelRequest(cNCMBemMovel: '84713012', xNCMBemMovel: 'Notebook', qtdNCMBemMovel: '2'),
+    ],
 );
 
+// 3i. CST sem grupo de tributação (400, 410 ou 820): sem cIndOp e sem gIBSCBS (NT 009, item 2.16)
+$ibscbsIsento = new IbsCbsRequest(
+    indDest: '0',
+    cst: '400',
+    cClassTrib: '400001',
+);
+
+// 3j. Documentos de ajuste da base de cálculo (substituem vDedRed e gReeRepRes). O tipo 105 e os
+// da faixa 101 a 199 repercutem também no IBS/CBS; os de 2 a 99 são exclusivos do ISSQN.
+$documentosAjuste = [
+    new DocAjusteBCRequest(
+        tipoDocumento: 'dFeNacional',
+        tpAjusteBC: '2',
+        vTotDoc: '3000.00',
+        vAjusteAplic: '3000.00',
+        dtEmiDoc: '2026-05-15',
+        tipoChaveDFe: '2',
+        chaveDFe: '352605' . '11444777000161' . '550010000000123123456789', // NF-e: 6 + CNPJ (14) + 24 = 44
+    ),
+    new DocAjusteBCRequest(
+        tipoDocumento: 'docOutro',
+        tpAjusteBC: '99',
+        xTpAjusteBC: 'Materiais de consumo',
+        vTotDoc: '500.00',
+        vAjusteAplic: '500.00',
+        dtEmiDoc: '2026-05-20',
+        nDoc: 'REC-2026-001',
+        xDoc: 'Recibo de materiais',
+    ),
+];
 // ─── 4. DPS Request completo ─────────────────────────────────────────────────
 
 $request = new DpsRequest(
@@ -330,9 +352,8 @@ $requestComObra = new DpsRequest(
     ibscbs: $ibscbs,
 );
 
-// 3h. Com todos os novos campos do Servico (comExterior, atvEvento, infoCompl, deducao, tributos)
+// 3h. Com todos os novos campos do Servico (comExterior, atvEvento, infoCompl, ajuste de base, tributos)
 $ibscbsAvancado = new IbsCbsRequest(
-    finNFSe: '0',
     cIndOp: '100001',
     indDest: '0',
     cst: '100',
@@ -418,25 +439,7 @@ $requestCompleto = new DpsRequest(
             itensPedido: ['Item 1 - Consultoria', 'Item 2 - Suporte'],
             infoComplementar: 'Serviço prestado parcialmente no exterior',
         ),
-        documentosDeducao: [
-            new DocDedRedRequest(
-                tipoDocumento: 'chNFe',
-                chaveNFe: '12345678901234567890123456789012345678901234',
-                tipoDeducaoReducao: '1',
-                dataEmissaoDoc: '2026-05-15',
-                valorDedutivel: '3000.00',
-                valorDeducao: '3000.00',
-            ),
-            new DocDedRedRequest(
-                tipoDocumento: 'nDoc',
-                numeroDoc: 'REC-2026-001',
-                tipoDeducaoReducao: '99',
-                descricaoOutrasDeducoes: 'Materiais de consumo',
-                dataEmissaoDoc: '2026-05-20',
-                valorDedutivel: '500.00',
-                valorDeducao: '500.00',
-            ),
-        ],
+        documentosAjusteBc: $documentosAjuste,
         tipoImunidade: null,
         exigSusp: new ExigSuspRequest(
             tipoSuspensao: 1,
@@ -477,7 +480,7 @@ $service = new EmitirDpsService(
 
 try {
     $response = $service->executar($request);
-    echo 'Chave de Acesso: ' . $response->chaveAcesso . PHP_EOL;
+    echo 'Chave de Acesso: ' . ($response->chaveAcesso ?? '(não informada na resposta)') . PHP_EOL;
     echo 'Sucesso: ' . ($response->success ? 'Sim' : 'Não') . PHP_EOL;
 
     if ($response->xml !== null) {

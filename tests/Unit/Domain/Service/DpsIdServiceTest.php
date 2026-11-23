@@ -53,12 +53,12 @@ final class DpsIdServiceTest extends TestCase
 
     public function test_generate_large_numbers(): void
     {
-        $dps = $this->createDpsWithCnpj('11444777000161', 99999, 999999999999999);
+        $dps = $this->createDpsWithCnpj('11444777000161', 89999, 999999999999999);
 
         $id = $this->service->generate($dps);
 
         $this->assertSame(45, strlen($id));
-        $this->assertStringContainsString('99999', $id);
+        $this->assertStringContainsString('89999', $id);
         $this->assertStringContainsString('999999999999999', $id);
     }
 

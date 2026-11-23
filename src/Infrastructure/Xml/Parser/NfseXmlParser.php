@@ -75,13 +75,13 @@ class NfseXmlParser
             // Emitente
             'emit'    => $emitNode !== null ? $this->parseEmit($emitNode) : null,
 
-            // Valores da NFS-e (TCValoresNFSe — filho direto, não o valores do DPS)
+            // Valores da NFS-e (TCValoresNFSe - filho direto, não o valores do DPS)
             'valores' => $valoresNode !== null ? $this->parseValoresNfse($valoresNode) : null,
 
             // DPS embutida
             'dps'     => $infDpsNode !== null ? $this->parseDps($infDpsNode, $versaoDps) : null,
 
-            // IBS/CBS (filho direto de infNFSe — já protegido em parseIbscbs)
+            // IBS/CBS (filho direto de infNFSe - já protegido em parseIbscbs)
             'ibscbs'  => $this->parseIbscbs($infNfse),
         ];
     }
@@ -135,7 +135,7 @@ class NfseXmlParser
     private function parseValoresNfse(\DOMElement $valores): array
     {
         return [
-            'vCalcDR'   => $this->getNodeValue($valores, 'vCalcDR'),
+            'vCalcAjusteBCISSQN' => $this->getNodeValue($valores, 'vCalcAjusteBCISSQN'),
             'tpBM'      => $this->getNodeValue($valores, 'tpBM'),
             'vCalcBM'   => $this->getNodeValue($valores, 'vCalcBM'),
             'vBC'       => $this->getNodeValue($valores, 'vBC'),
@@ -169,6 +169,7 @@ class NfseXmlParser
             'dCompet'        => $this->getNodeValue($infDps, 'dCompet'),
             'tpEmit'         => $this->getNodeValue($infDps, 'tpEmit'),
             'cMotivoEmisTI'  => $this->getNodeValue($infDps, 'cMotivoEmisTI'),
+            'finNFSe'        => $this->getNodeValue($infDps, 'finNFSe'),
             'chNFSeRej'      => $this->getNodeValue($infDps, 'chNFSeRej'),
             'cLocEmi'        => $this->getNodeValue($infDps, 'cLocEmi'),
             'prestador'      => $prestNode !== null ? $this->parsePrestador($prestNode) : null,
@@ -212,7 +213,7 @@ class NfseXmlParser
     }
 
     /**
-     * TCInfoPessoa — tomador e intermediário (ambos têm IM pelo XSD).
+     * TCInfoPessoa - tomador e intermediário (ambos têm IM pelo XSD).
      * @return array<string, mixed>
      */
     private function parseParte(\DOMElement $node): array
@@ -327,7 +328,7 @@ class NfseXmlParser
     }
 
     /**
-     * TCInfoItemPed: xItemPed com maxOccurs=99 — retorna array de strings.
+     * TCInfoItemPed: xItemPed com maxOccurs=99 - retorna array de strings.
      * @return list<string>
      */
     private function parseGItemPed(\DOMElement $gItemPed): array
@@ -428,7 +429,7 @@ class NfseXmlParser
     {
         $vServPrestNode      = $valores->getElementsByTagName('vServPrest')->item(0);
         $vDescCondIncondNode = $valores->getElementsByTagName('vDescCondIncond')->item(0);
-        $vDedRedNode         = $valores->getElementsByTagName('vDedRed')->item(0);
+        $vAjusteBCNode       = $valores->getElementsByTagName('vAjusteBC')->item(0);
         $tribNode            = $valores->getElementsByTagName('trib')->item(0);
         $tribMunNode         = $tribNode?->getElementsByTagName('tribMun')->item(0);
         $tribFedNode         = $tribNode?->getElementsByTagName('tribFed')->item(0);
@@ -466,12 +467,12 @@ class NfseXmlParser
             }
         }
 
-        // TCInfoDedRed uses xs:choice: pDR | vDR | documentos
-        $vDedRed = null;
-        if ($vDedRedNode !== null) {
-            $vDedRed = [
-                'pDR' => $this->getNodeValue($vDedRedNode, 'pDR'),
-                'vDR' => $this->getNodeValue($vDedRedNode, 'vDR'),
+        // TCInfoAjusteBC: choice opcional pAjusteBCISSQN | vAjusteBCISSQN, seguido de documentos
+        $vAjusteBC = null;
+        if ($vAjusteBCNode !== null) {
+            $vAjusteBC = [
+                'pAjusteBCISSQN' => $this->getNodeValue($vAjusteBCNode, 'pAjusteBCISSQN'),
+                'vAjusteBCISSQN' => $this->getNodeValue($vAjusteBCNode, 'vAjusteBCISSQN'),
             ];
         }
 
@@ -484,7 +485,7 @@ class NfseXmlParser
                 'vDescIncond' => $this->getNodeValue($vDescCondIncondNode, 'vDescIncond'),
                 'vDescCond'   => $this->getNodeValue($vDescCondIncondNode, 'vDescCond'),
             ] : null,
-            'vDedRed' => $vDedRed,
+            'vAjusteBC' => $vAjusteBC,
             'tribMun' => $tribMunNode !== null ? [
                 'tribISSQN'   => $this->getNodeValue($tribMunNode, 'tribISSQN'),
                 'cPaisResult' => $this->getNodeValue($tribMunNode, 'cPaisResult'),
@@ -524,7 +525,7 @@ class NfseXmlParser
      */
     private function parseIbscbs(\DOMElement $infNfse): ?array
     {
-        // Busca apenas o IBSCBS filho direto de infNFSe (TCRTCIBSCBS — gerado pela Sefin).
+        // Busca apenas o IBSCBS filho direto de infNFSe (TCRTCIBSCBS - gerado pela Sefin).
         // getElementsByTagName é recursivo e apanharia também o IBSCBS dentro de DPS/infDPS.
         $ibscbs = null;
         foreach ($infNfse->childNodes as $child) {
@@ -645,7 +646,8 @@ class NfseXmlParser
             'pRedutor'         => $this->getNodeValue($ibscbs, 'pRedutor'),
             'valores' => [
                 'vBC'           => $valores !== null ? $this->getNodeValue($valores, 'vBC') : null,
-                'vCalcReeRepRes' => $valores !== null ? $this->getNodeValue($valores, 'vCalcReeRepRes') : null,
+                'vCalcAjusteBCLocImoveis' => $valores !== null ? $this->getNodeValue($valores, 'vCalcAjusteBCLocImoveis') : null,
+                'vCalcAjusteBCIBSCBS' => $valores !== null ? $this->getNodeValue($valores, 'vCalcAjusteBCIBSCBS') : null,
                 'uf'  => $uf,
                 'mun' => $mun,
                 'fed' => $fed,
