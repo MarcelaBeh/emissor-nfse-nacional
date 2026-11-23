@@ -15,14 +15,12 @@ final class TipoEventoTest extends TestCase
         $this->assertSame('Cancelamento', TipoEvento::CANCELAMENTO->descricao());
         $this->assertSame('Cancelamento de NFS-e', TipoEvento::CANCELAMENTO->xDesc());
         $this->assertSame('e101101', TipoEvento::CANCELAMENTO->eventTypeTag());
-        $this->assertFalse(TipoEvento::CANCELAMENTO->needsChSubstituta());
         $this->assertTrue(TipoEvento::CANCELAMENTO->hasMotivo());
     }
 
     public function test_substituicao(): void
     {
         $this->assertSame('105102', TipoEvento::SUBSTITUICAO->value);
-        $this->assertTrue(TipoEvento::SUBSTITUICAO->needsChSubstituta());
         $this->assertTrue(TipoEvento::SUBSTITUICAO->hasMotivo());
     }
 
@@ -42,6 +40,5 @@ final class TipoEventoTest extends TestCase
     public function test_confirmitacao_tacita(): void
     {
         $this->assertFalse(TipoEvento::CONFIRMACAO_TACITA->hasMotivo());
-        $this->assertFalse(TipoEvento::CONFIRMACAO_TACITA->needsChSubstituta());
     }
 }

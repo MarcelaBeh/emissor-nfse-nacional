@@ -8,7 +8,6 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\EventoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoCancelamento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoRejeicao;
-use MarcelaBeh\EmissorNfseNacional\Domain\Enum\MotivoSubstituicao;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cnpj;
@@ -68,14 +67,6 @@ class EventoValidator
             } else {
                 $motivoErrors = $this->validarCodigoMotivo($tipoEvento, $request->codigoMotivo);
                 array_push($errors, ...$motivoErrors);
-            }
-        }
-
-        if (isset($tipoEvento) && $tipoEvento->needsChSubstituta()) {
-            if (empty($request->chSubstituta)) {
-                $errors[] = 'Chave da NFS-e substituta (chSubstituta) é obrigatória para substituição';
-            } elseif (preg_match(ChaveAcesso::PADRAO, $request->chSubstituta) !== 1) {
-                $errors[] = 'chSubstituta deve ter 50 posições, com letras A-Z somente na inscrição federal (posições 10 a 23)';
             }
         }
 
@@ -178,7 +169,6 @@ class EventoValidator
 
         $validos = match ($tipoEvento) {
             TipoEvento::CANCELAMENTO => MotivoCancelamento::valores(),
-            TipoEvento::SUBSTITUICAO => MotivoSubstituicao::valores(),
             TipoEvento::SOLICITACAO_ANALISE_FISCAL => MotivoCancelamento::valores(),
             TipoEvento::CANCELAMENTO_DEFERIDO => ['1'],
             TipoEvento::CANCELAMENTO_INDEFERIDO => ['1', '2'],

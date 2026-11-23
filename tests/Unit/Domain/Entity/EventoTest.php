@@ -36,22 +36,19 @@ final class EventoTest extends TestCase
         $this->assertSame('Erro na emissão da NFSe', $evento->getDescricaoMotivo());
     }
 
-    public function test_create_substituicao_completa(): void
+    public function test_substituicao_nao_e_pedido_de_evento(): void
     {
-        $chave = new ChaveAcesso(self::CHAVE_50);
-        $evento = new Evento(
+        // A SEFIN recusa o 105102 enviado pelo emitente (E1861): o evento nasce da DPS substituta.
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('E1861');
+
+        new Evento(
             tipo: TipoEvento::SUBSTITUICAO,
-            chaveNfse: $chave,
+            chaveNfse: new ChaveAcesso(self::CHAVE_50),
             dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
             versaoAplicacao: '1.0.0',
             cnpjAutor: '11444777000161',
-            codigoMotivo: '02',
-            descricaoMotivo: 'Desenquadramento do Simples Nacional',
-            chSubstituta: '22345678901234567890123456789012345678901234567890',
         );
-
-        $this->assertSame(TipoEvento::SUBSTITUICAO, $evento->getTipo());
-        $this->assertSame('22345678901234567890123456789012345678901234567890', $evento->getChSubstituta());
     }
 
     public function test_create_with_cpf_autor(): void
@@ -68,11 +65,10 @@ final class EventoTest extends TestCase
         $this->assertSame('52998224725', $evento->getCpfAutor());
     }
 
-    public function test_create_all_16_tipo_evento(): void
+    public function test_create_todos_os_tipos_de_evento_que_o_emitente_pode_pedir(): void
     {
         $casos = [
             TipoEvento::CANCELAMENTO,
-            TipoEvento::SUBSTITUICAO,
             TipoEvento::SOLICITACAO_ANALISE_FISCAL,
             TipoEvento::CANCELAMENTO_DEFERIDO,
             TipoEvento::CANCELAMENTO_INDEFERIDO,
@@ -97,10 +93,6 @@ final class EventoTest extends TestCase
                 'versaoAplicacao' => '1.0.0',
                 'cnpjAutor' => '11444777000161',
             ];
-
-            if ($tipo === TipoEvento::SUBSTITUICAO) {
-                $params['chSubstituta'] = '22345678901234567890123456789012345678901234567890';
-            }
 
             $evento = new Evento(...$params);
 
@@ -137,35 +129,6 @@ final class EventoTest extends TestCase
         );
     }
 
-    public function test_substituicao_sem_ch_substituta_throws(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Chave da NFS-e substituta (chSubstituta) é obrigatória');
-
-        new Evento(
-            tipo: TipoEvento::SUBSTITUICAO,
-            chaveNfse: new ChaveAcesso(self::CHAVE_50),
-            dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
-            versaoAplicacao: '1.0.0',
-            cnpjAutor: '11444777000161',
-        );
-    }
-
-    public function test_substituicao_ch_substituta_invalida_throws(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('chSubstituta deve ter 50 posições');
-
-        new Evento(
-            tipo: TipoEvento::SUBSTITUICAO,
-            chaveNfse: new ChaveAcesso(self::CHAVE_50),
-            dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
-            versaoAplicacao: '1.0.0',
-            cnpjAutor: '11444777000161',
-            chSubstituta: '123',
-        );
-    }
-
     public function test_x_desc_cancelamento(): void
     {
         $this->assertSame('Cancelamento de NFS-e', TipoEvento::CANCELAMENTO->xDesc());
@@ -181,12 +144,6 @@ final class EventoTest extends TestCase
         $this->assertSame('e101101', TipoEvento::CANCELAMENTO->eventTypeTag());
         $this->assertSame('e105102', TipoEvento::SUBSTITUICAO->eventTypeTag());
         $this->assertSame('e101103', TipoEvento::SOLICITACAO_ANALISE_FISCAL->eventTypeTag());
-    }
-
-    public function test_needs_ch_substituta(): void
-    {
-        $this->assertTrue(TipoEvento::SUBSTITUICAO->needsChSubstituta());
-        $this->assertFalse(TipoEvento::CANCELAMENTO->needsChSubstituta());
     }
 
     public function test_cancelamento_oficio_fields(): void

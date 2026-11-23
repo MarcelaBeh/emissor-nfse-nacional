@@ -37,8 +37,11 @@ linha 2.x até lá.
 - Consulta de NFS-e: `consultarPorChave()` agora preenche `chaveAcesso` e `numero` e devolve o erro real da SEFIN (antes
   qualquer falha virava "NFSe não encontrada"). O cancelamento não aparece na consulta da nota (`cStat` segue 100): use
   `consultarEventosProcessados()`.
-- Substituição: a SEFIN recusa o pedido de evento `105102` enviado pelo emitente (E1861). O `EventoValidator` passa a
-  recusá-lo e orientar a emitir a DPS substituta com `subst`, que faz a SEFIN registrar o evento na nota original.
+- Substituição: a SEFIN recusa o pedido de evento `105102` enviado pelo emitente (E1861). O `EventoValidator` e o
+  `Evento` passam a recusá-lo e orientar a emitir a DPS substituta com `subst`, que faz a SEFIN registrar o evento na
+  nota original. Por isso `chSubstituta` saiu do `EventoRequest`.
+- Substituição: o `DpsValidator` aplica a RN E0042 (parte 2): o município, o tipo de inscrição e a inscrição da chave
+  substituída devem ser os do prestador da DPS.
 
 ### Removido
 - `DocDedRed`, `IbsCbsReeRepRes`, `IbsCbsDocumentoReeRepRes` e `TipoReembolsoRepasseRessarcimento`, com os DTOs de request:
@@ -56,7 +59,7 @@ linha 2.x até lá.
 - Reescreva `imovel`: `cMun` é obrigatório; `inscImobFisc`, `cCIB` e o endereço passam para cada unidade.
 - CNPJ alfanumérico no request: maiúsculas e sem máscara.
 - Tire `prefeitura` da configuração e o município de `ConfigFactory` (`createDefault('3550308', 2)` vira `createDefault(2)`).
-- Tire `nSeqEvento`, `ambGer`, `dhProc` e `nDFSe` do `EventoRequest`.
+- Tire `nSeqEvento`, `ambGer`, `dhProc`, `nDFSe` e `chSubstituta` do `EventoRequest`.
 - `consultarEventos()` passa a exigir tipo e sequencial, devolve a lista de itens da SEFIN e lança `ServiceException`
   em vez de `['erro' => ...]`.
 

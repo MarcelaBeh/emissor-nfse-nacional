@@ -21,7 +21,6 @@ class Evento implements EventoInterface
         private ?string $cpfAutor = null,
         private ?string $codigoMotivo = null,
         private ?string $descricaoMotivo = null,
-        private ?string $chSubstituta = null,
         private ?string $cpfAgTrib = null,
         private ?string $nProcAdm = null,
         private ?string $xProcAdm = null,
@@ -46,12 +45,12 @@ class Evento implements EventoInterface
             throw new \InvalidArgumentException('Informar apenas CNPJ Autor ou CPF Autor, não ambos');
         }
 
-        if ($this->tipo->needsChSubstituta() && empty($this->chSubstituta)) {
-            throw new \InvalidArgumentException('Chave da NFS-e substituta (chSubstituta) é obrigatória para substituição');
-        }
-
-        if (!empty($this->chSubstituta) && preg_match(ChaveAcesso::PADRAO, $this->chSubstituta) !== 1) {
-            throw new \InvalidArgumentException('chSubstituta deve ter 50 posições, com letras A-Z somente na inscrição federal (posições 10 a 23)');
+        // A SEFIN registra o cancelamento por substituição ao receber a DPS substituta (grupo subst). O pedido de evento
+        // enviado pelo emitente é recusado (E1861, confirmado em produção restrita).
+        if ($this->tipo === TipoEvento::SUBSTITUICAO) {
+            throw new \InvalidArgumentException(
+                'O cancelamento por substituição não é um pedido de evento (E1861): emita a NFS-e substituta com o grupo subst na DPS'
+            );
         }
     }
 
@@ -103,11 +102,6 @@ class Evento implements EventoInterface
     public function getDescricaoMotivo(): ?string
     {
         return $this->descricaoMotivo;
-    }
-
-    public function getChSubstituta(): ?string
-    {
-        return $this->chSubstituta;
     }
 
     public function getCpfAgTrib(): ?string

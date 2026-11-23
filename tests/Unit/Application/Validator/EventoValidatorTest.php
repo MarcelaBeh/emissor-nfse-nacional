@@ -126,7 +126,6 @@ final class EventoValidatorTest extends TestCase
                 tipoAmbiente: 2,
                 cnpjAutor: '12345678000195',
                 codigoMotivo: $codigo,
-                chSubstituta: '99345678901234567890123456789012345678901234567890',
             );
 
             try {

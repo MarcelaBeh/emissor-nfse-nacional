@@ -78,11 +78,6 @@ enum TipoEvento: string
         return 'e' . $this->value;
     }
 
-    public function needsChSubstituta(): bool
-    {
-        return $this === self::SUBSTITUICAO;
-    }
-
     public function needsCpfAgTrib(): bool
     {
         return in_array($this, [

@@ -16,7 +16,6 @@ final readonly class EventoRequest
         public ?string $cpfAutor = null,
         public ?string $codigoMotivo = null,
         public ?string $descricaoMotivo = null,
-        public ?string $chSubstituta = null,
         public ?string $cpfAgTrib = null,
         public ?string $nProcAdm = null,
         public ?string $xProcAdm = null,

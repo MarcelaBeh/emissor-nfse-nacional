@@ -16,6 +16,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\IbsCbsUnidadeImobiliariaRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\PrestadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ServicoRequest;
+use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\SubstituicaoRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\TomadorRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
@@ -734,12 +735,85 @@ final class DpsValidatorNt009Test extends TestCase
         );
     }
 
+    // ===== substituição: a chave da NFS-e substituída deve ser do mesmo emitente (RN E0042, parte 2) =====
+
+    /** Município 3550308, ambiente gerador 2, tipo de inscrição 2 (CNPJ), CNPJ do prestador e o restante da chave. */
+    private const CHAVE_DO_PRESTADOR = '3550308' . '2' . '2' . '11444777000161' . '0000000000123' . '2611' . '012345678' . '9';
+
+    private function substituicao(string $chave): SubstituicaoRequest
+    {
+        return new SubstituicaoRequest(
+            chaveSubstituida: $chave,
+            codigoMotivo: '99',
+            descricaoMotivo: 'Substituicao de teste de validacao',
+        );
+    }
+
+    public function test_substituicao_com_chave_do_mesmo_prestador_passa(): void
+    {
+        $this->assertAceita($this->dps(substituicao: $this->substituicao(self::CHAVE_DO_PRESTADOR)));
+    }
+
+    public function test_substituicao_com_chave_de_outro_municipio_e_rejeitada(): void
+    {
+        $chave = '1302603' . substr(self::CHAVE_DO_PRESTADOR, 7);
+
+        $this->assertRejeita($this->dps(substituicao: $this->substituicao($chave)), 'E0042: a chave da NFS-e a ser substituída (chSubstda) não corresponde a esta DPS em: município;');
+    }
+
+    public function test_substituicao_com_chave_de_outro_cnpj_e_rejeitada(): void
+    {
+        $chave = substr(self::CHAVE_DO_PRESTADOR, 0, 9) . '33444555000181' . substr(self::CHAVE_DO_PRESTADOR, 23);
+
+        $this->assertRejeita($this->dps(substituicao: $this->substituicao($chave)), 'em: inscrição;');
+    }
+
+    public function test_substituicao_com_tipo_de_inscricao_diferente_e_rejeitada(): void
+    {
+        $chave = substr(self::CHAVE_DO_PRESTADOR, 0, 8) . '1' . substr(self::CHAVE_DO_PRESTADOR, 9);
+
+        $this->assertRejeita($this->dps(substituicao: $this->substituicao($chave)), 'em: tipo de inscrição;');
+    }
+
+    public function test_substituicao_aponta_todas_as_divergencias_de_uma_vez(): void
+    {
+        $chave = '1302603' . '2' . '1' . '33444555000181' . substr(self::CHAVE_DO_PRESTADOR, 23);
+
+        $this->assertRejeita($this->dps(substituicao: $this->substituicao($chave)), 'em: município, tipo de inscrição, inscrição;');
+    }
+
+    public function test_substituicao_de_prestador_cpf_compara_a_inscricao_com_zeros_a_esquerda(): void
+    {
+        // TSIdDPS: o CPF é completado com 000 à esquerda para ter 14 posições.
+        $do_cpf = '3550308' . '2' . '1' . '000' . '52998224725' . substr(self::CHAVE_DO_PRESTADOR, 23);
+        $de_outro = '3550308' . '2' . '1' . '000' . '12345678909' . substr(self::CHAVE_DO_PRESTADOR, 23);
+
+        $this->assertAceita($this->dps(prestadorDocumento: '52998224725', prestadorIsCnpj: false, substituicao: $this->substituicao($do_cpf)));
+        $this->assertRejeita(
+            $this->dps(prestadorDocumento: '52998224725', prestadorIsCnpj: false, substituicao: $this->substituicao($de_outro)),
+            'em: inscrição;'
+        );
+    }
+
+    public function test_chave_substituida_com_formato_invalido_nao_gera_a_e0042(): void
+    {
+        try {
+            $this->validator->validate($this->dps(substituicao: $this->substituicao('123')));
+            $this->fail('A chave de 3 posições deveria ser recusada');
+        } catch (ValidationException $e) {
+            $this->assertStringContainsString('chSubstda deve ter 50', $e->getMessage());
+            $this->assertStringNotContainsString('E0042', $e->getMessage());
+        }
+    }
+
     private function dps(
         string $finNFSe = '0',
         ?ServicoRequest $servico = null,
         ?IbsCbsRequest $ibscbs = null,
         string $prestadorDocumento = '11444777000161',
         string $tomadorDocumento = '33444555000181',
+        bool $prestadorIsCnpj = true,
+        ?SubstituicaoRequest $substituicao = null,
     ): DpsRequest {
         return new DpsRequest(
             tipoAmbiente: 2,
@@ -752,7 +826,7 @@ final class DpsValidatorNt009Test extends TestCase
             codigoMunicipioEmissor: '3550308',
             prestador: new PrestadorRequest(
                 documento: $prestadorDocumento,
-                isCnpj: true,
+                isCnpj: $prestadorIsCnpj,
                 inscricaoMunicipal: '123456',
                 razaoSocial: 'Prestador Ltda',
                 telefone: null,
@@ -782,6 +856,7 @@ final class DpsValidatorNt009Test extends TestCase
                 cep: '02002002',
             ),
             ibscbs: $ibscbs,
+            substituicao: $substituicao,
             finNFSe: $finNFSe,
         );
     }

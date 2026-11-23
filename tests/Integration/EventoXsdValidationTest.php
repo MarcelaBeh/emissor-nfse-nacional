@@ -44,26 +44,6 @@ final class EventoXsdValidationTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    public function test_substituicao_validates_against_xsd(): void
-    {
-        $evento = new Evento(
-            tipo: TipoEvento::SUBSTITUICAO,
-            chaveNfse: new ChaveAcesso(self::CHAVE_50),
-            dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
-            versaoAplicacao: '1.0.0',
-            tipoAmbiente: 2,
-            cnpjAutor: '11444777000161',
-            codigoMotivo: '02',
-            descricaoMotivo: 'Desenquadramento do Simples Nacional',
-            chSubstituta: '22345678901234567890123456789012345678901234567890',
-        );
-
-        $xml = $this->builder->build($evento);
-        $this->xsdValidator->validate($xml, 'pedRegEvento');
-
-        $this->expectNotToPerformAssertions();
-    }
-
     public function test_solicitacao_analise_fiscal_validates_against_xsd(): void
     {
         $evento = new Evento(

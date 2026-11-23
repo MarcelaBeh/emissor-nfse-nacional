@@ -88,28 +88,6 @@ final class EventoXmlBuilderTest extends TestCase
         $this->assertStringNotContainsString('<CNPJAutor', $xml);
     }
 
-    public function test_build_substituicao(): void
-    {
-        $evento = new Evento(
-            tipo: TipoEvento::SUBSTITUICAO,
-            chaveNfse: new ChaveAcesso(self::CHAVE_50),
-            dataEvento: new \DateTimeImmutable('2026-06-15T10:00:00-03:00'),
-            versaoAplicacao: '1.0.0',
-            tipoAmbiente: 2,
-            cnpjAutor: '11444777000161',
-            codigoMotivo: '02',
-            descricaoMotivo: 'Desenquadramento do Simples Nacional',
-            chSubstituta: '22345678901234567890123456789012345678901234567890',
-        );
-
-        $xml = $this->builder->build($evento);
-
-        $this->assertStringContainsString('<e105102>', $xml);
-        $this->assertStringContainsString('<xDesc>Cancelamento de NFS-e por Substituição</xDesc>', $xml);
-        $this->assertStringContainsString('<cMotivo>02</cMotivo>', $xml);
-        $this->assertStringContainsString('<chSubstituta>22345678901234567890123456789012345678901234567890</chSubstituta>', $xml);
-    }
-
     public function test_build_solicitacao_analise_fiscal(): void
     {
         $evento = new Evento(
@@ -284,7 +262,6 @@ final class EventoXmlBuilderTest extends TestCase
     {
         $casos = [
             [TipoEvento::CANCELAMENTO, 'e101101'],
-            [TipoEvento::SUBSTITUICAO, 'e105102'],
             [TipoEvento::SOLICITACAO_ANALISE_FISCAL, 'e101103'],
             [TipoEvento::CANCELAMENTO_DEFERIDO, 'e105104'],
             [TipoEvento::CANCELAMENTO_INDEFERIDO, 'e105105'],
@@ -310,10 +287,6 @@ final class EventoXmlBuilderTest extends TestCase
                 'tipoAmbiente' => 2,
                 'cnpjAutor' => '11444777000161',
             ];
-
-            if ($tipo === TipoEvento::SUBSTITUICAO) {
-                $params['chSubstituta'] = '22345678901234567890123456789012345678901234567890';
-            }
 
             $evento = new Evento(...$params);
             $xml = $this->builder->build($evento);

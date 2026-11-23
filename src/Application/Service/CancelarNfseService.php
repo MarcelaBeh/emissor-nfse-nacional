@@ -58,7 +58,6 @@ class CancelarNfseService
                 cpfAutor: $request->cpfAutor,
                 codigoMotivo: $request->codigoMotivo,
                 descricaoMotivo: $request->descricaoMotivo,
-                chSubstituta: $request->chSubstituta,
                 cpfAgTrib: $request->cpfAgTrib,
                 nProcAdm: $request->nProcAdm,
                 xProcAdm: $request->xProcAdm,

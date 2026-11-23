@@ -74,7 +74,8 @@ class EventoXmlBuilder implements Contract\XmlBuilderInterface
             TipoEvento::CANCELAMENTO,
             TipoEvento::SOLICITACAO_ANALISE_FISCAL => $this->buildMotivoCancelamento($evtNode, $evento),
 
-            TipoEvento::SUBSTITUICAO => $this->buildSubstituicao($evtNode, $evento),
+            // O Evento não admite este tipo: a SEFIN registra o cancelamento por substituição ao receber a DPS substituta.
+            TipoEvento::SUBSTITUICAO => throw new \LogicException('O cancelamento por substituição não é um pedido de evento'),
 
             TipoEvento::CANCELAMENTO_DEFERIDO => $this->buildDeferido($evtNode, $evento),
             TipoEvento::CANCELAMENTO_INDEFERIDO => $this->buildIndeferido($evtNode, $evento),
@@ -105,19 +106,6 @@ class EventoXmlBuilder implements Contract\XmlBuilderInterface
         }
         if ($evento->getDescricaoMotivo()) {
             $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), true);
-        }
-    }
-
-    private function buildSubstituicao(\DOMNode $parent, Evento $evento): void
-    {
-        if ($evento->getCodigoMotivo()) {
-            $this->addChild($parent, 'cMotivo', $evento->getCodigoMotivo(), true);
-        }
-        if ($evento->getDescricaoMotivo()) {
-            $this->addChild($parent, 'xMotivo', $evento->getDescricaoMotivo(), false);
-        }
-        if ($evento->getChSubstituta()) {
-            $this->addChild($parent, 'chSubstituta', $evento->getChSubstituta(), true);
         }
     }
 
