@@ -81,7 +81,7 @@ $repo = new FileCstClassTribRepository(__DIR__ . '/../storage/cClassTrib.json');
 
 // 3a. IBS/CBS básico (obrigatório para contribuintes IBS/CBS)
 $ibscbs = new IbsCbsRequest(
-    cIndOp: '100001',
+    cIndOp: '100301',
     indDest: '0',
     cst: '000',
     cClassTrib: '000001',
@@ -98,7 +98,7 @@ $ibscbs = new IbsCbsRequest(
 
 // 3b. Com destinatário terceiro (indDest=1)
 $ibscbsComDest = new IbsCbsRequest(
-    cIndOp: '100001',
+    cIndOp: '100301',
     indDest: '1',
     cst: '000',
     cClassTrib: '000001',
@@ -118,7 +118,7 @@ $ibscbsComDest = new IbsCbsRequest(
 
 // 3c. Com gRefNFSe (tpOper=2 ou 3)
 $ibscbsComRef = new IbsCbsRequest(
-    cIndOp: '100001',
+    cIndOp: '100301',
     indDest: '0',
     cst: '000',
     cClassTrib: '000001',
@@ -130,7 +130,7 @@ $ibscbsComRef = new IbsCbsRequest(
 
 // 3d. Com gTribRegular e gDif
 $ibscbsCompleto = new IbsCbsRequest(
-    cIndOp: '100001',
+    cIndOp: '100301',
     indDest: '0',
     cst: '515',
     cClassTrib: '515001', // a tabela oficial só permite diferimento nesta classificação
@@ -192,7 +192,7 @@ $ibscbsLocacao = new IbsCbsRequest(
 
 // 3g. Locação de bens móveis (cTribNac 99.04.01): grupo bensMoveis
 $ibscbsBensMoveis = new IbsCbsRequest(
-    cIndOp: '100001',
+    cIndOp: '100301',
     indDest: '0',
     cst: '000',
     cClassTrib: '000001',
@@ -352,7 +352,7 @@ $requestComObra = new DpsRequest(
 
 // 3h. Com todos os novos campos do Servico (comExterior, atvEvento, infoCompl, ajuste de base, tributos)
 $ibscbsAvancado = new IbsCbsRequest(
-    cIndOp: '100001',
+    cIndOp: '100301', // Anexo C: demais serviços, operação onerosa, adquirente no Brasil
     indDest: '0',
     cst: '000',
     cClassTrib: '000001',

@@ -206,10 +206,15 @@ final class DpsValidatorNt009Test extends TestCase
         $this->assertRejeita($this->dps(servico: $this->servico(docs: [$doc])), 'xTpAjusteBC é obrigatório');
     }
 
-    #[DataProvider('tiposComDescricaoObrigatoria')]
-    public function test_descricao_informada_para_99_e_199_passa(string $tipo): void
+    public function test_descricao_informada_para_99_passa(): void
     {
-        $doc = $this->doc(['tpAjusteBC' => $tipo, 'xTpAjusteBC' => 'Outros ajustes autorizados']);
+        $doc = $this->doc(['tpAjusteBC' => '99', 'xTpAjusteBC' => 'Outros ajustes autorizados']);
+        $this->assertAceita($this->dps(servico: $this->servico(docs: [$doc])));
+    }
+
+    public function test_descricao_informada_para_199_passa_com_documento_fiscal(): void
+    {
+        $doc = $this->docFiscalOutro(['tpAjusteBC' => '199', 'xTpAjusteBC' => 'Outros reembolsos autorizados']);
         $this->assertAceita($this->dps(servico: $this->servico(docs: [$doc])));
     }
 
@@ -217,6 +222,34 @@ final class DpsValidatorNt009Test extends TestCase
     public static function tiposComDescricaoObrigatoria(): array
     {
         return ['99' => ['99'], '199' => ['199']];
+    }
+
+    #[DataProvider('tiposQueExigemDocumentoFiscal')]
+    public function test_tipos_101_103_104_e_199_com_doc_outro_sao_rejeitados(string $tipo): void
+    {
+        // Confirmado em produção restrita: tpAjusteBC 199 com docOutro volta E0479.
+        $doc = $this->doc(['tpAjusteBC' => $tipo, 'xTpAjusteBC' => $tipo === '199' ? 'Reembolso' : null]);
+        $this->assertRejeita($this->dps(servico: $this->servico(docs: [$doc])), 'E0479');
+    }
+
+    #[DataProvider('tiposQueExigemDocumentoFiscal')]
+    public function test_tipos_101_103_104_e_199_com_documento_fiscal_passam(string $tipo): void
+    {
+        $doc = $this->docFiscalOutro(['tpAjusteBC' => $tipo, 'xTpAjusteBC' => $tipo === '199' ? 'Reembolso' : null]);
+        $this->assertAceita($this->dps(servico: $this->servico(docs: [$doc])));
+    }
+
+    /** @return array<string, array{string}> */
+    public static function tiposQueExigemDocumentoFiscal(): array
+    {
+        return ['101' => ['101'], '103' => ['103'], '104' => ['104'], '199' => ['199']];
+    }
+
+    public function test_tipos_sem_exigencia_de_documento_fiscal_aceitam_doc_outro(): void
+    {
+        foreach (['2', '5', '6', '7', '8', '9', '102', '105'] as $tipo) {
+            $this->assertAceita($this->dps(servico: $this->servico(docs: [$this->doc(['tpAjusteBC' => $tipo])])), "tipo $tipo");
+        }
     }
 
     public function test_descricao_proibida_fora_de_99_e_199(): void
@@ -296,6 +329,19 @@ final class DpsValidatorNt009Test extends TestCase
             'xDoc' => null,
         ]);
         $this->assertRejeita($this->dps(servico: $this->servico(docs: [$doc])), 'E0476');
+    }
+
+    public function test_doc_fiscal_outro_so_com_emissao_em_2026_e_rejeitado(): void
+    {
+        // Confirmado em produção restrita: sem dtCompDoc, um documento emitido em 2026 volta E0476.
+        $doc = $this->docFiscalOutro(['dtEmiDoc' => '2026-11-22']);
+        $this->assertRejeita($this->dps(servico: $this->servico(docs: [$doc])), 'E0476');
+    }
+
+    public function test_doc_fiscal_outro_so_com_emissao_em_2025_passa(): void
+    {
+        $doc = $this->docFiscalOutro(['dtEmiDoc' => '2025-12-05']);
+        $this->assertAceita($this->dps(servico: $this->servico(docs: [$doc])));
     }
 
     public function test_doc_fiscal_outro_com_competencia_de_2025_passa(): void
@@ -608,6 +654,24 @@ final class DpsValidatorNt009Test extends TestCase
             'vAjusteAplic' => '500.00',
             'nDoc' => 'REC-1',
             'xDoc' => 'Recibo de materiais',
+        ];
+
+        return new DocAjusteBCRequest(...array_merge($padrao, $override));
+    }
+
+    /** Documento com comprobatório fiscal (docFiscalOutro), aceito por todos os tipos de ajuste. */
+    private function docFiscalOutro(array $override = []): DocAjusteBCRequest
+    {
+        $padrao = [
+            'tipoDocumento' => 'docFiscalOutro',
+            'tpAjusteBC' => '2',
+            'vTotDoc' => '1000.00',
+            'vAjusteAplic' => '500.00',
+            'cMunDocFiscal' => '3550308',
+            'nDocFiscal' => 'NF-123',
+            'xDocFiscal' => 'Nota fiscal de materiais',
+            'nDoc' => null,
+            'xDoc' => null,
         ];
 
         return new DocAjusteBCRequest(...array_merge($padrao, $override));

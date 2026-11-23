@@ -943,6 +943,9 @@ class DpsValidator
                 if (!$tipo->exigeDescricao() && $doc->xTpAjusteBC !== null) {
                     $errors[] = "{$pfx}: E0464: xTpAjusteBC só pode ser informado quando tpAjusteBC = 99 ou 199";
                 }
+                if ($tipo->exigeDocumentoFiscal() && $doc->tipoDocumento === DocAjusteBC::DOC_OUTRO) {
+                    $errors[] = "{$pfx}: E0479: tpAjusteBC {$tipo->value} exige documento fiscal (dFeNacional ou docFiscalOutro), não docOutro";
+                }
                 if (($temPercentual || $temValor) && $tipo->exclusivoIssqn()) {
                     $errors[] = "{$pfx}: E0462: tpAjusteBC {$tipo->value} não pode ser informado por documento quando há ajuste por percentual ou valor (pAjusteBCISSQN/vAjusteBCISSQN)";
                 }
@@ -1046,10 +1049,11 @@ class DpsValidator
             $errors[] = "{$pfx}: E0472: dtEmiDoc deve ser igual ou posterior a dtCompDoc";
         }
 
-        if ($doc->tipoDocumento === DocAjusteBC::DOC_FISCAL_OUTRO
-            && $competencia !== null
-            && $competencia >= new \DateTimeImmutable('2026-01-01')) {
-            $errors[] = "{$pfx}: E0476: docFiscalOutro só pode ser informado se dtCompDoc for anterior a 01/01/2026";
+        if ($doc->tipoDocumento === DocAjusteBC::DOC_FISCAL_OUTRO) {
+            $referencia = $competencia ?? $emissao;
+            if ($referencia !== null && $referencia >= new \DateTimeImmutable('2026-01-01')) {
+                $errors[] = "{$pfx}: E0476: docFiscalOutro só pode ser informado se dtCompDoc for anterior a 01/01/2026 (sem dtCompDoc, vale a data de emissão)";
+            }
         }
     }
 

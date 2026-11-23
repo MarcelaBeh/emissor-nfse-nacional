@@ -71,6 +71,20 @@ enum TipoAjusteBC: string
     }
 
     /**
+     * Tipos que exigem documento fiscal (dFeNacional ou docFiscalOutro), nunca docOutro (RN E0479):
+     * 101, 103, 104 e 199. Confirmado em produção restrita: o tipo 199 com docOutro é rejeitado.
+     */
+    public function exigeDocumentoFiscal(): bool
+    {
+        return in_array($this, [
+            self::REPASSE_INTERMEDIACAO_IMOVEIS,
+            self::REEMBOLSO_PUBLICIDADE_PRODUCAO_EXTERNA,
+            self::REEMBOLSO_PUBLICIDADE_MIDIA,
+            self::OUTROS_REEMBOLSOS,
+        ], true);
+    }
+
+    /**
      * Ajustes exclusivos do ISSQN (2, 5 a 9, 99): não podem coexistir com ajuste por
      * percentual/valor padrão (`pAjusteBCISSQN`/`vAjusteBCISSQN`), conforme a RN E0462.
      */
