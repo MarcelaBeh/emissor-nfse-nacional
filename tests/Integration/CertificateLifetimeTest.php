@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  * __destruct do CertificateManager os apaga. Se nada mantiver o manager vivo
  * enquanto o cliente HTTP existir, os arquivos somem e a emissão falha com
  * "could not load PEM client certificate". A correção dá a posse do manager ao
- * CurlHttpClient — único consumidor dos PEMs.
+ * CurlHttpClient, único consumidor dos PEMs.
  *
  * @requires extension openssl
  */
@@ -45,7 +45,7 @@ final class CertificateLifetimeTest extends TestCase
         $this->dispararRequest($client);
 
         // Os 3 PEMs (private, public, cert) existem e continuam existindo
-        // enquanto o cliente — que possui o manager — estiver vivo.
+        // enquanto o cliente, que possui o manager, estiver vivo.
         self::assertCount(3, $this->pems($tempDir));
 
         $depois = $this->dispararRequestEContar($client, $tempDir);

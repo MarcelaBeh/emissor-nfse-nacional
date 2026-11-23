@@ -60,7 +60,6 @@ $cert = \NFePHP\Common\Certificate::readPfx($certContent, $certPassword);
 // ─── 2. Infra ────────────────────────────────────────────────────────────────
 $configuration = new Configuration([
     'tpAmb' => $config->tpamb,
-    'prefeitura' => '3501608', // Americana-SP (substituir pelo município do prestador)
 ]);
 
 // O CertificateManager grava os PEM num diretório temporário (0700) e os remove ao encerrar.

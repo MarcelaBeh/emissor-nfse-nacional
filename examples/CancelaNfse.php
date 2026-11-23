@@ -13,7 +13,6 @@ use MarcelaBeh\EmissorNfseNacional\Presentation\Facade\NfseNacionalFacade;
 
 $config = [
     'tpAmb' => 2,
-    'prefeitura' => '3501608',
 ];
 
 $certContent = file_get_contents('certificado.pfx');

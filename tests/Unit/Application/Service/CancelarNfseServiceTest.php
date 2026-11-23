@@ -122,7 +122,7 @@ final class CancelarNfseServiceTest extends TestCase
 
     public function test_executar_erro_sefin_extrai_codigo_e_descricao(): void
     {
-        // A SEFIN retorna os erros de evento em erro[] com Codigo/Descricao —
+        // A SEFIN retorna os erros de evento em erro[] com Codigo/Descricao,
         // não no campo 'mensagem'. A resposta deve trazer a mensagem real.
         $request = $this->createValidEventoRequest();
         $xml = '<?xml version="1.0"?><pedRegEvento></pedRegEvento>';
@@ -220,7 +220,7 @@ final class CancelarNfseServiceTest extends TestCase
         try {
             $service->executar($this->createValidEventoRequest());
         } catch (ValidationException) {
-            // esperado — interessa o que foi logado
+            // esperado: interessa o que foi logado
         }
 
         $this->assertStringContainsString('Validação cancelamento falhou', $capturado);
@@ -231,7 +231,7 @@ final class CancelarNfseServiceTest extends TestCase
     public function test_aceita_logger_psr3_generico(): void
     {
         // Interoperabilidade PSR-3: qualquer Psr\Log\LoggerInterface (Monolog,
-        // Symfony, etc.) pode ser injetado — não só o SanitizedLogger da lib.
+        // Symfony, etc.) pode ser injetado, não só o SanitizedLogger da lib.
         $this->assertInstanceOf(\Psr\Log\LoggerInterface::class, new SanitizedLogger(fn () => null));
 
         $psrLogger = $this->createMock(\Psr\Log\LoggerInterface::class);

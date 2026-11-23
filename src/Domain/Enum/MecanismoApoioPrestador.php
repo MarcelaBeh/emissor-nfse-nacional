@@ -21,9 +21,9 @@ enum MecanismoApoioPrestador: string
         return match ($this) {
             self::DESCONHECIDO => 'Desconhecido (tipo não informado na nota de origem)',
             self::NENHUM => 'Nenhum',
-            self::ACC => 'ACC - Adiantamento sobre Contrato de Câmbio – Redução a Zero do IR e do IOF',
-            self::ACE => 'ACE – Adiantamento sobre Cambiais Entregues - Redução a Zero do IR e do IOF',
-            self::BNDES_EXIM_POS => 'BNDES-Exim Pós-Embarque – Serviços',
+            self::ACC => 'ACC - Adiantamento sobre Contrato de Câmbio - Redução a Zero do IR e do IOF',
+            self::ACE => 'ACE - Adiantamento sobre Cambiais Entregues - Redução a Zero do IR e do IOF',
+            self::BNDES_EXIM_POS => 'BNDES-Exim Pós-Embarque - Serviços',
             self::BNDES_EXIM_PRE => 'BNDES-Exim Pré-Embarque - Serviços',
             self::FGE => 'FGE - Fundo de Garantia à Exportação',
             self::PROEX_EQUALIZACAO => 'PROEX - EQUALIZAÇÃO',

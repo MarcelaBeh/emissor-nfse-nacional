@@ -108,7 +108,7 @@ final class NfseXmlParserTest extends TestCase
 
     /**
      * Resposta real da CONSULTA (consultarPorChave). Tem a MESMA raiz <NFSe> da
-     * emissão — confirma que o parser serve os dois fluxos com um único caminho,
+     * emissão, confirma que o parser serve os dois fluxos com um único caminho,
      * sem nenhum envelope <CompNFSe> (inexistente nesta API).
      */
     public function test_parse_nfse_consulta_real_mesma_raiz_da_emissao(): void

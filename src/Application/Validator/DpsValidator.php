@@ -554,7 +554,7 @@ class DpsValidator
             $errors[] = 'A soma de vDescIncond e vDescCond deve ser menor que vServ (vTotal deve ser positivo)';
         }
 
-        // pAliq é TSDec1V2: 1 dígito inteiro + 2 decimais → máximo 9.99 (cobre o teto legal de ISS de 5%).
+        // pAliq é TSDec1V2: 1 dígito inteiro + 2 decimais, máximo 9.99 (cobre o teto legal de ISS de 5%).
         if ($s->aliquotaIss < 0 || $s->aliquotaIss > 9.99) {
             $errors[] = 'pAliq deve estar entre 0 e 9.99 (TSDec1V2)';
         }
@@ -1203,7 +1203,7 @@ class DpsValidator
             $errors[] = 'CST do PIS/COFINS inválido - deve ser um dos códigos do domínio oficial (TSTipoCST)';
         }
 
-        // pAliqPis/pAliqCofins são TSDec2V2: até 2 dígitos inteiros + 2 decimais → máximo 99.99.
+        // pAliqPis/pAliqCofins são TSDec2V2: até 2 dígitos inteiros + 2 decimais, máximo 99.99.
         if ($tf->pisCofinsAliquotaPis !== null && ($tf->pisCofinsAliquotaPis < 0 || $tf->pisCofinsAliquotaPis > 99.99)) {
             $errors[] = 'pAliqPis deve estar entre 0 e 99.99 (TSDec2V2)';
         }
@@ -1264,7 +1264,7 @@ class DpsValidator
             if ($s->pTotTribMun === null) {
                 $errors[] = 'pTotTribMun é obrigatório quando totTribTipo=pTotTrib (TSDec3V2)';
             }
-            // pTotTribFed/Est/Mun são TSDec3V2 → máximo 999.99.
+            // pTotTribFed/Est/Mun são TSDec3V2: máximo 999.99.
             foreach (['pTotTribFed' => $s->pTotTribFed, 'pTotTribEst' => $s->pTotTribEst, 'pTotTribMun' => $s->pTotTribMun] as $campo => $valor) {
                 if ($valor !== null && ($valor < 0 || $valor > 999.99)) {
                     $errors[] = "{$campo} deve estar entre 0 e 999.99 (TSDec3V2)";
@@ -1280,7 +1280,7 @@ class DpsValidator
             if ($s->pTotTribSN === null) {
                 $errors[] = 'pTotTribSN é obrigatório quando totTribTipo=pTotTribSN (TSDec2V2)';
             } elseif ($s->pTotTribSN < 0 || $s->pTotTribSN > 99.99) {
-                // pTotTribSN é TSDec2V2 → máximo 99.99.
+                // pTotTribSN é TSDec2V2: máximo 99.99.
                 $errors[] = 'pTotTribSN deve estar entre 0 e 99.99 (TSDec2V2)';
             }
         }

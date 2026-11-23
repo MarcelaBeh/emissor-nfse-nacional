@@ -57,7 +57,7 @@ final class IbsCbsFornecedorTest extends TestCase
 
     public function test_xnome_vazio_throws(): void
     {
-        // xNome é obrigatório quando o grupo fornecedor é informado — sem presunção.
+        // xNome é obrigatório quando o grupo fornecedor é informado, sem presunção.
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('xNome do fornecedor é obrigatório');
 

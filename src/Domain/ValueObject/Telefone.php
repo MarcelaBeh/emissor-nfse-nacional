@@ -21,7 +21,7 @@ final readonly class Telefone
 
         $len = strlen($numero);
 
-        // XSD TSTelefone: [0-9]{6,20} — suporta telefones nacionais e internacionais.
+        // XSD TSTelefone: [0-9]{6,20}; suporta telefones nacionais e internacionais.
         if ($len < 6 || $len > 20) {
             throw new ValidationException(
                 "Telefone deve ter entre 6 e 20 dígitos. Fornecido: {$numero}"

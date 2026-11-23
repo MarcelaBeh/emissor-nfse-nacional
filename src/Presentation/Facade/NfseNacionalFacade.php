@@ -41,7 +41,7 @@ class NfseNacionalFacade
      * @param LoggerInterface $logger logger dos serviços. Padrão: NullLogger (sem saída). Para
      *        rastreabilidade em produção sem vazar dados sensíveis, passe um SanitizedLogger.
      * @throws CertificateExpiredException se o certificado estiver vencido. A proximidade de
-     *         vencimento não é verificada pela lib — cabe ao integrador monitorá-la.
+     *         vencimento não é verificada pela lib; cabe ao integrador monitorá-la.
      */
     public static function create(
         Configuration|array $config,

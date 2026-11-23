@@ -14,7 +14,6 @@ use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\DpsRequest;
 // 1. Configuração
 $config = [
     'tpAmb' => 2,              // 1=Produção, 2=Homologação
-    'prefeitura' => '3550308', // IBGE do município
 ];
 
 // 2. Certificado

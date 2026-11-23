@@ -54,7 +54,7 @@ final class CstClassTribPropertiesTest extends TestCase
     public function test_reducao_zero_nao_conta_como_reducao(): void
     {
         // A tabela oficial traz pRedIBS/pRedCBS = 0.0 para a maioria dos códigos (sem redução).
-        // 0.0 não pode contar como "possui redução" — senão a SEFIN não retorna pRedAliq* e
+        // 0.0 não pode contar como "possui redução", senão a SEFIN não retorna pRedAliq* e
         // a regra E1541/E1546/E1551 gera falso positivo.
         $props = new CstClassTribProperties(
             cClassTrib: '010002',

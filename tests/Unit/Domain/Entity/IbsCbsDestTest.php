@@ -126,7 +126,7 @@ final class IbsCbsDestTest extends TestCase
 
     public function test_xnome_vazio_throws(): void
     {
-        // xNome é obrigatório (TCRTCInfoDest, minOccurs=1) — a lib não presume nome vazio.
+        // xNome é obrigatório (TCRTCInfoDest, minOccurs=1); a lib não presume nome vazio.
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('xNome do destinatário é obrigatório');
 

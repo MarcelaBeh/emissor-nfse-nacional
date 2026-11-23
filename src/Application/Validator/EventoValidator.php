@@ -121,7 +121,7 @@ class EventoValidator
             $errors[] = 'codEvento (codEventoBloqueio) inválido - deve ser e101101, e105102, e105104, e105105 ou e305101 (TSCodigoEventoNFSe)';
         }
 
-        // xProcAdm é TSMotivo (15–255), igual ao xMotivo.
+        // xProcAdm é TSMotivo (15 a 255), igual ao xMotivo.
         if ($request->xProcAdm !== null && $request->xProcAdm !== '') {
             $tamanho = mb_strlen($request->xProcAdm);
             if ($tamanho < 15 || $tamanho > 255) {

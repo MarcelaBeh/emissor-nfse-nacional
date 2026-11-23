@@ -103,10 +103,15 @@ class ApiConnector implements ApiConnectorInterface
         $body = $response['body'];
         $status = $response['status'];
 
+        // A resposta 201 de POST /nfse traz o XML da NFS-e e, ao lado dele, `alertas[]`. Ao trocar o
+        // JSON pelo XML decodificado os alertas se perderiam, então eles são guardados à parte.
+        $alertas = null;
+
         if (is_string($body) && str_contains($body, 'nfseXmlGZipB64')) {
             if (json_validate($body)) {
                 $decoded = json_decode($body, true);
                 if (isset($decoded['nfseXmlGZipB64'])) {
+                    $alertas = $decoded['alertas'] ?? null;
                     $body = $this->decodeGzipBase64($decoded['nfseXmlGZipB64']);
                 }
             }
@@ -118,11 +123,17 @@ class ApiConnector implements ApiConnectorInterface
             }
         }
 
-        return [
+        $resultado = [
             'status' => $status,
             'data' => $body,
             'success' => $status >= 200 && $status < 300,
         ];
+
+        if (is_array($alertas) && $alertas !== []) {
+            $resultado['alertas'] = $alertas;
+        }
+
+        return $resultado;
     }
 
     private function decodeGzipBase64(string $data): string

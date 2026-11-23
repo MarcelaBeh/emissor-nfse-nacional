@@ -600,7 +600,7 @@ final class IbscbsResponseValidatorTest extends TestCase
     public function test_emissao_real_cclasstrib_sem_reducao_e_vcalc_zero_passes(): void
     {
         // Reproduz a NFS-e real que a SEFIN aceitou (cStat=100) mas a lib rejeitava:
-        // - cClassTrib=010002 tem pRedIBS/pRedCBS=0.0 na tabela oficial (SEM redução) → SEFIN não retorna pRedAliq*
+        // - cClassTrib=010002 tem pRedIBS/pRedCBS=0.0 na tabela oficial (SEM redução): SEFIN não retorna pRedAliq*
         // - DPS sem documentos de ajuste, mas SEFIN devolve vCalcAjusteBCIBSCBS=0.00 por padrão
         // - DPS sem tpEnteGov, sem cCredPres, sem diferimento
         $validator = new IbscbsResponseValidator(

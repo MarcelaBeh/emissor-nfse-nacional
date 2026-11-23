@@ -521,7 +521,7 @@ final class DpsValidatorTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
-    // E0910: indDest=0 → dest must be null
+    // E0910: indDest=0, dest must be null
     public function test_ibscbs_inddest_zero_with_dest_throws(): void
     {
         $request = $this->createValidDpsRequestWithIbscbs(
@@ -537,7 +537,7 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
-    // E0910: indDest=1 → dest must be provided
+    // E0910: indDest=1, dest must be provided
     public function test_ibscbs_inddest_one_without_dest_throws(): void
     {
         $request = $this->createValidDpsRequestWithIbscbs(
@@ -1503,7 +1503,7 @@ final class DpsValidatorTest extends TestCase
                 codigoMunicipioPrestacao: '3550308',
                 valorServicos: 1000.0,
                 descontoIncondicionado: 600.0,
-                descontoCondicionado: 400.0, // soma = 1000 = vServ → vTotal = 0 (não positivo)
+                descontoCondicionado: 400.0, // soma = 1000 = vServ, vTotal = 0 (não positivo)
                 aliquotaIss: 5.0,
                 codigoNbs: '123456789',
             ),
@@ -1522,7 +1522,7 @@ final class DpsValidatorTest extends TestCase
                 codigoTributacao: '010101',
                 valorServicos: 1000.0,
                 descontoIncondicionado: 300.0,
-                descontoCondicionado: 200.0, // soma = 500 < 1000 → vTotal = 500
+                descontoCondicionado: 200.0, // soma = 500 < 1000, vTotal = 500
                 aliquotaIss: 5.0,
                 codigoNbs: '123456789',
                 codigoPaisPrestacao: 'US',
@@ -1625,7 +1625,7 @@ final class DpsValidatorTest extends TestCase
                 codigoNbs: '123456789',
                 beneficioMunicipal: new BeneficioMunicipalRequest(
                     numeroBeneficio: '12345678901234',
-                    valorReducaoBC: 1500.0, // benefício > serviço → BC negativa
+                    valorReducaoBC: 1500.0, // benefício > serviço, BC negativa
                 ),
             ),
         );

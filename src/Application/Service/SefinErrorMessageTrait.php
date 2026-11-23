@@ -7,8 +7,8 @@ namespace MarcelaBeh\EmissorNfseNacional\Application\Service;
 /**
  * Extrai a mensagem de erro real da resposta da SEFIN.
  *
- * A SEFIN (SefinNacional) retorna os erros em formato estruturado — `erros[]`
- * (emissão) ou `erro[]` (eventos) com `Codigo`+`Descricao` — e NÃO no campo
+ * A SEFIN (SefinNacional) retorna os erros em formato estruturado, `erros[]`
+ * (emissão) ou `erro[]` (eventos) com `Codigo`+`Descricao`, e NÃO no campo
  * `mensagem`. A leitura ingênua de `data['mensagem']` caía sempre no fallback
  * genérico. O payload cru completo continua disponível em `dados` da resposta.
  */

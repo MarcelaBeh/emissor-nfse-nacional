@@ -17,6 +17,10 @@ final readonly class NfseResponse
      * @param list<array{codigo: string|null, descricao: string}> $erros lista completa dos erros
      *        estruturados da SEFIN (a SEFIN pode retornar mais de um, ex.: E0617 + E0625);
      *        `mensagem` traz apenas o primeiro. Vazia em caso de sucesso.
+     * @param list<array{codigo: string|null, descricao: string, complemento: string|null}> $alertas
+     *        avisos previstos no contrato da SEFIN para a NFS-e autorizada (`alertas[]` da resposta 201
+     *        de `POST /nfse`). A nota foi emitida, mas o contribuinte deve avaliar o aviso. Vazia
+     *        quando a SEFIN não envia nenhum.
      */
     public function __construct(
         public bool $success,
@@ -26,6 +30,7 @@ final readonly class NfseResponse
         public ?array $dados = null,
         public ?string $xml = null,
         public array $erros = [],
+        public array $alertas = [],
     ) {
     }
 }

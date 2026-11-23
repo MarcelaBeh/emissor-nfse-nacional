@@ -502,48 +502,31 @@ class Configuration implements Contract\ConfigInterface
     {
         $this->config = $this->validateConfig($config);
         $this->tipoApi = $config['tipoApi'] ?? 'sefin';
-        
-        $prefeituras = $this->loadPrefeituras();
-        $this->loadUrls($prefeituras);
-        $this->loadOperations($prefeituras);
+
+        $this->loadUrls();
+        $this->loadOperations();
     }
-    
+
     private function validateConfig(array $config): array
     {
-        $required = ['tpAmb', 'prefeitura'];
-        
+        $required = ['tpAmb'];
+
         foreach ($required as $field) {
             if (!isset($config[$field])) {
                 throw new ConfigException("Campo obrigatório não informado: {$field}");
             }
         }
-        
+
         if (!in_array($config['tpAmb'], [1, 2, '1', '2'], true)) {
             throw new ConfigException('tpAmb deve ser 1 (Produção) ou 2 (Homologação)');
         }
-        
+
         $config['tpAmb'] = (int) $config['tpAmb'];
-        
+
         return $config;
     }
-    
-    /** Lê storage/prefeituras.json uma única vez, reusado por loadUrls/loadOperations. */
-    private function loadPrefeituras(): array
-    {
-        $configFile = __DIR__ . '/../../../storage/prefeituras.json';
-        if (!file_exists($configFile)) {
-            return [];
-        }
-        
-        $content = file_get_contents($configFile);
-        if ($content === false || !json_validate($content)) {
-            throw new ConfigException("Arquivo de configuração inválido: {$configFile}");
-        }
-        
-        return json_decode($content, true);
-    }
-    
-    private function loadUrls(array $prefeituras): void
+
+    private function loadUrls(): void
     {
         // URLs padrão (apenas sefin_* e adn_*)
         $this->urls = [
@@ -552,14 +535,9 @@ class Configuration implements Contract\ConfigInterface
             'adn_homologacao' => 'https://adn.producaorestrita.nfse.gov.br',
             'adn_producao' => 'https://adn.nfse.gov.br',
         ];
-        
-        $prefeitura = $this->config['prefeitura'];
-        if (isset($prefeituras[$prefeitura]['urls'])) {
-            $this->urls = array_merge($this->urls, $prefeituras[$prefeitura]['urls']);
-        }
     }
-    
-    private function loadOperations(array $prefeituras): void
+
+    private function loadOperations(): void
     {
         // Operations padrão (não há operações DANFSe)
         $this->operations = [
@@ -571,13 +549,8 @@ class Configuration implements Contract\ConfigInterface
             'verificar_dps' => 'dps/{id}',
             'decisao_judicial_nfse' => 'decisao-judicial/nfse',
         ];
-        
-        $prefeitura = $this->config['prefeitura'];
-        if (isset($prefeituras[$prefeitura]['operations'])) {
-            $this->operations = array_merge($this->operations, $prefeituras[$prefeitura]['operations']);
-        }
     }
-    
+
     public function getTipoAmbiente(): TipoAmbiente
     {
         return TipoAmbiente::from($this->config['tpAmb']);
@@ -1074,7 +1047,6 @@ class EmitirDpsTest extends TestCase
     {
         $config = [
             'tpAmb' => 2, // Homologação
-            'prefeitura' => '3550308', // São Paulo
         ];
         
         $certContent = file_get_contents(__DIR__ . '/../Fixtures/cert-test.pfx');

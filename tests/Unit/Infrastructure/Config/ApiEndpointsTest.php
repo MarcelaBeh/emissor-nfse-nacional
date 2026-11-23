@@ -14,7 +14,7 @@ final class ApiEndpointsTest extends TestCase
 
     protected function setUp(): void
     {
-        $config = new Configuration(['tpAmb' => 2, 'prefeitura' => '3550308']);
+        $config = new Configuration(['tpAmb' => 2]);
         $this->endpoints = new ApiEndpoints($config);
     }
 

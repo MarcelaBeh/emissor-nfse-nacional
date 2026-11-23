@@ -31,18 +31,18 @@ final class TelefoneTest extends TestCase
     public function test_phone_too_short_throws_exception(): void
     {
         $this->expectException(ValidationException::class);
-        new Telefone('12345'); // 5 dígitos — abaixo do mínimo XSD (6)
+        new Telefone('12345'); // 5 dígitos, abaixo do mínimo XSD (6)
     }
 
     public function test_phone_too_long_throws_exception(): void
     {
         $this->expectException(ValidationException::class);
-        new Telefone('123456789012345678901'); // 21 dígitos — acima do máximo XSD (20)
+        new Telefone('123456789012345678901'); // 21 dígitos, acima do máximo XSD (20)
     }
 
     public function test_valid_international_phone(): void
     {
-        $telefone = new Telefone('123456'); // 6 dígitos — mínimo válido pelo XSD
+        $telefone = new Telefone('123456'); // 6 dígitos, mínimo válido pelo XSD
         $this->assertSame('123456', $telefone->getNumero());
     }
 

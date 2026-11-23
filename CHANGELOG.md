@@ -39,13 +39,23 @@ em produção deve permanecer na linha 2.x até a confirmação.
   `gUnidImob` (até 99) e `gAjusteBCLocImoveis`. Enum `TipoAjusteBCLocImoveis`.
 - `IbsCbsRequest::$bensMoveis` (locação de bens móveis, cTribNac 99.04.01).
 - Validações com o código da RN oficial (E0453 a E0476, E0859, E0860, E0936 a E0974 e outras) na mensagem.
+- `NfseResponse::$alertas`: avisos (`alertas[]`) previstos no contrato da API da SEFIN para a NFS-e autorizada. Antes eram
+  descartados.
+
+### Corrigido
+- `vDescCond` zerado: com só desconto incondicionado, a DPS saía com `<vDescCond>0.00</vDescCond>` e a SEFIN rejeitava
+  (E0432). Agora só o desconto positivo é emitido.
+- `vAjusteBC`: os tipos 101, 103, 104 e 199 exigem documento fiscal, não `docOutro` (E0479), e `docFiscalOutro` só
+  vale para documentos anteriores a 2026 (E0476). O `DpsValidator` passa a recusar o que a SEFIN recusa.
 
 ### Removido
 - `DocDedRedRequest`/`DocDedRed`, `IbsCbsReeRepResRequest`/`IbsCbsReeRepRes`,
   `IbsCbsDocumentoReeRepResRequest`/`IbsCbsDocumentoReeRepRes` e `TipoReembolsoRepasseRessarcimento`: substituídos
   por `vAjusteBC`. Os tipos de ajuste 1, 3 e 4 foram extintos pela NT e não há mapeamento automático.
 - `Dps::gerarChaveAcesso()` e `Dps::getChaveAcesso()`: use `gerarIdDps()` e `getIdDps()`.
-- `Presentation\Factory\DpsFactory`, descontinuada na v2.3.2.
+- `storage/prefeituras.json` e o parâmetro `prefeitura` da configuração: toda emissão passa pela SEFIN Nacional, não
+  há mais endereço por município. `ConfigFactory::createDefault()`, `createHomologacao()` e `createProducao()` deixam
+  de receber o município.
 
 ### Migração
 - Troque `documentosDeducao` (e `reeRepRes`) por `documentosAjusteBc`; os documentos agora exigem `vTotDoc` e
@@ -54,6 +64,8 @@ em produção deve permanecer na linha 2.x até a confirmação.
 - Reescreva `imovel`: `cMun` é obrigatório e `inscImobFisc`, `cCIB` e o endereço passam para cada unidade (`unidades`).
   O endereço do imóvel é sempre nacional (CEP) e `xBairro` é opcional.
 - Para CNPJ alfanumérico, o documento no request deve vir em maiúsculas e sem máscara (o `DpsValidator` rejeita minúsculas).
+- Tire `prefeitura` da configuração e o município das chamadas de `ConfigFactory` (`createDefault('3550308', 2)` vira
+  `createDefault(2)`). Um `prefeitura` que sobrar em um array de configuração é ignorado.
 
 ---
 

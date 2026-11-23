@@ -144,7 +144,7 @@ enum TipoEvento: string
      * Indica se a descrição do motivo (xMotivo, mapeado de descricaoMotivo no builder) é obrigatória,
      * conforme o XSD (xMotivo minOccurs=1). Cobre cancelamento, análise fiscal, deferido, indeferido,
      * anulação da rejeição e bloqueio por ofício. Onde é minOccurs=0 (substituição, rejeições), a
-     * obrigatoriedade dependeria de regra de NT — não validada aqui (política: seguir só o XSD).
+     * obrigatoriedade dependeria de regra de NT, não validada aqui (política: seguir só o XSD).
      */
     public function descricaoMotivoObrigatoria(): bool
     {

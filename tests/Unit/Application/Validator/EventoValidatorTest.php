@@ -99,7 +99,7 @@ final class EventoValidatorTest extends TestCase
 
     public function test_cancelamento_sem_descricao_throws_para_qualquer_codigo(): void
     {
-        // Cancelamento (TE101101): xMotivo é minOccurs=1 no XSD → sempre obrigatório,
+        // Cancelamento (TE101101): xMotivo é minOccurs=1 no XSD, sempre obrigatório,
         // mesmo com código 1 (não só no "Outros"). Provado por schemaValidate.
         $request = new EventoRequest(
             tipoEvento: '101101',
@@ -120,7 +120,7 @@ final class EventoValidatorTest extends TestCase
 
     public function test_substituicao_sem_descricao_passa_para_qualquer_codigo(): void
     {
-        // Substituição (TE105102): xMotivo é minOccurs=0 no XSD → opcional para qualquer código.
+        // Substituição (TE105102): xMotivo é minOccurs=0 no XSD, opcional para qualquer código.
         foreach (['01', '99'] as $codigo) {
             $request = new EventoRequest(
                 tipoEvento: '105102',

@@ -33,7 +33,7 @@ use NFePHP\Common\Certificate;
 $certificado = Certificate::readPfx(file_get_contents($caminhoCertificado), $senha);
 
 // 2. Criar configuração
-$config = ConfigFactory::createHomologacao('codigo-ibge-municipio');
+$config = ConfigFactory::createHomologacao();
 
 // 3. Criar facade (aceita Configuration|array - sem cast)
 $nfse = NfseNacionalFacade::create($config, $certificado);
@@ -118,9 +118,9 @@ src/
 
 ## ⚠️ Avisos Importantes
 
-### Configuração do Município
+### Configuração
 
-A variável `prefeitura` deve receber o **código IBGE do município** (7 dígitos), conforme especificação dos XSDs da NFSe (ABRASF).
+A configuração exige apenas `tpAmb` (1 produção, 2 homologação). Toda emissão passa pela SEFIN Nacional, então não há mais parâmetro de município: o `prefeitura` das versões anteriores foi removido.
 
 ### Encoding XML
 

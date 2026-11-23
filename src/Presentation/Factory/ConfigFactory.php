@@ -17,21 +17,18 @@ class ConfigFactory
         return new Configuration($config);
     }
 
-    public static function createDefault(string $prefeitura, int $tpAmb = 2): Configuration
+    public static function createDefault(int $tpAmb = 2): Configuration
     {
-        return new Configuration([
-            'tpAmb' => $tpAmb,
-            'prefeitura' => $prefeitura,
-        ]);
+        return new Configuration(['tpAmb' => $tpAmb]);
     }
 
-    public static function createHomologacao(string $prefeitura): Configuration
+    public static function createHomologacao(): Configuration
     {
-        return self::createDefault($prefeitura, TipoAmbiente::HOMOLOGACAO->value);
+        return self::createDefault(TipoAmbiente::HOMOLOGACAO->value);
     }
 
-    public static function createProducao(string $prefeitura): Configuration
+    public static function createProducao(): Configuration
     {
-        return self::createDefault($prefeitura, TipoAmbiente::PRODUCAO->value);
+        return self::createDefault(TipoAmbiente::PRODUCAO->value);
     }
 }

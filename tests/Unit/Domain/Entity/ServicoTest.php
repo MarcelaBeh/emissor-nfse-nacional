@@ -181,7 +181,7 @@ final class ServicoTest extends TestCase
 
     public function test_beneficio_municipal_valor_reduz_base_calculo(): void
     {
-        // vRedBCBM = 400 → BC = 2000 - 400 = 1600.
+        // vRedBCBM = 400: BC = 2000 - 400 = 1600.
         $bm = new BeneficioMunicipal(numeroBeneficio: '35503080100001', valorReducaoBC: 400.00);
         $servico = new Servico(
             discriminacao: 'test',
@@ -198,7 +198,7 @@ final class ServicoTest extends TestCase
 
     public function test_beneficio_municipal_percentual_reduz_base_calculo(): void
     {
-        // pRedBCBM = 20% de 2000 = 400 → BC = 1600.
+        // pRedBCBM = 20% de 2000 = 400: BC = 1600.
         $bm = new BeneficioMunicipal(numeroBeneficio: '35503080100001', percentualReducaoBC: 20.0);
         $servico = new Servico(
             discriminacao: 'test',

@@ -37,7 +37,7 @@ final class EnderecoTest extends TestCase
 
     public function test_create_exterior(): void
     {
-        // Exterior: cMun/CEP nacionais não se aplicam (choice endExt) — são null.
+        // Exterior: cMun/CEP nacionais não se aplicam (choice endExt), são null.
         $end = new Endereco(
             logradouro: 'Main Street',
             numero: '456',
@@ -66,7 +66,7 @@ final class EnderecoTest extends TestCase
 
     public function test_create_nacional_sem_cmun_throws(): void
     {
-        // Endereço nacional exige cMun e CEP — a lib não presume '0000000'/'00000000'.
+        // Endereço nacional exige cMun e CEP; a lib não presume '0000000'/'00000000'.
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Endereço nacional exige');
 
