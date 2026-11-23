@@ -219,7 +219,8 @@ final class EventoXsdValidationTest extends TestCase
             tipoAmbiente: 2,
             cnpjAutor: '11444777000161',
             cpfAgTrib: '52998224725',
-            // TSIdNumEvento no XSD de 20/10/2026 tem 56 posições (chave + tipo), diferente das 59 de TSIdEvento; ver docs/DIVIDAS_TECNICAS.md.
+            // TSIdNumEvento no XSD de 20/10/2026 tem 56 posições (chave + tipo), diferente das 59 de TSIdEvento.
+            // Parece erro do pacote oficial e deve ser confirmado com a SEFIN; o teste usa 56 para satisfazer o XSD local.
             idBloqOfic: self::CHAVE_50 . '305101',
         );
 

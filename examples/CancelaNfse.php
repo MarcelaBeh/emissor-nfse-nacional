@@ -27,10 +27,10 @@ $request = new EventoRequest(
     versaoAplicacao: 'SistemaERP_v2.0',
     dataEvento: (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
     chaveNfse: '12345678901234567890123456789012345678901234567890',
-    tipoEvento: 'cancelamento',
+    tipoEvento: '101101', // cancelamento (enum TipoEvento)
     cnpjAutor: '11444777000161',
-    codigoMotivo: '05',
-    descricaoMotivo: 'Rejeicao pelo tomador',
+    codigoMotivo: '1', // 1 = erro na emissão, 2 = serviço não prestado, 9 = outros
+    descricaoMotivo: 'Erro na emissao da nota',
 );
 
 try {

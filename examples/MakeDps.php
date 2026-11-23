@@ -36,11 +36,13 @@ use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\DpsValidator;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\IbscbsResponseValidator;
 use MarcelaBeh\EmissorNfseNacional\Domain\Contract\CstClassTribRepository;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Client\CurlHttpClient;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Repository\FileCstClassTribRepository;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\CertificateManager;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\XmlSigner;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\DpsXmlBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
@@ -61,18 +63,14 @@ $configuration = new Configuration([
     'prefeitura' => '3501608', // Americana-SP (substituir pelo município do prestador)
 ]);
 
-// Extrair cert/key do PFX para CurlHttpClient (arquivos .pem)
-$pemCert = __DIR__ . '/cert.pem';
-$pemKey  = __DIR__ . '/key.pem';
-if (!file_exists($pemCert) || !file_exists($pemKey)) {
-    openssl_pkcs12_read($certContent, $certs, $certPassword);
-    file_put_contents($pemCert, ($certs['extracerts'] ?? '') . "\n" . $certs['cert']);
-    file_put_contents($pemKey, $certs['pkey']);
-}
+// O CertificateManager grava os PEM num diretório temporário (0700) e os remove ao encerrar.
+// Não gere cert.pem/key.pem na pasta do projeto: a chave privada ficaria em texto puro no disco.
+$certificateManager = new CertificateManager($cert);
 
-$httpClient     = new CurlHttpClient(certPath: $pemCert, privateKeyPath: $pemKey, keyPassword: $certPassword);
+$httpClient     = new CurlHttpClient(timeout: 60, connectTimeout: 10, certificateManager: $certificateManager, keyPassword: null);
 $apiConnector   = new ApiConnector($configuration, $httpClient);
-$xmlSigner      = new XmlSigner($cert);
+$apiEndpoints   = new ApiEndpoints($configuration);
+$xmlSigner      = new XmlSigner($certificateManager->getCertificate());
 $xsdValidator   = new XsdValidator();
 $requestBuilder = new RequestBuilder();
 
@@ -85,8 +83,8 @@ $repo = new FileCstClassTribRepository(__DIR__ . '/../storage/cClassTrib.json');
 $ibscbs = new IbsCbsRequest(
     cIndOp: '100001',
     indDest: '0',
-    cst: '100',
-    cClassTrib: '100123',
+    cst: '000',
+    cClassTrib: '000001',
     indFinal: '1',
     tpOper: '1',
     tpEnteGov: null,
@@ -102,8 +100,8 @@ $ibscbs = new IbsCbsRequest(
 $ibscbsComDest = new IbsCbsRequest(
     cIndOp: '100001',
     indDest: '1',
-    cst: '100',
-    cClassTrib: '100123',
+    cst: '000',
+    cClassTrib: '000001',
     indFinal: '1',
     tpOper: '1',
     dest: new IbsCbsDestRequest(
@@ -122,8 +120,8 @@ $ibscbsComDest = new IbsCbsRequest(
 $ibscbsComRef = new IbsCbsRequest(
     cIndOp: '100001',
     indDest: '0',
-    cst: '100',
-    cClassTrib: '100123',
+    cst: '000',
+    cClassTrib: '000001',
     tpOper: '2',
     refNFSeList: [
         '12345678901234567890123456789012345678901234567890',
@@ -134,11 +132,11 @@ $ibscbsComRef = new IbsCbsRequest(
 $ibscbsCompleto = new IbsCbsRequest(
     cIndOp: '100001',
     indDest: '0',
-    cst: '100',
-    cClassTrib: '100123',
+    cst: '515',
+    cClassTrib: '515001', // a tabela oficial só permite diferimento nesta classificação
     tribRegular: new IbsCbsTribRegularRequest(
         cstReg: '200',
-        cClassTribReg: '200456',
+        cClassTribReg: '200005',
     ),
     diferimento: new IbsCbsDiferimentoRequest(
         pDifUF: 10.0,
@@ -151,8 +149,8 @@ $ibscbsCompleto = new IbsCbsRequest(
 $ibscbsComImovel = new IbsCbsRequest(
     cIndOp: '020101',
     indDest: '0',
-    cst: '100',
-    cClassTrib: '100123',
+    cst: '000',
+    cClassTrib: '000001',
     imovel: new IbsCbsImovelRequest(
         cMun: '3550308',
         unidades: [
@@ -166,8 +164,8 @@ $ibscbsComImovel = new IbsCbsRequest(
 $ibscbsLocacao = new IbsCbsRequest(
     cIndOp: '020101',
     indDest: '0',
-    cst: '100',
-    cClassTrib: '100123',
+    cst: '000',
+    cClassTrib: '000001',
     imovel: new IbsCbsImovelRequest(
         cMun: '3550308',
         locacao: new IbsCbsLocacaoImovelRequest(
@@ -196,8 +194,8 @@ $ibscbsLocacao = new IbsCbsRequest(
 $ibscbsBensMoveis = new IbsCbsRequest(
     cIndOp: '100001',
     indDest: '0',
-    cst: '100',
-    cClassTrib: '100123',
+    cst: '000',
+    cClassTrib: '000001',
     bensMoveis: [
         new IbsCbsBemMovelRequest(cNCMBemMovel: '84713012', xNCMBemMovel: 'Notebook', qtdNCMBemMovel: '2'),
     ],
@@ -356,8 +354,8 @@ $requestComObra = new DpsRequest(
 $ibscbsAvancado = new IbsCbsRequest(
     cIndOp: '100001',
     indDest: '0',
-    cst: '100',
-    cClassTrib: '100123',
+    cst: '000',
+    cClassTrib: '000001',
 );
 
 $requestCompleto = new DpsRequest(
@@ -476,6 +474,7 @@ $service = new EmitirDpsService(
     requestBuilder: $requestBuilder,
     nfseXmlParser: new NfseXmlParser(),
     ibscbsResponseValidator: new IbscbsResponseValidator($repo),
+    apiEndpoints: $apiEndpoints,
 );
 
 try {
