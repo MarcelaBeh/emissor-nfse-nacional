@@ -75,6 +75,29 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
         $this->assertXmlContains($xml, 'cClassTrib');
     }
 
+    public function test_vserv_e_emitido_bruto_e_nao_liquido_de_descontos(): void
+    {
+        // Antes saía vServ=900.00 junto com vDescIncond=100.00 (desconto aplicado em dobro).
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(100.00),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 2.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+            codigoNbs: '12345678',
+        );
+        $dps = $this->createDpsWithIbscbs(ibscbs: $this->createIbscbs(), servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+
+        $this->assertXmlContains($xml, '<vServ>1000.00</vServ>');
+        $this->assertXmlContains($xml, '<vDescIncond>100.00</vDescIncond>');
+    }
     public function test_build_ibscbs_xml_without_ibscbs_does_not_contain_ibscbs(): void
     {
         $dps = $this->createDpsWithoutIbscbs();

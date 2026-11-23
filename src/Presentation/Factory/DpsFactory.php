@@ -18,6 +18,11 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\CodigoMunicipio;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 
+/**
+ * @deprecated Não monta uma DPS válida desde a v2.3.0 (o Servico exige totTribTipo, que esta fábrica não
+ *             informa) e não tem consumidores. Será removida na próxima versão major. Use DpsRequest com
+ *             EmitirDpsService.
+ */
 class DpsFactory
 {
     /**

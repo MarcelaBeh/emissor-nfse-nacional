@@ -31,7 +31,7 @@ class Intermediario
             throw new \InvalidArgumentException('Razão social do intermediário é obrigatória');
         }
 
-        if (strlen($this->razaoSocial) > 150) {
+        if (mb_strlen($this->razaoSocial, 'UTF-8') > 150) {
             throw new \InvalidArgumentException('Razão social do intermediário deve ter no máximo 150 caracteres');
         }
     }

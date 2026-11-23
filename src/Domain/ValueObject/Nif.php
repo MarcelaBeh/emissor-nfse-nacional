@@ -23,7 +23,7 @@ final readonly class Nif
             throw new ValidationException('NIF não pode ser vazio');
         }
 
-        if (strlen($nif) > 40) {
+        if (mb_strlen($nif, 'UTF-8') > 40) {
             throw new ValidationException('NIF deve ter no máximo 40 caracteres');
         }
 

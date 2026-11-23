@@ -31,7 +31,7 @@ class Tomador
             throw new \InvalidArgumentException('Razão social do tomador é obrigatória');
         }
 
-        if (strlen($this->razaoSocial) > 150) {
+        if (mb_strlen($this->razaoSocial, 'UTF-8') > 150) {
             throw new \InvalidArgumentException('Razão social do tomador deve ter no máximo 150 caracteres');
         }
     }

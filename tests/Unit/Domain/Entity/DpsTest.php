@@ -125,8 +125,9 @@ final class DpsTest extends TestCase
         $this->assertSame($chave1, $chave2);
     }
 
-    public function test_gerar_chave_acesso_with_cpf_produces_shorter_key(): void
+    public function test_gerar_chave_acesso_with_cpf_completa_a_inscricao_com_zeros(): void
     {
+        // Antes lançava InvalidChaveAcessoException (47 posições) e o prestador CPF não conseguia emitir.
         $prestador = new Prestador(
             documento: new Cpf('52998224725'),
             inscricaoMunicipal: null,
@@ -151,10 +152,20 @@ final class DpsTest extends TestCase
             servico: $this->createServico(),
         );
 
-        $this->expectException(\MarcelaBeh\EmissorNfseNacional\Domain\Exception\InvalidChaveAcessoException::class);
-        $dps->gerarChaveAcesso();
+        $chave = $dps->gerarChaveAcesso()->getChave();
+
+        // TSIdDPS: município (7) + tipo 1 (CPF) + inscrição de 14 posições (3 zeros + CPF) + série (5) + número (15).
+        $this->assertSame(50, strlen($chave));
+        $this->assertSame('3550308' . '1' . '00052998224725' . '00001' . '000000000000001', substr($chave, 0, 42));
+        $this->assertSame('00000000', substr($chave, 42));
     }
 
+    public function test_gerar_chave_acesso_with_cnpj_mantem_a_inscricao_de_14_posicoes(): void
+    {
+        $chave = $this->createDps()->gerarChaveAcesso()->getChave();
+
+        $this->assertSame('3550308' . '2' . '11444777000161' . '00001' . '000000000000123', substr($chave, 0, 42));
+    }
     public function test_gerar_chave_acesso_throws_when_prestador_has_no_documento(): void
     {
         $prestador = new Prestador(

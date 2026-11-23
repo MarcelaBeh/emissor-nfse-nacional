@@ -424,7 +424,7 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
         if ($servico->getValorRecebido() !== null) {
             $this->addChild($vServPrest, 'vReceb', number_format($servico->getValorRecebido(), 2, '.', ''), false);
         }
-        $this->addChild($vServPrest, 'vServ', number_format($servico->getValorTotal()->getValue(), 2, '.', ''), true);
+        $this->addChild($vServPrest, 'vServ', number_format($servico->getValorServicos()->getValue(), 2, '.', ''), true);
 
         $descIncond = $servico->getDescontoIncondicionado();
         $descCond = $servico->getDescontoCondicionado();

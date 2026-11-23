@@ -71,6 +71,64 @@ final class DpsValidatorTest extends TestCase
         $this->validator->validate($request);
     }
 
+    // ===== Tamanho de texto em caracteres, não em bytes (XSD maxLength conta caracteres) =====
+
+    public function test_descricao_de_2000_caracteres_acentuados_e_aceita(): void
+    {
+        // 2000 "ç" = 2000 caracteres e 4000 bytes em UTF-8: dentro do TSDesc2000 do XSD.
+        $descricao = str_repeat('ç', 2000);
+        $this->assertSame(4000, strlen($descricao));
+
+        $this->validator->validate($this->createValidDpsRequest(discriminacao: $descricao));
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_descricao_de_1500_caracteres_acentuados_e_aceita(): void
+    {
+        // Menos de 2000 caracteres, mas 3000 bytes: antes era recusada por contar bytes.
+        $this->validator->validate($this->createValidDpsRequest(discriminacao: str_repeat('ã', 1500)));
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_descricao_de_2001_caracteres_e_rejeitada(): void
+    {
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('xDescServ deve ter no máximo 2000 caracteres');
+
+        $this->validator->validate($this->createValidDpsRequest(discriminacao: str_repeat('ç', 2001)));
+    }
+
+    public function test_descricao_ascii_de_2001_caracteres_continua_rejeitada(): void
+    {
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('xDescServ deve ter no máximo 2000 caracteres');
+
+        $this->validator->validate($this->createValidDpsRequest(discriminacao: str_repeat('a', 2001)));
+    }
+
+    public function test_complemento_do_tomador_acentuado_e_medido_em_caracteres(): void
+    {
+        // xCpl admite 156 caracteres (TSComplementoEndereco): 156 "ã" são 312 bytes.
+        $request = $this->createValidDpsRequest(
+            tomador: new TomadorRequest(
+                documento: '33444555000181',
+                isCnpj: true,
+                razaoSocial: 'Tomador Ltda',
+                telefone: null,
+                email: null,
+                logradouro: 'Rua B',
+                numero: '200',
+                complemento: str_repeat('ã', 156),
+                bairro: 'Centro',
+                codigoMunicipio: '3550308',
+                uf: 'SP',
+                cep: '02002002',
+            ),
+        );
+
+        $this->validator->validate($request);
+        $this->addToAssertionCount(1);
+    }
     public function test_invalid_numero_throws(): void
     {
         $request = $this->createValidDpsRequest(numero: 0);

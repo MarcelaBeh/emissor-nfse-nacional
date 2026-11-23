@@ -94,7 +94,7 @@ class DpsValidator
 
         if (empty($request->versaoAplicacao)) {
             $errors[] = 'verAplic é obrigatória';
-        } elseif (strlen($request->versaoAplicacao) > 20) {
+        } elseif (mb_strlen($request->versaoAplicacao, 'UTF-8') > 20) {
             $errors[] = 'verAplic deve ter no máximo 20 caracteres (TSVerAplic)';
         }
 
@@ -132,7 +132,7 @@ class DpsValidator
             $errors[] = 'regEspTrib inválido — deve ser 0, 1, 2, 3, 4, 5, 6 ou 9 (TSRegEspTrib)';
         }
 
-        if (strlen($p->razaoSocial) > 300) {
+        if (mb_strlen($p->razaoSocial, 'UTF-8') > 300) {
             $errors[] = 'xNome do prestador deve ter no máximo 300 caracteres (TSNomeRazaoSocial)';
         }
 
@@ -166,7 +166,7 @@ class DpsValidator
             }
         }
 
-        if ($p->nif !== null && (strlen($p->nif) < 1 || strlen($p->nif) > 40)) {
+        if ($p->nif !== null && (mb_strlen($p->nif, 'UTF-8') < 1 || mb_strlen($p->nif, 'UTF-8') > 40)) {
             $errors[] = 'NIF do prestador deve ter 1 a 40 caracteres (TSNIF)';
         }
 
@@ -178,7 +178,7 @@ class DpsValidator
             $errors[] = 'CAEPF do prestador deve ter 14 dígitos numéricos (TSCAEPF)';
         }
 
-        if ($p->inscricaoMunicipal !== null && (strlen($p->inscricaoMunicipal) < 1 || strlen($p->inscricaoMunicipal) > 15)) {
+        if ($p->inscricaoMunicipal !== null && (mb_strlen($p->inscricaoMunicipal, 'UTF-8') < 1 || mb_strlen($p->inscricaoMunicipal, 'UTF-8') > 15)) {
             $errors[] = 'IM do prestador deve ter 1 a 15 caracteres (TSInscMun)';
         }
 
@@ -202,23 +202,23 @@ class DpsValidator
 
             if (empty($p->logradouro)) {
                 $errors[] = 'xLgr do prestador é obrigatório quando o endereço é informado (TSLogradouro)';
-            } elseif (strlen($p->logradouro) > 255) {
+            } elseif (mb_strlen($p->logradouro, 'UTF-8') > 255) {
                 $errors[] = 'xLgr do prestador deve ter no máximo 255 caracteres (TSLogradouro)';
             }
 
             if (empty($p->numero)) {
                 $errors[] = 'nro do prestador é obrigatório quando o endereço é informado (TSNumeroEndereco)';
-            } elseif (strlen($p->numero) > 60) {
+            } elseif (mb_strlen($p->numero, 'UTF-8') > 60) {
                 $errors[] = 'nro do prestador deve ter no máximo 60 caracteres (TSNumeroEndereco)';
             }
 
-            if ($p->complemento !== null && (strlen($p->complemento) < 1 || strlen($p->complemento) > 156)) {
+            if ($p->complemento !== null && (mb_strlen($p->complemento, 'UTF-8') < 1 || mb_strlen($p->complemento, 'UTF-8') > 156)) {
                 $errors[] = 'xCpl do prestador deve ter 1 a 156 caracteres (TSComplementoEndereco)';
             }
 
             if (empty($p->bairro)) {
                 $errors[] = 'xBairro do prestador é obrigatório quando o endereço é informado (TSBairro)';
-            } elseif (strlen($p->bairro) > 60) {
+            } elseif (mb_strlen($p->bairro, 'UTF-8') > 60) {
                 $errors[] = 'xBairro do prestador deve ter no máximo 60 caracteres (TSBairro)';
             }
 
@@ -231,7 +231,7 @@ class DpsValidator
             $errors[] = 'fone do prestador deve ter 6 a 20 dígitos numéricos (TSTelefone)';
         }
 
-        if ($p->email !== null && (strlen($p->email) < 1 || strlen($p->email) > 80)) {
+        if ($p->email !== null && (mb_strlen($p->email, 'UTF-8') < 1 || mb_strlen($p->email, 'UTF-8') > 80)) {
             $errors[] = 'email do prestador deve ter 1 a 80 caracteres (TSEmail)';
         }
     }
@@ -246,7 +246,7 @@ class DpsValidator
 
         if (empty($t->razaoSocial)) {
             $errors[] = 'xNome do tomador é obrigatória (TSNomeRazaoSocial)';
-        } elseif (strlen($t->razaoSocial) > 300) {
+        } elseif (mb_strlen($t->razaoSocial, 'UTF-8') > 300) {
             $errors[] = 'xNome do tomador deve ter no máximo 300 caracteres (TSNomeRazaoSocial)';
         }
 
@@ -281,7 +281,7 @@ class DpsValidator
             }
         }
 
-        if ($t->nif !== null && (strlen($t->nif) < 1 || strlen($t->nif) > 40)) {
+        if ($t->nif !== null && (mb_strlen($t->nif, 'UTF-8') < 1 || mb_strlen($t->nif, 'UTF-8') > 40)) {
             $errors[] = 'NIF do tomador deve ter 1 a 40 caracteres (TSNIF)';
         }
 
@@ -293,7 +293,7 @@ class DpsValidator
             $errors[] = 'CAEPF do tomador deve ter 14 dígitos numéricos (TSCAEPF)';
         }
 
-        if ($t->inscricaoMunicipal !== null && (strlen($t->inscricaoMunicipal) < 1 || strlen($t->inscricaoMunicipal) > 15)) {
+        if ($t->inscricaoMunicipal !== null && (mb_strlen($t->inscricaoMunicipal, 'UTF-8') < 1 || mb_strlen($t->inscricaoMunicipal, 'UTF-8') > 15)) {
             $errors[] = 'IM do tomador deve ter 1 a 15 caracteres (TSInscMun)';
         }
 
@@ -310,23 +310,23 @@ class DpsValidator
             // ficar vazios quando o grupo é emitido, senão o XSD rejeita com erro genérico.
             if (empty($t->logradouro)) {
                 $errors[] = 'xLgr do tomador é obrigatório quando há endereço (TSLogradouro)';
-            } elseif (strlen($t->logradouro) > 255) {
+            } elseif (mb_strlen($t->logradouro, 'UTF-8') > 255) {
                 $errors[] = 'xLgr do tomador deve ter no máximo 255 caracteres (TSLogradouro)';
             }
 
             if (empty($t->numero)) {
                 $errors[] = 'nro do tomador é obrigatório quando há endereço — use "S/N" se não houver (TSNumeroEndereco)';
-            } elseif (strlen($t->numero) > 60) {
+            } elseif (mb_strlen($t->numero, 'UTF-8') > 60) {
                 $errors[] = 'nro do tomador deve ter no máximo 60 caracteres (TSNumeroEndereco)';
             }
 
-            if ($t->complemento !== null && (strlen($t->complemento) < 1 || strlen($t->complemento) > 156)) {
+            if ($t->complemento !== null && (mb_strlen($t->complemento, 'UTF-8') < 1 || mb_strlen($t->complemento, 'UTF-8') > 156)) {
                 $errors[] = 'xCpl do tomador deve ter 1 a 156 caracteres (TSComplementoEndereco)';
             }
 
             if (empty($t->bairro)) {
                 $errors[] = 'xBairro do tomador é obrigatório quando há endereço (TSBairro)';
-            } elseif (strlen($t->bairro) > 60) {
+            } elseif (mb_strlen($t->bairro, 'UTF-8') > 60) {
                 $errors[] = 'xBairro do tomador deve ter no máximo 60 caracteres (TSBairro)';
             }
 
@@ -335,13 +335,13 @@ class DpsValidator
                 if (!preg_match('/^[A-Z]{2}$/', $t->codigoPais)) {
                     $errors[] = 'cPais do tomador deve ser 2 letras maiúsculas (TSCodPaisISO)';
                 }
-                if ($t->codigoPostalExterior === null || strlen($t->codigoPostalExterior) < 1 || strlen($t->codigoPostalExterior) > 11) {
+                if ($t->codigoPostalExterior === null || mb_strlen($t->codigoPostalExterior, 'UTF-8') < 1 || mb_strlen($t->codigoPostalExterior, 'UTF-8') > 11) {
                     $errors[] = 'cEndPost do tomador é obrigatório e deve ter 1 a 11 caracteres para endereço exterior (TSCodigoEndPostal)';
                 }
-                if ($t->nomeCidadeExterior === null || strlen($t->nomeCidadeExterior) < 1 || strlen($t->nomeCidadeExterior) > 60) {
+                if ($t->nomeCidadeExterior === null || mb_strlen($t->nomeCidadeExterior, 'UTF-8') < 1 || mb_strlen($t->nomeCidadeExterior, 'UTF-8') > 60) {
                     $errors[] = 'xCidade do tomador é obrigatória e deve ter 1 a 60 caracteres para endereço exterior (TSCidade)';
                 }
-                if ($t->estadoProvinciaExterior === null || strlen($t->estadoProvinciaExterior) < 1 || strlen($t->estadoProvinciaExterior) > 60) {
+                if ($t->estadoProvinciaExterior === null || mb_strlen($t->estadoProvinciaExterior, 'UTF-8') < 1 || mb_strlen($t->estadoProvinciaExterior, 'UTF-8') > 60) {
                     $errors[] = 'xEstProvReg do tomador é obrigatório e deve ter 1 a 60 caracteres para endereço exterior (TSEstadoProvRegiao)';
                 }
             } else {
@@ -362,7 +362,7 @@ class DpsValidator
             $errors[] = 'fone do tomador deve ter 6 a 20 dígitos numéricos (TSTelefone)';
         }
 
-        if ($t->email !== null && (strlen($t->email) < 1 || strlen($t->email) > 80)) {
+        if ($t->email !== null && (mb_strlen($t->email, 'UTF-8') < 1 || mb_strlen($t->email, 'UTF-8') > 80)) {
             $errors[] = 'email do tomador deve ter 1 a 80 caracteres (TSEmail)';
         }
     }
@@ -377,7 +377,7 @@ class DpsValidator
 
         if (empty($i->razaoSocial)) {
             $errors[] = 'xNome do intermediário é obrigatória (TSNomeRazaoSocial)';
-        } elseif (strlen($i->razaoSocial) > 300) {
+        } elseif (mb_strlen($i->razaoSocial, 'UTF-8') > 300) {
             $errors[] = 'xNome do intermediário deve ter no máximo 300 caracteres (TSNomeRazaoSocial)';
         }
 
@@ -411,7 +411,7 @@ class DpsValidator
             }
         }
 
-        if ($i->nif !== null && (strlen($i->nif) < 1 || strlen($i->nif) > 40)) {
+        if ($i->nif !== null && (mb_strlen($i->nif, 'UTF-8') < 1 || mb_strlen($i->nif, 'UTF-8') > 40)) {
             $errors[] = 'NIF do intermediário deve ter 1 a 40 caracteres (TSNIF)';
         }
 
@@ -423,7 +423,7 @@ class DpsValidator
             $errors[] = 'CAEPF do intermediário deve ter 14 dígitos numéricos (TSCAEPF)';
         }
 
-        if ($i->inscricaoMunicipal !== null && (strlen($i->inscricaoMunicipal) < 1 || strlen($i->inscricaoMunicipal) > 15)) {
+        if ($i->inscricaoMunicipal !== null && (mb_strlen($i->inscricaoMunicipal, 'UTF-8') < 1 || mb_strlen($i->inscricaoMunicipal, 'UTF-8') > 15)) {
             $errors[] = 'IM do intermediário deve ter entre 1 e 15 caracteres (TSInscMun)';
         }
 
@@ -437,23 +437,23 @@ class DpsValidator
             // xLgr, nro e xBairro são obrigatórios (minOccurs=1) dentro de <end>.
             if (empty($i->logradouro)) {
                 $errors[] = 'xLgr do intermediário é obrigatório quando há endereço (TSLogradouro)';
-            } elseif (strlen($i->logradouro) > 255) {
+            } elseif (mb_strlen($i->logradouro, 'UTF-8') > 255) {
                 $errors[] = 'xLgr do intermediário deve ter no máximo 255 caracteres (TSLogradouro)';
             }
 
             if (empty($i->numero)) {
                 $errors[] = 'nro do intermediário é obrigatório quando há endereço — use "S/N" se não houver (TSNumeroEndereco)';
-            } elseif (strlen($i->numero) > 60) {
+            } elseif (mb_strlen($i->numero, 'UTF-8') > 60) {
                 $errors[] = 'nro do intermediário deve ter no máximo 60 caracteres (TSNumeroEndereco)';
             }
 
-            if ($i->complemento !== null && strlen($i->complemento) > 156) {
+            if ($i->complemento !== null && mb_strlen($i->complemento, 'UTF-8') > 156) {
                 $errors[] = 'xCpl do intermediário deve ter no máximo 156 caracteres (TSComplementoEndereco)';
             }
 
             if (empty($i->bairro)) {
                 $errors[] = 'xBairro do intermediário é obrigatório quando há endereço (TSBairro)';
-            } elseif (strlen($i->bairro) > 60) {
+            } elseif (mb_strlen($i->bairro, 'UTF-8') > 60) {
                 $errors[] = 'xBairro do intermediário deve ter no máximo 60 caracteres (TSBairro)';
             }
 
@@ -462,13 +462,13 @@ class DpsValidator
                 if (!preg_match('/^[A-Z]{2}$/', $i->codigoPais)) {
                     $errors[] = 'cPais do intermediário deve ser 2 letras maiúsculas (TSCodPaisISO)';
                 }
-                if ($i->codigoPostalExterior === null || strlen($i->codigoPostalExterior) < 1 || strlen($i->codigoPostalExterior) > 11) {
+                if ($i->codigoPostalExterior === null || mb_strlen($i->codigoPostalExterior, 'UTF-8') < 1 || mb_strlen($i->codigoPostalExterior, 'UTF-8') > 11) {
                     $errors[] = 'cEndPost do intermediário é obrigatório e deve ter 1 a 11 caracteres para endereço exterior (TSCodigoEndPostal)';
                 }
-                if ($i->nomeCidadeExterior === null || strlen($i->nomeCidadeExterior) < 1 || strlen($i->nomeCidadeExterior) > 60) {
+                if ($i->nomeCidadeExterior === null || mb_strlen($i->nomeCidadeExterior, 'UTF-8') < 1 || mb_strlen($i->nomeCidadeExterior, 'UTF-8') > 60) {
                     $errors[] = 'xCidade do intermediário é obrigatória e deve ter 1 a 60 caracteres para endereço exterior (TSCidade)';
                 }
-                if ($i->estadoProvinciaExterior === null || strlen($i->estadoProvinciaExterior) < 1 || strlen($i->estadoProvinciaExterior) > 60) {
+                if ($i->estadoProvinciaExterior === null || mb_strlen($i->estadoProvinciaExterior, 'UTF-8') < 1 || mb_strlen($i->estadoProvinciaExterior, 'UTF-8') > 60) {
                     $errors[] = 'xEstProvReg do intermediário é obrigatório e deve ter 1 a 60 caracteres para endereço exterior (TSEstadoProvRegiao)';
                 }
             } else {
@@ -488,7 +488,7 @@ class DpsValidator
             $errors[] = 'fone do intermediário deve ter 6 a 20 dígitos numéricos (TSTelefone)';
         }
 
-        if ($i->email !== null && (strlen($i->email) < 1 || strlen($i->email) > 80)) {
+        if ($i->email !== null && (mb_strlen($i->email, 'UTF-8') < 1 || mb_strlen($i->email, 'UTF-8') > 80)) {
             $errors[] = 'email do intermediário deve ter 1 a 80 caracteres (TSEmail)';
         }
     }
@@ -500,7 +500,7 @@ class DpsValidator
 
         if (empty($s->discriminacao)) {
             $errors[] = 'xDescServ é obrigatória (TSDesc2000)';
-        } elseif (strlen($s->discriminacao) > 2000) {
+        } elseif (mb_strlen($s->discriminacao, 'UTF-8') > 2000) {
             $errors[] = 'xDescServ deve ter no máximo 2000 caracteres (TSDesc2000)';
         }
 
@@ -589,7 +589,7 @@ class DpsValidator
             return;
         }
 
-        if ($o->inscImobFisc !== null && (strlen($o->inscImobFisc) < 1 || strlen($o->inscImobFisc) > 30)) {
+        if ($o->inscImobFisc !== null && (mb_strlen($o->inscImobFisc, 'UTF-8') < 1 || mb_strlen($o->inscImobFisc, 'UTF-8') > 30)) {
             $errors[] = 'inscImobFisc deve ter 1 a 30 caracteres (TSInscImobFisc)';
         }
 
@@ -605,7 +605,7 @@ class DpsValidator
             $errors[] = 'cObra, cCIB e end são mutuamente exclusivos no grupo obra (TCInfoObra choice)';
         }
 
-        if ($hasCObra && (strlen($o->cObra) < 1 || strlen($o->cObra) > 30)) {
+        if ($hasCObra && (mb_strlen($o->cObra, 'UTF-8') < 1 || mb_strlen($o->cObra, 'UTF-8') > 30)) {
             $errors[] = 'cObra deve ter 1 a 30 caracteres (TSCodObra)';
         }
 
@@ -629,33 +629,33 @@ class DpsValidator
             }
 
             if ($e->endExt !== null) {
-                if (strlen($e->endExt->cEndPost) < 1 || strlen($e->endExt->cEndPost) > 11) {
+                if (mb_strlen($e->endExt->cEndPost, 'UTF-8') < 1 || mb_strlen($e->endExt->cEndPost, 'UTF-8') > 11) {
                     $errors[] = 'cEndPost do endExt da obra deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
                 }
-                if (strlen($e->endExt->xCidade) < 1 || strlen($e->endExt->xCidade) > 60) {
+                if (mb_strlen($e->endExt->xCidade, 'UTF-8') < 1 || mb_strlen($e->endExt->xCidade, 'UTF-8') > 60) {
                     $errors[] = 'xCidade do endExt da obra deve ter 1 a 60 caracteres (TSCidade)';
                 }
-                if (strlen($e->endExt->xEstProvReg) < 1 || strlen($e->endExt->xEstProvReg) > 60) {
+                if (mb_strlen($e->endExt->xEstProvReg, 'UTF-8') < 1 || mb_strlen($e->endExt->xEstProvReg, 'UTF-8') > 60) {
                     $errors[] = 'xEstProvReg do endExt da obra deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
                 }
             }
 
             if (empty($e->xLgr)) {
                 $errors[] = 'xLgr é obrigatório no endereço da obra (TSLogradouro)';
-            } elseif (strlen($e->xLgr) > 255) {
+            } elseif (mb_strlen($e->xLgr, 'UTF-8') > 255) {
                 $errors[] = 'xLgr deve ter no máximo 255 caracteres (TSLogradouro)';
             }
             if (empty($e->nro)) {
                 $errors[] = 'nro é obrigatório no endereço da obra (TSNumeroEndereco)';
-            } elseif (strlen($e->nro) > 60) {
+            } elseif (mb_strlen($e->nro, 'UTF-8') > 60) {
                 $errors[] = 'nro deve ter no máximo 60 caracteres (TSNumeroEndereco)';
             }
-            if ($e->xCpl !== null && (strlen($e->xCpl) < 1 || strlen($e->xCpl) > 156)) {
+            if ($e->xCpl !== null && (mb_strlen($e->xCpl, 'UTF-8') < 1 || mb_strlen($e->xCpl, 'UTF-8') > 156)) {
                 $errors[] = 'xCpl deve ter 1 a 156 caracteres (TSComplementoEndereco)';
             }
             if (empty($e->xBairro)) {
                 $errors[] = 'xBairro é obrigatório no endereço da obra (TSBairro)';
-            } elseif (strlen($e->xBairro) > 60) {
+            } elseif (mb_strlen($e->xBairro, 'UTF-8') > 60) {
                 $errors[] = 'xBairro deve ter no máximo 60 caracteres (TSBairro)';
             }
         }
@@ -711,11 +711,11 @@ class DpsValidator
             $errors[] = 'movTempBens inválido (TSMovTempBens)';
         }
 
-        if ($ce->numeroDeclaracaoImportacao !== null && (strlen($ce->numeroDeclaracaoImportacao) < 1 || strlen($ce->numeroDeclaracaoImportacao) > 12)) {
+        if ($ce->numeroDeclaracaoImportacao !== null && (mb_strlen($ce->numeroDeclaracaoImportacao, 'UTF-8') < 1 || mb_strlen($ce->numeroDeclaracaoImportacao, 'UTF-8') > 12)) {
             $errors[] = 'nDI deve ter 1 a 12 caracteres (TSNumDocImport)';
         }
 
-        if ($ce->numeroRegistroExportacao !== null && (strlen($ce->numeroRegistroExportacao) < 1 || strlen($ce->numeroRegistroExportacao) > 12)) {
+        if ($ce->numeroRegistroExportacao !== null && (mb_strlen($ce->numeroRegistroExportacao, 'UTF-8') < 1 || mb_strlen($ce->numeroRegistroExportacao, 'UTF-8') > 12)) {
             $errors[] = 'nRE deve ter 1 a 12 caracteres (TSNumRegExport)';
         }
 
@@ -736,7 +736,7 @@ class DpsValidator
 
         if (empty($ae->descricao)) {
             $errors[] = 'xNome é obrigatório no grupo atvEvento (TSDesc255)';
-        } elseif (strlen($ae->descricao) > 255) {
+        } elseif (mb_strlen($ae->descricao, 'UTF-8') > 255) {
             $errors[] = 'xNome deve ter no máximo 255 caracteres (TSDesc255)';
         }
 
@@ -766,7 +766,7 @@ class DpsValidator
             $errors[] = 'idAtvEvt e end são mutuamente exclusivos no grupo atvEvento (TCAtvEvento choice)';
         }
 
-        if ($hasId && strlen($ae->identificacaoEvento) > 30) {
+        if ($hasId && mb_strlen($ae->identificacaoEvento, 'UTF-8') > 30) {
             $errors[] = 'idAtvEvt deve ter 1 a 30 caracteres (TSIdeEvento)';
         }
 
@@ -784,13 +784,13 @@ class DpsValidator
             }
 
             if ($ehExterior) {
-                if ($e->codigoPostalExterior === null || strlen($e->codigoPostalExterior) < 1 || strlen($e->codigoPostalExterior) > 11) {
+                if ($e->codigoPostalExterior === null || mb_strlen($e->codigoPostalExterior, 'UTF-8') < 1 || mb_strlen($e->codigoPostalExterior, 'UTF-8') > 11) {
                     $errors[] = 'cEndPost do endExt do evento deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
                 }
-                if ($e->nomeCidadeExterior === null || strlen($e->nomeCidadeExterior) < 1 || strlen($e->nomeCidadeExterior) > 60) {
+                if ($e->nomeCidadeExterior === null || mb_strlen($e->nomeCidadeExterior, 'UTF-8') < 1 || mb_strlen($e->nomeCidadeExterior, 'UTF-8') > 60) {
                     $errors[] = 'xCidade do endExt do evento deve ter 1 a 60 caracteres (TSCidade)';
                 }
-                if ($e->estadoProvinciaExterior === null || strlen($e->estadoProvinciaExterior) < 1 || strlen($e->estadoProvinciaExterior) > 60) {
+                if ($e->estadoProvinciaExterior === null || mb_strlen($e->estadoProvinciaExterior, 'UTF-8') < 1 || mb_strlen($e->estadoProvinciaExterior, 'UTF-8') > 60) {
                     $errors[] = 'xEstProvReg do endExt do evento deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
                 }
             }
@@ -800,20 +800,20 @@ class DpsValidator
             }
             if (empty($e->logradouro)) {
                 $errors[] = 'xLgr é obrigatório no endereço do evento (TSLogradouro)';
-            } elseif (strlen($e->logradouro) > 255) {
+            } elseif (mb_strlen($e->logradouro, 'UTF-8') > 255) {
                 $errors[] = 'xLgr deve ter no máximo 255 caracteres (TSLogradouro)';
             }
             if (empty($e->numero)) {
                 $errors[] = 'nro é obrigatório no endereço do evento (TSNumeroEndereco)';
-            } elseif (strlen($e->numero) > 60) {
+            } elseif (mb_strlen($e->numero, 'UTF-8') > 60) {
                 $errors[] = 'nro deve ter no máximo 60 caracteres (TSNumeroEndereco)';
             }
-            if ($e->complemento !== null && (strlen($e->complemento) < 1 || strlen($e->complemento) > 156)) {
+            if ($e->complemento !== null && (mb_strlen($e->complemento, 'UTF-8') < 1 || mb_strlen($e->complemento, 'UTF-8') > 156)) {
                 $errors[] = 'xCpl deve ter 1 a 156 caracteres (TSComplementoEndereco)';
             }
             if (empty($e->bairro)) {
                 $errors[] = 'xBairro é obrigatório no endereço do evento (TSBairro)';
-            } elseif (strlen($e->bairro) > 60) {
+            } elseif (mb_strlen($e->bairro, 'UTF-8') > 60) {
                 $errors[] = 'xBairro deve ter no máximo 60 caracteres (TSBairro)';
             }
         }
@@ -833,15 +833,15 @@ class DpsValidator
             return;
         }
 
-        if ($ic->idDocTecnico !== null && (strlen($ic->idDocTecnico) < 1 || strlen($ic->idDocTecnico) > 40)) {
+        if ($ic->idDocTecnico !== null && (mb_strlen($ic->idDocTecnico, 'UTF-8') < 1 || mb_strlen($ic->idDocTecnico, 'UTF-8') > 40)) {
             $errors[] = 'idDocTec deve ter 1 a 40 caracteres (TSDRT)';
         }
 
-        if ($ic->docReferencia !== null && (strlen($ic->docReferencia) < 1 || strlen($ic->docReferencia) > 255)) {
+        if ($ic->docReferencia !== null && (mb_strlen($ic->docReferencia, 'UTF-8') < 1 || mb_strlen($ic->docReferencia, 'UTF-8') > 255)) {
             $errors[] = 'docRef deve ter 1 a 255 caracteres (TSDesc255)';
         }
 
-        if ($ic->numeroPedido !== null && (strlen($ic->numeroPedido) < 1 || strlen($ic->numeroPedido) > 60)) {
+        if ($ic->numeroPedido !== null && (mb_strlen($ic->numeroPedido, 'UTF-8') < 1 || mb_strlen($ic->numeroPedido, 'UTF-8') > 60)) {
             $errors[] = 'xPed deve ter 1 a 60 caracteres (TSNumeroEndereco)';
         }
 
@@ -850,13 +850,13 @@ class DpsValidator
                 $errors[] = 'gItemPed deve conter no máximo 99 itens (xItemPed maxOccurs=99)';
             }
             foreach ($ic->itensPedido as $i => $item) {
-                if (strlen($item) < 1 || strlen($item) > 60) {
+                if (mb_strlen($item, 'UTF-8') < 1 || mb_strlen($item, 'UTF-8') > 60) {
                     $errors[] = "xItemPed #{$i} deve ter 1 a 60 caracteres (TSNumeroEndereco)";
                 }
             }
         }
 
-        if ($ic->infoComplementar !== null && (strlen($ic->infoComplementar) < 1 || strlen($ic->infoComplementar) > 2000)) {
+        if ($ic->infoComplementar !== null && (mb_strlen($ic->infoComplementar, 'UTF-8') < 1 || mb_strlen($ic->infoComplementar, 'UTF-8') > 2000)) {
             $errors[] = 'xInfComp deve ter 1 a 2000 caracteres (TSDescInfCompl)';
         }
     }
@@ -992,7 +992,7 @@ class DpsValidator
                 $errors[] = "{$pfx}: xDescOutDed é obrigatório quando tpDedRed=99";
             }
 
-            if ($doc->descricaoOutrasDeducoes !== null && (strlen($doc->descricaoOutrasDeducoes) < 1 || strlen($doc->descricaoOutrasDeducoes) > 150)) {
+            if ($doc->descricaoOutrasDeducoes !== null && (mb_strlen($doc->descricaoOutrasDeducoes, 'UTF-8') < 1 || mb_strlen($doc->descricaoOutrasDeducoes, 'UTF-8') > 150)) {
                 $errors[] = "{$pfx}: xDescOutDed deve ter 1 a 150 caracteres (TSDescOutDedRed)";
             }
 
@@ -1285,7 +1285,7 @@ class DpsValidator
 
         if (empty($dest->xNome)) {
             $errors[] = 'xNome do destinatário é obrigatório (TSDesc150)';
-        } elseif (strlen($dest->xNome) > 150) {
+        } elseif (mb_strlen($dest->xNome, 'UTF-8') > 150) {
             $errors[] = 'xNome do destinatário deve ter no máximo 150 caracteres (TSDesc150)';
         }
 
@@ -1316,7 +1316,7 @@ class DpsValidator
         if ($dest->cpf !== null && !preg_match('/^[0-9]{11}$/', $dest->cpf)) {
             $errors[] = 'CPF do destinatário deve ter 11 dígitos numéricos (TSCPF)';
         }
-        if ($dest->nif !== null && (strlen($dest->nif) < 1 || strlen($dest->nif) > 40)) {
+        if ($dest->nif !== null && (mb_strlen($dest->nif, 'UTF-8') < 1 || mb_strlen($dest->nif, 'UTF-8') > 40)) {
             $errors[] = 'NIF do destinatário deve ter 1 a 40 caracteres (TSNIF)';
         }
         if ($dest->codigoNaoNif !== null && !in_array($dest->codigoNaoNif, CausaNaoNif::valores(), true)) {
@@ -1341,16 +1341,16 @@ class DpsValidator
 
         if ($temEnderecoDest) {
             // Comuns ao TCEndereco (válidos para endNac e endExt).
-            if ($dest->logradouro === null || strlen($dest->logradouro) < 1 || strlen($dest->logradouro) > 255) {
+            if ($dest->logradouro === null || mb_strlen($dest->logradouro, 'UTF-8') < 1 || mb_strlen($dest->logradouro, 'UTF-8') > 255) {
                 $errors[] = 'xLgr do destinatário é obrigatório quando o endereço é informado e deve ter 1 a 255 caracteres (TSLogradouro)';
             }
-            if ($dest->numero === null || strlen($dest->numero) < 1 || strlen($dest->numero) > 60) {
+            if ($dest->numero === null || mb_strlen($dest->numero, 'UTF-8') < 1 || mb_strlen($dest->numero, 'UTF-8') > 60) {
                 $errors[] = 'nro do destinatário é obrigatório quando o endereço é informado e deve ter 1 a 60 caracteres (TSNumeroEndereco)';
             }
-            if ($dest->complemento !== null && (strlen($dest->complemento) < 1 || strlen($dest->complemento) > 156)) {
+            if ($dest->complemento !== null && (mb_strlen($dest->complemento, 'UTF-8') < 1 || mb_strlen($dest->complemento, 'UTF-8') > 156)) {
                 $errors[] = 'xCpl do destinatário deve ter 1 a 156 caracteres (TSComplementoEndereco)';
             }
-            if ($dest->bairro === null || strlen($dest->bairro) < 1 || strlen($dest->bairro) > 60) {
+            if ($dest->bairro === null || mb_strlen($dest->bairro, 'UTF-8') < 1 || mb_strlen($dest->bairro, 'UTF-8') > 60) {
                 $errors[] = 'xBairro do destinatário é obrigatório quando o endereço é informado e deve ter 1 a 60 caracteres (TSBairro)';
             }
 
@@ -1361,13 +1361,13 @@ class DpsValidator
                 if ($dest->codigoPais === null || !preg_match('/^[A-Z]{2}$/', $dest->codigoPais)) {
                     $errors[] = 'cPais do destinatário é obrigatório no endExt e deve ter 2 letras maiúsculas (TSCodPaisISO)';
                 }
-                if ($dest->codigoPostalExterior === null || strlen($dest->codigoPostalExterior) < 1 || strlen($dest->codigoPostalExterior) > 11) {
+                if ($dest->codigoPostalExterior === null || mb_strlen($dest->codigoPostalExterior, 'UTF-8') < 1 || mb_strlen($dest->codigoPostalExterior, 'UTF-8') > 11) {
                     $errors[] = 'cEndPost do destinatário é obrigatório no endExt e deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
                 }
-                if ($dest->nomeCidadeExterior === null || strlen($dest->nomeCidadeExterior) < 1 || strlen($dest->nomeCidadeExterior) > 60) {
+                if ($dest->nomeCidadeExterior === null || mb_strlen($dest->nomeCidadeExterior, 'UTF-8') < 1 || mb_strlen($dest->nomeCidadeExterior, 'UTF-8') > 60) {
                     $errors[] = 'xCidade do destinatário é obrigatório no endExt e deve ter 1 a 60 caracteres (TSCidade)';
                 }
-                if ($dest->estadoProvinciaExterior === null || strlen($dest->estadoProvinciaExterior) < 1 || strlen($dest->estadoProvinciaExterior) > 60) {
+                if ($dest->estadoProvinciaExterior === null || mb_strlen($dest->estadoProvinciaExterior, 'UTF-8') < 1 || mb_strlen($dest->estadoProvinciaExterior, 'UTF-8') > 60) {
                     $errors[] = 'xEstProvReg do destinatário é obrigatório no endExt e deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
                 }
             } else {
@@ -1386,7 +1386,7 @@ class DpsValidator
         if ($dest->fone !== null && !preg_match('/^[0-9]{6,20}$/', $dest->fone)) {
             $errors[] = 'fone do destinatário deve ter 6 a 20 dígitos numéricos (TSTelefone)';
         }
-        if ($dest->email !== null && (strlen($dest->email) < 1 || strlen($dest->email) > 80)) {
+        if ($dest->email !== null && (mb_strlen($dest->email, 'UTF-8') < 1 || mb_strlen($dest->email, 'UTF-8') > 80)) {
             $errors[] = 'email do destinatário deve ter 1 a 80 caracteres (TSEmail)';
         }
     }
@@ -1399,7 +1399,7 @@ class DpsValidator
             return;
         }
 
-        if ($im->inscImobFisc !== null && (strlen($im->inscImobFisc) < 1 || strlen($im->inscImobFisc) > 30)) {
+        if ($im->inscImobFisc !== null && (mb_strlen($im->inscImobFisc, 'UTF-8') < 1 || mb_strlen($im->inscImobFisc, 'UTF-8') > 30)) {
             $errors[] = 'inscImobFisc deve ter 1 a 30 caracteres (TSInscImobFisc)';
         }
 
@@ -1429,33 +1429,33 @@ class DpsValidator
             }
 
             if ($e->endExt !== null) {
-                if (strlen($e->endExt->cEndPost) < 1 || strlen($e->endExt->cEndPost) > 11) {
+                if (mb_strlen($e->endExt->cEndPost, 'UTF-8') < 1 || mb_strlen($e->endExt->cEndPost, 'UTF-8') > 11) {
                     $errors[] = 'cEndPost do endExt do imóvel deve ter 1 a 11 caracteres (TSCodigoEndPostal)';
                 }
-                if (strlen($e->endExt->xCidade) < 1 || strlen($e->endExt->xCidade) > 60) {
+                if (mb_strlen($e->endExt->xCidade, 'UTF-8') < 1 || mb_strlen($e->endExt->xCidade, 'UTF-8') > 60) {
                     $errors[] = 'xCidade do endExt do imóvel deve ter 1 a 60 caracteres (TSCidade)';
                 }
-                if (strlen($e->endExt->xEstProvReg) < 1 || strlen($e->endExt->xEstProvReg) > 60) {
+                if (mb_strlen($e->endExt->xEstProvReg, 'UTF-8') < 1 || mb_strlen($e->endExt->xEstProvReg, 'UTF-8') > 60) {
                     $errors[] = 'xEstProvReg do endExt do imóvel deve ter 1 a 60 caracteres (TSEstadoProvRegiao)';
                 }
             }
 
             if (empty($e->xLgr)) {
                 $errors[] = 'xLgr é obrigatório no endereço do imóvel (TSLogradouro)';
-            } elseif (strlen($e->xLgr) > 255) {
+            } elseif (mb_strlen($e->xLgr, 'UTF-8') > 255) {
                 $errors[] = 'xLgr deve ter no máximo 255 caracteres (TSLogradouro)';
             }
             if (empty($e->nro)) {
                 $errors[] = 'nro é obrigatório no endereço do imóvel (TSNumeroEndereco)';
-            } elseif (strlen($e->nro) > 60) {
+            } elseif (mb_strlen($e->nro, 'UTF-8') > 60) {
                 $errors[] = 'nro deve ter no máximo 60 caracteres (TSNumeroEndereco)';
             }
-            if ($e->xCpl !== null && (strlen($e->xCpl) < 1 || strlen($e->xCpl) > 156)) {
+            if ($e->xCpl !== null && (mb_strlen($e->xCpl, 'UTF-8') < 1 || mb_strlen($e->xCpl, 'UTF-8') > 156)) {
                 $errors[] = 'xCpl deve ter 1 a 156 caracteres (TSComplementoEndereco)';
             }
             if (empty($e->xBairro)) {
                 $errors[] = 'xBairro é obrigatório no endereço do imóvel (TSBairro)';
-            } elseif (strlen($e->xBairro) > 60) {
+            } elseif (mb_strlen($e->xBairro, 'UTF-8') > 60) {
                 $errors[] = 'xBairro deve ter no máximo 60 caracteres (TSBairro)';
             }
         }
@@ -1534,7 +1534,7 @@ class DpsValidator
                 $errors[] = "{$pfx}: xTpReeRepRes é obrigatório quando tpReeRepRes=99 (TSDesc150)";
             }
 
-            if ($doc->xTpReeRepRes !== null && (strlen($doc->xTpReeRepRes) < 1 || strlen($doc->xTpReeRepRes) > 150)) {
+            if ($doc->xTpReeRepRes !== null && (mb_strlen($doc->xTpReeRepRes, 'UTF-8') < 1 || mb_strlen($doc->xTpReeRepRes, 'UTF-8') > 150)) {
                 $errors[] = "{$pfx}: xTpReeRepRes deve ter 1 a 150 caracteres (TSDesc150)";
             }
 
@@ -1544,13 +1544,13 @@ class DpsValidator
                 }
                 if (empty($doc->chaveDFe)) {
                     $errors[] = "{$pfx}: chaveDFe é obrigatória para dFeNacional (TSRTCChaveDFe)";
-                } elseif (strlen($doc->chaveDFe) > 50) {
+                } elseif (mb_strlen($doc->chaveDFe, 'UTF-8') > 50) {
                     $errors[] = "{$pfx}: chaveDFe deve ter no máximo 50 caracteres (TSRTCChaveDFe)";
                 }
                 if ($doc->tipoChaveDFe === '9' && empty($doc->xTipoChaveDFe)) {
                     $errors[] = "{$pfx}: xTipoChaveDFe é obrigatório quando tipoChaveDFe=9 (TSDesc255)";
                 }
-                if ($doc->xTipoChaveDFe !== null && (strlen($doc->xTipoChaveDFe) < 1 || strlen($doc->xTipoChaveDFe) > 255)) {
+                if ($doc->xTipoChaveDFe !== null && (mb_strlen($doc->xTipoChaveDFe, 'UTF-8') < 1 || mb_strlen($doc->xTipoChaveDFe, 'UTF-8') > 255)) {
                     $errors[] = "{$pfx}: xTipoChaveDFe deve ter 1 a 255 caracteres (TSDesc255)";
                 }
             }
@@ -1561,12 +1561,12 @@ class DpsValidator
                 }
                 if (empty($doc->nDocFiscal)) {
                     $errors[] = "{$pfx}: nDocFiscal é obrigatório para docFiscalOutro (TSDesc255)";
-                } elseif (strlen($doc->nDocFiscal) > 255) {
+                } elseif (mb_strlen($doc->nDocFiscal, 'UTF-8') > 255) {
                     $errors[] = "{$pfx}: nDocFiscal deve ter no máximo 255 caracteres (TSDesc255)";
                 }
                 if (empty($doc->xDocFiscal)) {
                     $errors[] = "{$pfx}: xDocFiscal é obrigatório para docFiscalOutro (TSDesc255)";
-                } elseif (strlen($doc->xDocFiscal) > 255) {
+                } elseif (mb_strlen($doc->xDocFiscal, 'UTF-8') > 255) {
                     $errors[] = "{$pfx}: xDocFiscal deve ter no máximo 255 caracteres (TSDesc255)";
                 }
             }
@@ -1574,12 +1574,12 @@ class DpsValidator
             if ($doc->tipoDocumento === 'docOutro') {
                 if (empty($doc->nDoc)) {
                     $errors[] = "{$pfx}: nDoc é obrigatório para docOutro (TSDesc255)";
-                } elseif (strlen($doc->nDoc) > 255) {
+                } elseif (mb_strlen($doc->nDoc, 'UTF-8') > 255) {
                     $errors[] = "{$pfx}: nDoc deve ter no máximo 255 caracteres (TSDesc255)";
                 }
                 if (empty($doc->xDoc)) {
                     $errors[] = "{$pfx}: xDoc é obrigatório para docOutro (TSDesc255)";
-                } elseif (strlen($doc->xDoc) > 255) {
+                } elseif (mb_strlen($doc->xDoc, 'UTF-8') > 255) {
                     $errors[] = "{$pfx}: xDoc deve ter no máximo 255 caracteres (TSDesc255)";
                 }
             }
@@ -1617,7 +1617,7 @@ class DpsValidator
         }
         if ($fornec->nif !== null) {
             $idCount++;
-            if (strlen($fornec->nif) < 1 || strlen($fornec->nif) > 40) {
+            if (mb_strlen($fornec->nif, 'UTF-8') < 1 || mb_strlen($fornec->nif, 'UTF-8') > 40) {
                 $errors[] = "{$pfx}: NIF do fornecedor deve ter 1 a 40 caracteres (TSNIF)";
             }
         }
@@ -1635,7 +1635,7 @@ class DpsValidator
             $errors[] = "{$pfx}: fornecedor — CNPJ, CPF, NIF e cNaoNIF são mutuamente exclusivos";
         }
 
-        if (strlen($fornec->xNome) < 1 || strlen($fornec->xNome) > 150) {
+        if (mb_strlen($fornec->xNome, 'UTF-8') < 1 || mb_strlen($fornec->xNome, 'UTF-8') > 150) {
             $errors[] = "{$pfx}: xNome do fornecedor deve ter 1 a 150 caracteres (TSDesc150)";
         }
     }

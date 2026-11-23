@@ -14,7 +14,7 @@ final readonly class CodigoCIB
     {
         $codigo = trim($codigo);
 
-        if (strlen($codigo) !== 8) {
+        if (mb_strlen($codigo, 'UTF-8') !== 8) {
             throw new DomainException('CIB deve ter exatamente 8 caracteres');
         }
 

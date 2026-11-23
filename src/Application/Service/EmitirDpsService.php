@@ -838,15 +838,15 @@ class EmitirDpsService
             }
         }
 
-        // Prioriza os dados REAIS da NFS-e autorizada (parseados da resposta da SEFIN):
-        // a chave de acesso definitiva e o número da NFS-e (nNFSe). A chave gerada
-        // localmente a partir do DPS é apenas fallback quando a resposta não traz XML.
+        // Usa os dados REAIS da NFS-e autorizada (parseados da resposta da SEFIN): a chave de
+        // acesso definitiva e o número da NFS-e (nNFSe). A chave só existe depois da autorização;
+        // sem o XML da resposta ela permanece null, nunca é inventada a partir da DPS.
         $chaveReal = null;
         $numeroNfse = null;
         if (is_array($xmlParsed)) {
             // O atributo Id do infNFSe segue TSIdNFSe: "NFS" + 50 dígitos (53 posições).
-            // Só extrai a chave (os 50 dígitos) quando o formato confere — id malformado
-            // não vira chave inválida silenciosa; cai no fallback.
+            // Só extrai a chave (os 50 dígitos) quando o formato confere; id malformado
+            // não vira chave inválida silenciosa.
             $id = $xmlParsed['id'] ?? null;
             if (is_string($id) && preg_match('/^NFS([0-9]{50})$/', $id, $m) === 1) {
                 $chaveReal = $m[1];
@@ -857,7 +857,7 @@ class EmitirDpsService
 
         return new NfseResponse(
             success: true,
-            chaveAcesso: $chaveReal ?? $dps->getChaveAcesso()?->getChave(),
+            chaveAcesso: $chaveReal,
             numero: $numeroNfse,
             dados: is_array($data) ? $data : null,
             xml: is_string($data) ? $data : null,
@@ -878,7 +878,7 @@ class EmitirDpsService
             'tpEnteGov' => $ibscbs->getTpEnteGov()?->value,
             'cClassTrib' => $ibscbs->getCClassTrib()->getCodigo(),
             'cCredPres' => $ibscbs->getCCredPres()?->getCodigo(),
-            'vServ' => (string) $dps->getServico()->getValorTotal()->getValue(),
+            'vServ' => (string) $dps->getServico()->getValorServicos()->getValue(),
         ];
 
         if ($ibscbs->getDiferimento() !== null) {

@@ -11,6 +11,9 @@ use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Money;
 
 class Servico
 {
+    /** Valor bruto do serviço (vServ da DPS), antes de descontos e ajustes. */
+    private Money $valorServicos;
+    /** Valor líquido dos descontos (vServ - vDescIncond - vDescCond). Não é o vServ do XML. */
     private Money $valorTotal;
     private Money $baseCalculo;
     private Money $valorIss;
@@ -66,7 +69,10 @@ class Servico
         $descontoIncond = $this->descontoIncondicionado ?? new Money(0);
         $descontoCond = $this->descontoCondicionado ?? new Money(0);
 
+        $this->valorServicos = $valorServicos;
+        // Fórmula oficial (RN E1295): vBC = vServ - vDescIncond - deduções - benefício municipal.
         $this->baseCalculo = $valorServicos
+            ->subtract($descontoIncond)
             ->subtract($valorDeducoes)
             ->subtract($reducaoBM);
         $this->valorIss = $this->aliquotaIss !== null
@@ -133,7 +139,7 @@ class Servico
             throw new \InvalidArgumentException('Discriminação do serviço é obrigatória');
         }
 
-        if (strlen($this->discriminacao) > 2000) {
+        if (mb_strlen($this->discriminacao, 'UTF-8') > 2000) {
             throw new \InvalidArgumentException('Discriminação deve ter no máximo 2000 caracteres');
         }
 
@@ -168,6 +174,13 @@ class Servico
         return $this->localPrestacao;
     }
 
+    /** Valor bruto do serviço: é o que vai no campo vServ da DPS. */
+    public function getValorServicos(): Money
+    {
+        return $this->valorServicos;
+    }
+
+    /** Valor líquido dos descontos incondicional e condicional (não usar como vServ). */
     public function getValorTotal(): Money
     {
         return $this->valorTotal;

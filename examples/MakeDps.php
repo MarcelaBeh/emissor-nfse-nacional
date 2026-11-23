@@ -261,8 +261,11 @@ $request = new DpsRequest(
         codigoTributacao: '010101',
         codigoMunicipioPrestacao: '3550308',
         valorServicos: 1500.00,
+        codigoNbs: '123456789',
         tribISSQN: '1',
         tpRetISSQN: '1',
+        totTribTipo: 'indTotTrib',
+        indTotTrib: '0',
     ),
     ibscbs: $ibscbs,
     substituicao: null,
@@ -314,8 +317,11 @@ $requestComObra = new DpsRequest(
         codigoTributacao: '101010',
         codigoMunicipioPrestacao: '3550308',
         valorServicos: 50000.00,
+        codigoNbs: '123456789',
         tribISSQN: '1',
         tpRetISSQN: '1',
+        totTribTipo: 'indTotTrib',
+        indTotTrib: '0',
         obra: new ObraRequest(
             inscImobFisc: '98765',
             cObra: 'CNO123456789012',
@@ -371,7 +377,8 @@ $requestCompleto = new DpsRequest(
         codigoMunicipio: '3550308',
         uf: 'SP',
         cep: '00000000',
-        codigoPais: '049',
+        codigoPais: 'US',
+        codigoNaoNif: '1', // 1 = dispensado do NIF (tomador no exterior sem documento)
         codigoPostalExterior: '10001-123',
         nomeCidadeExterior: 'New York',
         estadoProvinciaExterior: 'NY',
@@ -383,7 +390,7 @@ $requestCompleto = new DpsRequest(
         valorServicos: 25000.00,
         tribISSQN: '1',
         tpRetISSQN: '1',
-        codigoNbs: '12345678',
+        codigoNbs: '123456789',
         codigoTributacaoMunicipal: '123',
         codigoInternoContribuinte: 'INT001',
         valorRecebido: 24300.00,
@@ -433,10 +440,10 @@ $requestCompleto = new DpsRequest(
         tipoImunidade: null,
         exigSusp: new ExigSuspRequest(
             tipoSuspensao: 1,
-            numeroProcesso: 'PROC-2026-12345',
+            numeroProcesso: '000000000000000000000000012345', // 30 dígitos
         ),
         beneficioMunicipal: new BeneficioMunicipalRequest(
-            numeroBeneficio: 'BM-2026-001',
+            numeroBeneficio: '35503080100001', // 14 dígitos: município (7) + tipo (2) + sequencial (5)
         ),
         tribFederal: new TribFederalRequest(
             pisCofinsCst: '01',

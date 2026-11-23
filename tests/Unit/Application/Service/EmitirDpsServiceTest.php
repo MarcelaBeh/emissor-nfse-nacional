@@ -203,10 +203,10 @@ final class EmitirDpsServiceTest extends TestCase
         $this->assertSame('199', $response->numero);
     }
 
-    public function test_executar_id_malformado_cai_no_fallback_da_chave_local(): void
+    public function test_executar_id_malformado_nao_gera_chave_e_nao_inventa_fallback(): void
     {
-        // Se o Id da NFS-e não bater TSIdNFSe (NFS + 50 dígitos), não vira chave
-        // inválida silenciosa: cai na chave gerada localmente a partir do DPS.
+        // Se o Id da NFS-e não bater TSIdNFSe (NFS + 50 dígitos), não vira chave inválida
+        // silenciosa e a lib também não inventa uma chave a partir da DPS: fica null.
         $request = $this->createValidDpsRequest();
         $xml = '<?xml version="1.0"?><DPS><infDPS Id="' . self::CHAVE_50 . '"></infDPS></DPS>';
         $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
@@ -223,7 +223,7 @@ final class EmitirDpsServiceTest extends TestCase
         $response = $this->service->executar($request);
 
         $this->assertTrue($response->success);
-        $this->assertSame(50, strlen((string) $response->chaveAcesso)); // chave local (fallback), não 'LIXO'
+        $this->assertNull($response->chaveAcesso);
         $this->assertNull($response->numero);
     }
 

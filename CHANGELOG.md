@@ -11,6 +11,30 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ---
 
+## [v2.3.2] - 2026-11-23
+
+### Corrigido
+- **`vServ` era enviado líquido de desconto.** Com serviço de 1000,00 e desconto incondicional de 100,00 o XML
+  saía `vServ=900.00` e `vDescIncond=100.00` (desconto aplicado em dobro). Agora `vServ` é o valor bruto.
+  Quem emite com desconto passa a ter valores diferentes na NFS-e: conferir em produção restrita antes de atualizar.
+  `Servico::getValorServicos()` devolve o bruto; `getValorTotal()` continua sendo o líquido de descontos.
+- **Limites de texto agora são medidos em caracteres, não em bytes.** Uma descrição de serviço (`xDescServ`, máx.
+  2000) com acentos podia passar de 2000 bytes e ser recusada pela lib mesmo estando dentro do limite do XSD, que
+  conta caracteres. Vale para todos os campos de texto validados (descrição, nome, endereço, complemento etc.).
+- **Prestador CPF voltou a conseguir emitir.** `Dps::gerarChaveAcesso()` lançava `InvalidChaveAcessoException`
+  para CPF (chave de 47 posições). A inscrição federal agora ocupa as 14 posições do `TSIdDPS` (CPF com zeros à
+  esquerda), como já fazia o `DpsIdService`.
+- **`NfseResponse::chaveAcesso` deixou de devolver uma chave inventada.** Sem o XML da resposta ele é `null`;
+  antes caía numa "chave" montada a partir da DPS, que não é chave de NFS-e.
+- **Base de cálculo local do ISSQN** passou a subtrair o desconto incondicional
+  (`vBC = vServ - vDescIncond - deduções - benefício municipal`). Valor informativo, não enviado.
+- **Logs:** o `SensitiveDataSanitizer` passou a mascarar CNPJ e chave de acesso alfanuméricos (CNPJ alfanumérico a
+  partir de julho de 2026).
+- **`examples/MakeDps.php`** era rejeitado pela própria validação da lib nos três requests (sem `totTribTipo` e
+  NBS, tomador no exterior sem `cNaoNIF`, país fora do ISO-2, NBS, processo e benefício com tamanho errado).
+
+---
+
 ## [v2.3.1] - 2026-07-02
 
 ### Corrigido
@@ -325,7 +349,8 @@ Ajustes de leiaute confirmados pela **NT-007 SE/CGNFS-e v1.0**.
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.1...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.2...HEAD
+[v2.3.2]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.1...v2.3.2
 [v2.3.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.0...v2.3.1
 [v2.3.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.9...v2.3.0
 [v2.2.9]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.8...v2.2.9

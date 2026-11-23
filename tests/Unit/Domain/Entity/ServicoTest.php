@@ -61,9 +61,10 @@ final class ServicoTest extends TestCase
             valorDeducaoPadrao: 200.00,
         );
 
+        // vBC = vServ - vDescIncond - dedução: 2000 - 50 - 200 = 1750 (RN E1295).
         $this->assertSame(1920.00, $servico->getValorTotal()->getValue());
-        $this->assertSame(1800.00, $servico->getBaseCalculo()->getValue());
-        $this->assertSame(90.00, $servico->getValorIss()->getValue());
+        $this->assertSame(1750.00, $servico->getBaseCalculo()->getValue());
+        $this->assertSame(87.50, $servico->getValorIss()->getValue());
     }
 
     public function test_deducao_percentual_reduz_base_calculo(): void
@@ -365,6 +366,82 @@ final class ServicoTest extends TestCase
             valorServicos: new Money(1000.00),
             descontoIncondicionado: new Money(0),
             descontoCondicionado: new Money(0),
+            aliquotaIss: 5.0,
+        );
+    }
+
+    public function test_valor_servicos_e_o_valor_bruto_e_valor_total_e_o_liquido_de_descontos(): void
+    {
+        // O vServ da DPS é o bruto; o valor líquido de descontos é outro número (não pode ser enviado como vServ).
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(100.00),
+            descontoCondicionado: new Money(50.00),
+            aliquotaIss: 2.0,
+        );
+
+        $this->assertSame(1000.00, $servico->getValorServicos()->getValue());
+        $this->assertSame(850.00, $servico->getValorTotal()->getValue());
+    }
+
+    public function test_desconto_incondicionado_reduz_a_base_de_calculo_do_issqn(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(100.00),
+            aliquotaIss: 2.0,
+        );
+
+        $this->assertSame(900.00, $servico->getBaseCalculo()->getValue());
+        $this->assertSame(18.00, $servico->getValorIss()->getValue());
+    }
+
+    public function test_desconto_condicionado_nao_reduz_a_base_de_calculo_do_issqn(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoCondicionado: new Money(100.00),
+            aliquotaIss: 2.0,
+        );
+
+        $this->assertSame(1000.00, $servico->getBaseCalculo()->getValue());
+    }
+
+    public function test_discriminacao_de_2000_caracteres_acentuados_e_aceita(): void
+    {
+        // 2000 caracteres = 4000 bytes em UTF-8. O limite do XSD (TSDesc2000) é em caracteres.
+        $discriminacao = str_repeat('ç', 2000);
+
+        $servico = new Servico(
+            discriminacao: $discriminacao,
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(100.00),
+            aliquotaIss: 5.0,
+        );
+
+        $this->assertSame($discriminacao, $servico->getDiscriminacao());
+    }
+
+    public function test_discriminacao_de_2001_caracteres_acentuados_throws(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('no máximo 2000 caracteres');
+
+        new Servico(
+            discriminacao: str_repeat('ç', 2001),
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(100.00),
             aliquotaIss: 5.0,
         );
     }

@@ -60,6 +60,11 @@ class Dps
         }
     }
 
+    /**
+     * Gera (uma única vez) os dados do identificador `infDPS/@Id` (TSIdDPS): município (7), tipo de
+     * inscrição (1), inscrição federal (14), série (5) e número (15), mais 8 zeros de preenchimento.
+     * Não é uma chave de acesso de NFS-e: esta só existe depois da autorização.
+     */
     public function gerarChaveAcesso(): ChaveAcesso
     {
         if ($this->chaveAcesso !== null) {
@@ -73,6 +78,8 @@ class Dps
 
         $docStr = $documento->__toString();
         $tpInsc = strlen($docStr) === 14 ? '2' : '1';
+        // TSIdDPS: a inscrição federal ocupa 14 posições; o CPF (11) é completado com zeros à esquerda.
+        $docStr = str_pad($docStr, 14, '0', STR_PAD_LEFT);
 
         $codigo = sprintf(
             '%s%s%s%05d%015d00000000',

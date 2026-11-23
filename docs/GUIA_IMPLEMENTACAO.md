@@ -449,6 +449,13 @@ class Servico
         }
     }
     
+    /** Valor bruto: é o que vai no campo vServ da DPS. */
+    public function getValorServicos(): Money
+    {
+        return $this->valorServicos;
+    }
+
+    /** Valor líquido dos descontos. Não usar como vServ. */
     public function getValorTotal(): Money
     {
         return $this->valorTotal;

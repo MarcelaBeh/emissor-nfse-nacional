@@ -1,7 +1,7 @@
 {
     "name": "marcelabeh/emissor-nfse-nacional",
     "type": "library",
-    "description": "Biblioteca PHP para emissão, consulta e cancelamento de NFS-e Nacional (Sefin) — Clean Architecture, validação XSD v1.01, assinatura SHA-256, suporte IBS/CBS",
+    "description": "Biblioteca PHP para emissão, consulta e cancelamento de NFS-e Nacional (Sefin)",
     "keywords": [
         "nfse",
         "nfse-nacional",

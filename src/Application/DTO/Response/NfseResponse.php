@@ -9,9 +9,9 @@ final readonly class NfseResponse
     /**
      * @param bool $success reflete o sucesso HTTP da requisição (status 2xx), NÃO necessariamente o
      *        sucesso de negócio na SEFIN. Para confirmar a emissão, inspecione `xml`/`dados`.
-     * @param string|null $chaveAcesso chave de acesso da NFS-e. Quando a SEFIN retorna o XML da
-     *        NFS-e autorizada, é a chave REAL extraída da resposta (atributo `Id` do `infNFSe`);
-     *        em sucesso HTTP sem XML, cai para a chave calculada localmente a partir do DPS.
+     * @param string|null $chaveAcesso chave de acesso da NFS-e, extraída da resposta da SEFIN
+     *        (atributo `Id` do `infNFSe`). É null quando a resposta não traz o XML da NFS-e
+     *        autorizada: a chave só existe após a autorização e não é calculada localmente.
      * @param string|null $numero número da NFS-e (`nNFSe`), extraído da resposta da SEFIN.
      * @param array<string, mixed>|null $dados
      * @param list<array{codigo: string|null, descricao: string}> $erros lista completa dos erros

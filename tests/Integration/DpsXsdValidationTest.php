@@ -417,6 +417,101 @@ final class DpsXsdValidationTest extends TestCase
         $this->expectNotToPerformAssertions();
     }
 
+    public function test_dps_prestador_cpf_gera_id_valido_no_xsd(): void
+    {
+        // Regressão: antes o prestador CPF não conseguia gerar a chave (47 posições) e a emissão falhava.
+        $dps = new Dps(
+            tipoAmbiente: TipoAmbiente::HOMOLOGACAO,
+            dataEmissao: new \DateTimeImmutable('2026-06-15T10:00:00'),
+            versaoAplicacao: '1.0.0',
+            serie: 1,
+            numero: 123,
+            dataCompetencia: new \DateTimeImmutable('2026-06-01'),
+            tipoEmissao: TipoEmitente::PRESTADOR,
+            codigoMunicipioEmissor: new CodigoMunicipio('3550308'),
+            prestador: new Prestador(
+                documento: new \MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\Cpf('52998224725'),
+                inscricaoMunicipal: null,
+                razaoSocial: 'Prestador CPF',
+                telefone: null,
+                email: null,
+                endereco: $this->createEndereco(),
+                regimeTributario: RegimeTributario::SIMPLES_NACIONAL,
+            ),
+            tomador: new Tomador(
+                documento: new Cnpj('33444555000181'),
+                razaoSocial: 'Tomador Ltda',
+                telefone: null,
+                email: null,
+                endereco: $this->createEndereco(),
+            ),
+            servico: new Servico(
+                discriminacao: 'Serviço de teste',
+                codigoTributacao: '010101',
+                localPrestacao: new CodigoMunicipio('3550308'),
+                valorServicos: new Money(1000.00),
+                descontoIncondicionado: new Money(0),
+                descontoCondicionado: new Money(0),
+                aliquotaIss: 2.0,
+                totTribTipo: 'indTotTrib',
+                indTotTrib: '0',
+            ),
+        );
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        self::assertMatchesRegularExpression('/Id="DPS35503081' . '00052998224725' . '[0-9]{20}"/', $xml);
+    }
+
+    public function test_dps_descricao_de_2000_caracteres_acentuados_validates_against_xsd(): void
+    {
+        // TSDesc2000 limita em caracteres (xs:maxLength). 2000 "ç" ocupam 4000 bytes em UTF-8 e o
+        // XSD aceita; a biblioteca recusava por medir bytes com strlen().
+        $descricao = str_repeat('ç', 2000);
+        $servico = new Servico(
+            discriminacao: $descricao,
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(0),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 2.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+        );
+        $dps = $this->createDps(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        self::assertStringContainsString("<xDescServ>{$descricao}</xDescServ>", $xml);
+    }
+
+    public function test_dps_vserv_bruto_com_desconto_validates_against_xsd(): void
+    {
+        $servico = new Servico(
+            discriminacao: 'Serviço com desconto',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money(100.00),
+            descontoCondicionado: new Money(0),
+            aliquotaIss: 2.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+        );
+        $dps = $this->createDps(servico: $servico);
+        $dps->gerarChaveAcesso();
+
+        $xml = $this->builder->build($dps);
+        $this->xsdValidator->validate($xml, 'DPS');
+
+        self::assertStringContainsString('<vServ>1000.00</vServ>', $xml);
+        self::assertStringContainsString('<vDescIncond>100.00</vDescIncond>', $xml);
+    }
     public function test_dps_without_ibscbs_validates_against_xsd(): void
     {
         $dps = $this->createDps();

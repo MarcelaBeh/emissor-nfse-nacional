@@ -35,7 +35,7 @@ $certificado = Certificate::readPfx(file_get_contents($caminhoCertificado), $sen
 // 2. Criar configuração
 $config = ConfigFactory::createHomologacao('codigo-ibge-municipio');
 
-// 3. Criar facade (aceita Configuration|array — sem cast)
+// 3. Criar facade (aceita Configuration|array - sem cast)
 $nfse = NfseNacionalFacade::create($config, $certificado);
 
 // 4. Emitir DPS
