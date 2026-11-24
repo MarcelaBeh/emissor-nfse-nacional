@@ -13,6 +13,7 @@ use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\CancelarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\EmitirDpsService;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\EventoProcessado;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\Configuration;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Exception\CertificateExpiredException;
 use MarcelaBeh\EmissorNfseNacional\Presentation\Factory\ServiceFactory;
@@ -73,7 +74,8 @@ class NfseNacionalFacade
     }
 
     /**
-     * Consulta o DPS original de uma NFS-e pela chave de acesso.
+     * @deprecated desde a 2.4.0. Nunca funcionou: a SEFIN consulta a DPS pelo Id da DPS e devolve a chave da NFS-e. Use
+     *             `consultarChavePorDps()`; os dados da DPS de uma NFS-e vêm em `consultarPorChave()->dados['dps']`.
      *
      * @return array<string, mixed>
      * @throws ServiceException se a comunicação com a API falhar
@@ -84,7 +86,20 @@ class NfseNacionalFacade
     }
 
     /**
-     * Cancela, manifesta ou substitui uma NFS-e via evento.
+     * Descobre a chave de acesso da NFS-e gerada a partir de uma DPS, pelo Id da DPS ("DPS" + 42 dígitos). Devolve null
+     * se nenhuma NFS-e foi gerada com esse Id.
+     *
+     * @throws ValidationException se o Id não tiver o formato do TSIdDPS
+     * @throws ServiceException se a comunicação com a API falhar
+     */
+    public function consultarChavePorDps(string $idDps): ?string
+    {
+        return $this->consultarNfseService->consultarChavePorDps($idDps);
+    }
+
+    /**
+     * Cancela ou manifesta uma NFS-e via evento. A substituição não é um pedido de evento: emita a NFS-e substituta com
+     * `DpsRequest::$substituicao` e a SEFIN registra o evento 105102 na original.
      *
      * @throws ValidationException se os dados do evento forem inválidos
      * @throws ServiceException se a comunicação com a API falhar
@@ -96,6 +111,9 @@ class NfseNacionalFacade
 
     /**
      * Consulta os eventos registrados para uma NFS-e.
+     *
+     * @deprecated desde a 2.4.0. A SEFIN só consulta eventos por tipo e sequencial; sem eles responde 405, que aqui vira
+     *             "Eventos não encontrados". Use `consultarEventosProcessados()`.
      *
      * @return array<int, mixed>
      * @throws ServiceException se a comunicação com a API falhar
@@ -110,6 +128,20 @@ class NfseNacionalFacade
             $tipoEvento,
             $sequencial
         ));
+    }
+
+    /**
+     * Consulta um evento já registrado (o cancelamento, por exemplo, é o tipo 101101 sequencial 1) e devolve o evento
+     * processado: data e hora do registro, sequencial e o XML assinado para guardar como comprovante. Lista vazia se a
+     * SEFIN não encontrar o evento.
+     *
+     * @return list<EventoProcessado>
+     * @throws ValidationException se a chave, o tipo ou o sequencial forem inválidos
+     * @throws ServiceException se a comunicação com a API falhar ou o evento não puder ser lido
+     */
+    public function consultarEventosProcessados(string $chave, string $tipoEvento, int $sequencial): array
+    {
+        return $this->consultarNfseService->consultarEventosProcessados($chave, $tipoEvento, $sequencial);
     }
 
     /**

@@ -9,6 +9,35 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [v2.4.0] - 2026-11-24
+
+### Adicionado
+- `NfseResponse::$alertas`: avisos (`alertas[]`) previstos no contrato da API da SEFIN para a NFS-e autorizada. Antes eram
+  descartados.
+- Leitura do evento processado (`evento_v1.01.xsd`): `EventoResponse::$evento` e `consultarEventosProcessados()` devolvem
+  data e hora do registro, sequencial e o XML assinado do evento, como comprovante. A resposta do cancelamento o traz em
+  base64 simples e a consulta em base64 duplo; os dois são aceitos.
+- `consultarChavePorDps()`: descobre a chave da NFS-e pelo Id da DPS.
+
+### Corrigido
+- `vDescCond` zerado: com só desconto incondicionado, a DPS saía com `<vDescCond>0.00</vDescCond>` e a SEFIN rejeitava (E0432).
+- Consulta de NFS-e: `consultarPorChave()` agora preenche `chaveAcesso` e `numero` e devolve o erro real da SEFIN (antes
+  qualquer falha virava "NFSe não encontrada"). O cancelamento não aparece na consulta da nota (`cStat` segue 100): use
+  `consultarEventosProcessados()`.
+- Substituição: a SEFIN recusa o pedido de evento `105102` enviado pelo emitente (E1861). O `EventoValidator` passa a
+  recusá-lo e orientar a emitir a DPS substituta com `subst`, que faz a SEFIN registrar o evento na nota original.
+- Substituição: o `DpsValidator` aplica a RN E0042 (parte 2): o município, o tipo de inscrição e a inscrição da chave
+  substituída devem ser os do prestador da DPS. O dígito verificador da chave não é validado, porque o cálculo não
+  consta nos documentos oficiais; a SEFIN o confere.
+
+### Descontinuado
+Só marcados como `@deprecated`: continuam funcionando como antes.
+- `consultarDpsPorChave()`: nunca funcionou (a SEFIN consulta a DPS pelo Id da DPS, não pela chave da NFS-e). Use
+  `consultarChavePorDps()`.
+- `consultarEventos()`: a SEFIN exige tipo e sequencial (sem eles responde 405). Use `consultarEventosProcessados()`.
+- `nSeqEvento`, `ambGer`, `dhProc`, `nDFSe` e `chSubstituta` do `EventoRequest`: os quatro primeiros são do evento processado
+  (resposta) e sempre foram ignorados; o último pertence ao pedido de substituição, que a SEFIN recusa.
+
 ---
 
 ## [v2.3.2] - 2026-11-23
@@ -349,7 +378,8 @@ Ajustes de leiaute confirmados pela **NT-007 SE/CGNFS-e v1.0**.
 - Facade `NfseNacionalFacade` para uso simplificado
 - PHPStan level 8 configurado (0 erros)
 
-[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.2...HEAD
+[Unreleased]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.4.0...HEAD
+[v2.4.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.2...v2.4.0
 [v2.3.2]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.1...v2.3.2
 [v2.3.1]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.3.0...v2.3.1
 [v2.3.0]: https://github.com/marcelabeh/emissor-nfse-nacional/compare/v2.2.9...v2.3.0

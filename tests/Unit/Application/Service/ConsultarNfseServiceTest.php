@@ -7,12 +7,16 @@ namespace MarcelaBeh\EmissorNfseNacional\Tests\Unit\Application\Service;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Request\ConsultaRequest;
 use MarcelaBeh\EmissorNfseNacional\Application\DTO\Response\NfseResponse;
 use MarcelaBeh\EmissorNfseNacional\Application\Exception\ServiceException;
+use MarcelaBeh\EmissorNfseNacional\Application\Exception\ValidationException;
 use MarcelaBeh\EmissorNfseNacional\Application\Service\ConsultarNfseService;
 use MarcelaBeh\EmissorNfseNacional\Application\Validator\ConsultaValidator;
+use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\EventoProcessado;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\ApiConnector;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\NfseXmlParser;
+use MarcelaBeh\EmissorNfseNacional\Tests\Support\EventoProcessadoXml;
 use PHPUnit\Framework\TestCase;
 
 final class ConsultarNfseServiceTest extends TestCase
@@ -186,4 +190,267 @@ final class ConsultarNfseServiceTest extends TestCase
         $this->assertSame(['erro' => 'Eventos não encontrados'], $result);
     }
 
+    public function test_consultar_por_chave_preenche_chave_e_numero(): void
+    {
+        $this->validator->expects($this->once())->method('validate');
+        $this->apiEndpoints->method('consultarNfse')->willReturn('u');
+        $this->apiConnector->method('get')->willReturn(['success' => true, 'data' => '<NFSe/>']);
+        $this->xmlParser->method('parse')->willReturn([['id' => 'NFS' . self::CHAVE_50, 'numero' => '264']]);
+
+        $response = $this->service->consultarPorChave(self::CHAVE_50);
+
+        $this->assertTrue($response->success);
+        $this->assertSame(self::CHAVE_50, $response->chaveAcesso);
+        $this->assertSame('264', $response->numero);
+    }
+
+    public function test_consultar_por_chave_com_id_malformado_nao_inventa_chave(): void
+    {
+        $this->validator->method('validate');
+        $this->apiEndpoints->method('consultarNfse')->willReturn('u');
+        $this->apiConnector->method('get')->willReturn(['success' => true, 'data' => '<NFSe/>']);
+        $this->xmlParser->method('parse')->willReturn([['id' => 'LIXO', 'numero' => '']]);
+
+        $response = $this->service->consultarPorChave(self::CHAVE_50);
+
+        $this->assertTrue($response->success);
+        $this->assertNull($response->chaveAcesso);
+        $this->assertNull($response->numero);
+    }
+
+    public function test_consultar_por_chave_nao_encontrada_mostra_o_erro_da_sefin(): void
+    {
+        // Na consulta a SEFIN devolve `erro` como objeto unico.
+        $erro = ['codigo' => 'E2401', 'descricao' => 'Chave de acesso não encontrada.'];
+        $this->validator->method('validate');
+        $this->apiEndpoints->method('consultarNfse')->willReturn('u');
+        $this->apiConnector->method('get')->willReturn(['success' => false, 'status' => 404, 'data' => ['erro' => $erro]]);
+
+        $response = $this->service->consultarPorChave(self::CHAVE_50);
+
+        $this->assertFalse($response->success);
+        $this->assertSame('E2401 - Chave de acesso não encontrada.', $response->mensagem);
+        $this->assertSame([['codigo' => 'E2401', 'descricao' => 'Chave de acesso não encontrada.']], $response->erros);
+        $this->assertSame(['erro' => $erro], $response->dados);
+    }
+
+    public function test_consultar_por_chave_falha_que_nao_e_404_nao_diz_que_nao_foi_encontrada(): void
+    {
+        $this->validator->method('validate');
+        $this->apiEndpoints->method('consultarNfse')->willReturn('u');
+        $this->apiConnector->method('get')->willReturn(['success' => false, 'status' => 403, 'data' => ['message' => '']]);
+
+        $response = $this->service->consultarPorChave(self::CHAVE_50);
+
+        $this->assertFalse($response->success);
+        $this->assertSame('Falha ao consultar NFSe (HTTP 403)', $response->mensagem);
+        $this->assertSame([], $response->erros);
+    }
+
+    public function test_consultar_por_chave_falha_com_erros_em_lista_mostra_a_mensagem_da_sefin(): void
+    {
+        $this->validator->method('validate');
+        $this->apiEndpoints->method('consultarNfse')->willReturn('u');
+        $this->apiConnector->method('get')->willReturn([
+            'success' => false,
+            'status' => 500,
+            'data' => ['erros' => [['Codigo' => 'E9000', 'Descricao' => 'Falha interna']]],
+        ]);
+
+        $response = $this->service->consultarPorChave(self::CHAVE_50);
+
+        $this->assertSame('E9000 - Falha interna', $response->mensagem);
+    }
+
+    private const ID_DPS = 'DPS' . '3550308' . '2' . '11444777000161' . '00001' . '000000000000123';
+
+    public function test_consultar_chave_por_dps_devolve_a_chave_da_nfse(): void
+    {
+        $this->apiEndpoints->expects($this->once())->method('verificarDps')->with(self::ID_DPS)->willReturn('u');
+        $this->apiConnector->method('get')->willReturn(['success' => true, 'status' => 200, 'data' => ['chaveAcesso' => self::CHAVE_50]]);
+
+        $this->assertSame(self::CHAVE_50, $this->service->consultarChavePorDps(self::ID_DPS));
+    }
+
+    public function test_consultar_chave_por_dps_sem_nfse_gerada_devolve_null(): void
+    {
+        $this->apiEndpoints->method('verificarDps')->willReturn('u');
+        $this->apiConnector->method('get')->willReturn([
+            'success' => false,
+            'status' => 404,
+            'data' => ['erro' => ['codigo' => 'E2404', 'descricao' => 'Não foi gerada uma NFS-e com o identificador de DPS informado']],
+        ]);
+
+        $this->assertNull($this->service->consultarChavePorDps(self::ID_DPS));
+    }
+
+    public function test_consultar_chave_por_dps_outra_falha_mostra_o_erro_da_sefin(): void
+    {
+        $this->apiEndpoints->method('verificarDps')->willReturn('u');
+        $this->apiConnector->method('get')->willReturn([
+            'success' => false,
+            'status' => 400,
+            'data' => ['erro' => ['codigo' => 'E2400', 'descricao' => 'Identificador mal formado.']],
+        ]);
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('Falha ao consultar a DPS: E2400 - Identificador mal formado.');
+
+        $this->service->consultarChavePorDps(self::ID_DPS);
+    }
+
+    public function test_consultar_chave_por_dps_resposta_sem_chave_lanca_excecao(): void
+    {
+        $this->apiEndpoints->method('verificarDps')->willReturn('u');
+        $this->apiConnector->method('get')->willReturn(['success' => true, 'status' => 200, 'data' => ['chaveAcesso' => 'curta']]);
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('sem a chave de acesso');
+
+        $this->service->consultarChavePorDps(self::ID_DPS);
+    }
+
+    public function test_consultar_chave_por_dps_recusa_id_fora_do_formato(): void
+    {
+        $this->apiConnector->expects($this->never())->method('get');
+
+        $this->expectException(ValidationException::class);
+
+        // a chave da NFS-e (50 posições) não é o Id da DPS
+        $this->service->consultarChavePorDps(self::CHAVE_50);
+    }
+
+    public function test_consultar_chave_por_dps_falha_http_vira_service_exception(): void
+    {
+        $this->apiEndpoints->method('verificarDps')->willReturn('u');
+        $this->apiConnector->method('get')->willThrowException(new HttpException('Connection timeout', 504));
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('Falha ao consultar a DPS: Connection timeout');
+
+        $this->service->consultarChavePorDps(self::ID_DPS);
+    }
+
+    /**
+     * @param array<string, mixed> $resposta
+     */
+    private function simularConsultaDeEvento(array $resposta): void
+    {
+        $this->validator->method('validate');
+        $this->apiEndpoints->method('consultarEventos')->willReturn('https://api.example.com/nfse/x/eventos/101101/1');
+        $this->apiConnector->expects($this->once())->method('get')->willReturn($resposta);
+    }
+
+    public function test_consultar_eventos_processados_le_o_xml_em_base64_duplo(): void
+    {
+        $arquivo = EventoProcessadoXml::gzipBase64Duplo(EventoProcessadoXml::build());
+        $this->validator->expects($this->once())->method('validate');
+        $this->apiEndpoints->expects($this->once())->method('consultarEventos')->with(self::CHAVE_50, '101101', 1)->willReturn('u');
+        $this->apiConnector->method('get')->willReturn([
+            'success' => true,
+            'status' => 200,
+            'data' => ['eventos' => [['chaveAcesso' => self::CHAVE_50, 'tipoEvento' => 101101, 'arquivoXml' => $arquivo]]],
+        ]);
+
+        $eventos = $this->service->consultarEventosProcessados(self::CHAVE_50, '101101', 1);
+
+        $this->assertCount(1, $eventos);
+        $this->assertInstanceOf(EventoProcessado::class, $eventos[0]);
+        $this->assertSame(TipoEvento::CANCELAMENTO, $eventos[0]->pedido->tipoEvento);
+        $this->assertSame('1', $eventos[0]->nSeqEvento);
+    }
+
+    public function test_consultar_eventos_processados_404_devolve_lista_vazia(): void
+    {
+        $this->simularConsultaDeEvento(['success' => false, 'status' => 404, 'data' => []]);
+
+        $this->assertSame([], $this->service->consultarEventosProcessados(self::CHAVE_50, '101101', 1));
+    }
+
+    public function test_consultar_eventos_processados_mostra_o_erro_da_sefin(): void
+    {
+        // Nas consultas a SEFIN devolve `erro` como objeto unico, nao como lista.
+        $this->simularConsultaDeEvento([
+            'success' => false,
+            'status' => 400,
+            'data' => ['erro' => ['codigo' => 'E2400', 'descricao' => 'Identificador mal formado.']],
+        ]);
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('Falha ao consultar evento: E2400 - Identificador mal formado.');
+
+        $this->service->consultarEventosProcessados(self::CHAVE_50, '101101', 1);
+    }
+
+    public function test_consultar_eventos_processados_erro_sem_mensagem_mostra_o_status(): void
+    {
+        $this->simularConsultaDeEvento(['success' => false, 'status' => 503, 'data' => ['message' => '']]);
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('HTTP 503');
+
+        $this->service->consultarEventosProcessados(self::CHAVE_50, '101101', 1);
+    }
+
+    public function test_consultar_eventos_processados_falha_http_vira_service_exception(): void
+    {
+        $this->validator->method('validate');
+        $this->apiEndpoints->method('consultarEventos')->willReturn('u');
+        $this->apiConnector->method('get')->willThrowException(new HttpException('Connection timeout', 504));
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('Falha ao consultar evento: Connection timeout');
+
+        $this->service->consultarEventosProcessados(self::CHAVE_50, '101101', 1);
+    }
+
+    public function test_consultar_eventos_processados_recusa_tipo_invalido(): void
+    {
+        $this->validator->method('validate');
+        $this->apiConnector->expects($this->never())->method('get');
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Tipo de evento inválido');
+
+        $this->service->consultarEventosProcessados(self::CHAVE_50, '999999', 1);
+    }
+
+    public function test_consultar_eventos_processados_recusa_sequencial_fora_de_1_a_999(): void
+    {
+        $this->validator->method('validate');
+        $this->apiConnector->expects($this->never())->method('get');
+
+        foreach ([0, 1000, -1] as $sequencial) {
+            try {
+                $this->service->consultarEventosProcessados(self::CHAVE_50, '101101', $sequencial);
+                $this->fail("O sequencial {$sequencial} deveria ser recusado");
+            } catch (ValidationException $e) {
+                $this->assertStringContainsString('entre 1 e 999', $e->getMessage());
+            }
+        }
+    }
+
+    public function test_consultar_eventos_processados_item_sem_arquivo_xml_lanca_excecao(): void
+    {
+        $this->simularConsultaDeEvento(['success' => true, 'status' => 200, 'data' => ['eventos' => [['chaveAcesso' => self::CHAVE_50]]]]);
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('sem o campo arquivoXml');
+
+        $this->service->consultarEventosProcessados(self::CHAVE_50, '101101', 1);
+    }
+
+    public function test_consultar_eventos_processados_arquivo_ilegivel_lanca_excecao(): void
+    {
+        $this->simularConsultaDeEvento([
+            'success' => true,
+            'status' => 200,
+            'data' => ['eventos' => [['arquivoXml' => EventoProcessadoXml::gzipBase64Duplo('<evento versao="1.01"/>')]]],
+        ]);
+
+        $this->expectException(ServiceException::class);
+        $this->expectExceptionMessage('Não foi possível ler o evento');
+
+        $this->service->consultarEventosProcessados(self::CHAVE_50, '101101', 1);
+    }
 }

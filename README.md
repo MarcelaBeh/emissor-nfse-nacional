@@ -112,9 +112,11 @@ src/
 
 - `emitirDps(DpsRequest)` → `NfseResponse`
 - `consultarPorChave(string)` → `NfseResponse|null`
-- `consultarDpsPorChave(string)` → `array`
+- `consultarChavePorDps(string idDps)`: devolve a chave da NFS-e gerada (`string|null`)
 - `cancelar(EventoRequest)` → `EventoResponse`
-- `consultarEventos(string)` → `array`
+- `consultarEventosProcessados(string chave, string tipo, int sequencial)`: devolve `list<EventoProcessado>`
+
+`consultarDpsPorChave()` e `consultarEventos()` estão descontinuados desde a 2.4.0 (veja o CHANGELOG).
 
 ## ⚠️ Avisos Importantes
 

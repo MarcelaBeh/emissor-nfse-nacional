@@ -150,6 +150,42 @@ final class EmitirDpsServiceTest extends TestCase
         $this->assertSame(self::CHAVE_50, $response->chaveAcesso);
         $this->assertSame('196', $response->numero);
         $this->assertSame($responseXml, $response->xml);
+        $this->assertSame([], $response->alertas);
+    }
+
+    public function test_executar_expoe_alertas_da_sefin_na_nfse_autorizada(): void
+    {
+        // O contrato (OpenAPI) traz alertas[] com codigo, descricao e complemento na resposta 201.
+        // A nota foi autorizada, mas o aviso precisa chegar ao integrador. Aceita as duas grafias
+        // dos campos (a SEFIN devolve os erros com Codigo/Descricao capitalizados).
+        $request = $this->createValidDpsRequest();
+        $xmlAssinado = '<?xml version="1.0" encoding="UTF-8"?><DPS></DPS>';
+        $responseXml = '<?xml version="1.0"?><NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01"></NFSe>';
+
+        $this->validator->expects($this->once())->method('validate');
+        $this->xmlBuilder->expects($this->once())->method('build')->willReturn('<DPS></DPS>');
+        $this->xsdValidator->expects($this->once())->method('validate');
+        $this->xmlSigner->expects($this->once())->method('sign')->willReturn($xmlAssinado);
+        $this->requestBuilder->expects($this->once())->method('buildDpsPayload')->willReturn(['xml' => $xmlAssinado]);
+        $this->apiConnector->expects($this->once())->method('post')->willReturn([
+            'success' => true,
+            'data' => $responseXml,
+            'alertas' => [
+                ['codigo' => 'A0001', 'descricao' => 'Aviso de teste', 'complemento' => 'detalhe'],
+                ['Codigo' => 'A0002', 'Descricao' => 'Outro aviso'],
+                ['codigo' => 'A0003'],
+                'texto solto',
+            ],
+        ]);
+        $this->nfseXmlParser->expects($this->once())->method('parse')->willReturn([['id' => 'LIXO', 'numero' => null]]);
+
+        $response = $this->service->executar($request);
+
+        $this->assertTrue($response->success);
+        $this->assertSame([
+            ['codigo' => 'A0001', 'descricao' => 'Aviso de teste', 'complemento' => 'detalhe'],
+            ['codigo' => 'A0002', 'descricao' => 'Outro aviso', 'complemento' => null],
+        ], $response->alertas);
     }
 
     /**

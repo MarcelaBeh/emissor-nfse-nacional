@@ -13,12 +13,15 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Entity\Evento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoEvento;
 use MarcelaBeh\EmissorNfseNacional\Domain\Exception\DomainException;
 use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\ChaveAcesso;
+use MarcelaBeh\EmissorNfseNacional\Domain\ValueObject\EventoProcessado;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Config\ApiEndpoints;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Contract\ApiConnectorInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\Exception\HttpException;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\GzipBase64Decoder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Http\RequestBuilder;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Security\Contract\XmlSignerInterface;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Builder\Contract\XmlBuilderInterface;
+use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Parser\EventoXmlParser;
 use MarcelaBeh\EmissorNfseNacional\Infrastructure\Xml\Validator\Contract\XsdValidatorInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -36,6 +39,7 @@ class CancelarNfseService
         private RequestBuilder $requestBuilder,
         private ApiEndpoints $apiEndpoints,
         private LoggerInterface $logger = new NullLogger(),
+        private EventoXmlParser $eventoXmlParser = new EventoXmlParser(),
     ) {
     }
 
@@ -92,6 +96,7 @@ class CancelarNfseService
                 success: true,
                 mensagem: 'Cancelamento realizado com sucesso',
                 dados: $response['data'] ?? null,
+                evento: $this->lerEventoProcessado($response['data'] ?? null),
             );
 
         } catch (DomainException $e) {
@@ -108,6 +113,30 @@ class CancelarNfseService
                 0,
                 $e
             );
+        }
+    }
+
+    /**
+     * Lê o evento processado que a SEFIN devolve junto com o registro (`eventoXmlGZipB64`). O evento já está
+     * registrado, então a leitura é um complemento: se falhar, o motivo vai para o log e o dado original continua em
+     * `dados`, em vez de transformar um registro bem-sucedido em erro.
+     */
+    private function lerEventoProcessado(mixed $data): ?EventoProcessado
+    {
+        $compactado = is_array($data) ? ($data['eventoXmlGZipB64'] ?? null) : null;
+        if (!is_string($compactado) || $compactado === '') {
+            return null;
+        }
+
+        try {
+            return $this->eventoXmlParser->parse(GzipBase64Decoder::decode($compactado));
+        } catch (\RuntimeException $e) {
+            $this->logger->warning(
+                'Evento registrado, mas o XML processado não pôde ser lido: {msg}',
+                ['msg' => $e->getMessage()]
+            );
+
+            return null;
         }
     }
 }

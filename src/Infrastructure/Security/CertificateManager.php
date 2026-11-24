@@ -40,13 +40,19 @@ class CertificateManager implements Contract\CertificateManagerInterface
 
     private function setupTempDirectory(): void
     {
-        $cnpj = $this->certificate->getCnpj() ?: $this->certificate->getCpf();
+        // O documento do certificado vira nome de diretório: só letras e dígitos passam (CNPJ
+        // alfanumérico incluso), então um valor inesperado não escapa do diretório temporário.
+        $documento = (string) ($this->certificate->getCnpj() ?: $this->certificate->getCpf());
+        $documento = preg_replace('/[^0-9A-Za-z]/', '', $documento) ?? '';
+        if ($documento === '') {
+            $documento = 'sem-documento';
+        }
 
         $this->tempDir = sys_get_temp_dir()
             . '/nfse-nacional-'
             . (function_exists('posix_getuid') ? posix_getuid() : getmyuid())
             . '/'
-            . $cnpj
+            . $documento
             . '/certs/';
 
         if (!is_dir($this->tempDir)) {
