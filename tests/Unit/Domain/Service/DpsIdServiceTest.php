@@ -148,6 +148,17 @@ final class DpsIdServiceTest extends TestCase
         );
     }
 
+    public function test_inscricao_federal_do_cnpj_mantem_as_14_posicoes(): void
+    {
+        $this->assertSame(['2', '11444777000161'], DpsIdService::inscricaoFederal(true, '11444777000161'));
+    }
+
+    public function test_inscricao_federal_do_cpf_completa_com_zeros_a_esquerda(): void
+    {
+        // TSIdDPS: "CPF completar com 000 à esquerda".
+        $this->assertSame(['1', '00052998224725'], DpsIdService::inscricaoFederal(false, '52998224725'));
+    }
+
     private function createEndereco(): Endereco
     {
         return new Endereco(

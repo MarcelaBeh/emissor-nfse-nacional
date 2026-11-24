@@ -15,6 +15,21 @@ final readonly class ChaveAcesso
         $this->chave = $this->validate($chave);
     }
 
+    /**
+     * Extrai a chave do atributo `Id` de uma NFS-e (TSIdNFSe: "NFS" + chave de 50 posições). Devolve null se o valor
+     * não tiver esse formato, em vez de produzir uma chave inválida.
+     */
+    public static function doIdNfse(mixed $id): ?string
+    {
+        if (!is_string($id) || !str_starts_with($id, 'NFS')) {
+            return null;
+        }
+
+        $chave = substr($id, 3);
+
+        return preg_match('/^[0-9]{50}$/', $chave) === 1 ? $chave : null;
+    }
+
     private function validate(string $chave): string
     {
         $chave = preg_replace('/[^0-9]/', '', $chave) ?? '';

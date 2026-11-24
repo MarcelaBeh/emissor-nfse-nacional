@@ -428,11 +428,16 @@ class DpsXmlBuilder implements Contract\XmlBuilderInterface
 
         $descIncond = $servico->getDescontoIncondicionado();
         $descCond = $servico->getDescontoCondicionado();
-        if ($descIncond !== null && $descIncond->isPositive() || $descCond !== null && $descCond->isPositive()) {
+        // Os dois elementos são opcionais no XSD e a RN E0432 rejeita vDescCond igual a zero: só o desconto positivo é emitido.
+        if (($descIncond !== null && $descIncond->isPositive()) || ($descCond !== null && $descCond->isPositive())) {
             $desc = $this->dom->createElement('vDescCondIncond');
             $valNode->appendChild($desc);
-            $this->addChild($desc, 'vDescIncond', $descIncond !== null ? number_format($descIncond->getValue(), 2, '.', '') : '0.00', false);
-            $this->addChild($desc, 'vDescCond', $descCond !== null ? number_format($descCond->getValue(), 2, '.', '') : '0.00', false);
+            if ($descIncond !== null && $descIncond->isPositive()) {
+                $this->addChild($desc, 'vDescIncond', number_format($descIncond->getValue(), 2, '.', ''), false);
+            }
+            if ($descCond !== null && $descCond->isPositive()) {
+                $this->addChild($desc, 'vDescCond', number_format($descCond->getValue(), 2, '.', ''), false);
+            }
         }
 
         if ($servico->getPercentualDeducao() !== null) {

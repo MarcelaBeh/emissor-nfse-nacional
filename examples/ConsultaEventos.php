@@ -24,12 +24,17 @@ $facade = NfseNacionalFacade::create($config, $cert);
 $chave = '12345678901234567890123456789012345678901234567890';
 
 try {
-    $eventos = $facade->consultarEventos($chave);
-    echo 'Eventos encontrados: ' . count($eventos) . PHP_EOL;
-    print_r($eventos);
+    // A SEFIN consulta por tipo e sequencial: o cancelamento é o tipo 101101, sequencial 1.
+    $eventos = $facade->consultarEventosProcessados($chave, '101101', 1);
 
-    // Com filtro por tipo e sequencial:
-    // $eventos = $facade->consultarEventos($chave, '1', 1);
+    if ($eventos === []) {
+        echo 'Nenhum evento de cancelamento registrado para essa NFS-e.' . PHP_EOL;
+    }
+    foreach ($eventos as $evento) {
+        echo 'Evento ' . $evento->pedido->tipoEvento->value . ' registrado em ' . $evento->dhProc->format('d/m/Y H:i:s')
+            . ' (sequencial ' . $evento->nSeqEvento . ')' . PHP_EOL;
+        // $evento->xml é o XML assinado do evento, para guardar como comprovante.
+    }
 } catch (\Throwable $e) {
     echo 'ERRO: ' . $e->getMessage() . PHP_EOL;
 }

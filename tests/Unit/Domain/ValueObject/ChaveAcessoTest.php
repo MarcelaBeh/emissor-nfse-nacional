@@ -41,4 +41,31 @@ final class ChaveAcessoTest extends TestCase
         $chave = new ChaveAcesso(self::VALID_CHAVE);
         $this->assertSame(self::VALID_CHAVE, (string) $chave);
     }
+
+    public function test_do_id_nfse_extrai_a_chave_do_id(): void
+    {
+        $this->assertSame(self::VALID_CHAVE, ChaveAcesso::doIdNfse('NFS' . self::VALID_CHAVE));
+    }
+
+    /**
+     * @return array<string, array{mixed}>
+     */
+    public static function idsInvalidos(): array
+    {
+        return [
+            'sem prefixo' => [self::VALID_CHAVE],
+            'prefixo errado' => ['DPS' . self::VALID_CHAVE],
+            'curto' => ['NFS' . substr(self::VALID_CHAVE, 1)],
+            'longo' => ['NFS' . self::VALID_CHAVE . '1'],
+            'com letra' => ['NFS' . 'A' . substr(self::VALID_CHAVE, 1)],
+            'nulo' => [null],
+            'nao e texto' => [123],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('idsInvalidos')]
+    public function test_do_id_nfse_devolve_null_para_id_invalido(mixed $id): void
+    {
+        $this->assertNull(ChaveAcesso::doIdNfse($id));
+    }
 }

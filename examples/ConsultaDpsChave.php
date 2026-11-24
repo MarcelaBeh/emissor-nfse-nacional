@@ -21,12 +21,14 @@ $cert = \NFePHP\Common\Certificate::readPfx($certContent, $certPassword);
 
 $facade = NfseNacionalFacade::create($config, $cert);
 
-$chave = '12345678901234567890123456789012345678901234567890';
+// Id da DPS (TSIdDPS): "DPS" + 42 dígitos. É o Id que a lib gerou ao emitir.
+$idDps = 'DPS355030821144477700016100001000000000000123';
 
 try {
-    $dados = $facade->consultarDpsPorChave($chave);
-    echo 'Resposta:' . PHP_EOL;
-    print_r($dados);
+    $chave = $facade->consultarChavePorDps($idDps);
+    echo $chave === null
+        ? 'Nenhuma NFS-e foi gerada com esse Id de DPS.' . PHP_EOL
+        : 'Chave de acesso da NFS-e: ' . $chave . PHP_EOL;
 } catch (\Throwable $e) {
     echo 'ERRO: ' . $e->getMessage() . PHP_EOL;
 }

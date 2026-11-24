@@ -32,6 +32,7 @@ use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoReembolsoRepasseRessarcimento
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TipoRetencaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\TributacaoIssqn;
 use MarcelaBeh\EmissorNfseNacional\Domain\Enum\VinculoPrestador;
+use MarcelaBeh\EmissorNfseNacional\Domain\Service\DpsIdService;
 
 class DpsValidator
 {
@@ -1721,6 +1722,48 @@ class DpsValidator
         }
     }
 
+    /**
+     * RN E0042, parte 2: o município, o tipo de inscrição e a inscrição da chave da NFS-e substituída devem ser os do
+     * Id desta DPS. Posições do TSIdNFSe: município nas posições 1 a 7, tipo de inscrição na 9 e inscrição nas 10 a 23;
+     * a inscrição do CPF segue o TSIdDPS (14 posições, com zeros à esquerda).
+     *
+     * A parte 1 da regra, o dígito verificador da chave, não é aplicada: o cálculo não consta nos documentos oficiais
+     * disponíveis. A SEFIN confere o DV e devolve a mesma E0042.
+     *
+     * @param array<string> $errors
+     */
+    private function validateChaveSubstituidaDoMesmoEmitente(DpsRequest $request, string $chave, array &$errors): void
+    {
+        $prestador = $request->prestador;
+        if ($prestador->documento === null || $prestador->isCnpj === null) {
+            return; // sem CNPJ ou CPF não há Id da DPS para comparar
+        }
+
+        $documentoValido = $prestador->isCnpj
+            ? preg_match('/^[0-9]{14}$/', $prestador->documento) === 1
+            : preg_match('/^[0-9]{11}$/', $prestador->documento) === 1;
+        if (!$documentoValido) {
+            return; // o documento do prestador já é recusado em outra validação
+        }
+
+        [$tipoInscricao, $inscricao] = DpsIdService::inscricaoFederal($prestador->isCnpj, $prestador->documento);
+
+        $divergencias = [];
+        if (substr($chave, 0, 7) !== $request->codigoMunicipioEmissor) {
+            $divergencias[] = 'município';
+        }
+        if (substr($chave, 8, 1) !== $tipoInscricao) {
+            $divergencias[] = 'tipo de inscrição';
+        }
+        if (substr($chave, 9, 14) !== $inscricao) {
+            $divergencias[] = 'inscrição';
+        }
+
+        if ($divergencias !== []) {
+            $errors[] = 'E0042: a chave da NFS-e a ser substituída (chSubstda) não corresponde a esta DPS em: '
+                . implode(', ', $divergencias) . '; o município, o tipo de inscrição e a inscrição devem ser os do prestador';
+        }
+    }
     /** @param array<string> $errors */
     private function validateSubstituicao(DpsRequest $request, array &$errors): void
     {
@@ -1731,6 +1774,8 @@ class DpsValidator
 
         if (!preg_match('/^[0-9]{50}$/', $s->chaveSubstituida)) {
             $errors[] = 'chSubstda deve ter 50 dígitos numéricos (TSChaveNFSe)';
+        } else {
+            $this->validateChaveSubstituidaDoMesmoEmitente($request, $s->chaveSubstituida, $errors);
         }
 
         if (!in_array($s->codigoMotivo, MotivoSubstituicao::valores(), true)) {

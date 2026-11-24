@@ -861,7 +861,41 @@ class EmitirDpsService
             numero: $numeroNfse,
             dados: is_array($data) ? $data : null,
             xml: is_string($data) ? $data : null,
+            alertas: $this->extrairAlertas($response['alertas'] ?? null),
         );
+    }
+
+    /**
+     * Normaliza os `alertas[]` da SEFIN (código, descrição e complemento). Aceita os nomes dos campos
+     * em minúsculas (contrato OpenAPI) e capitalizados (`Codigo`/`Descricao`, como a SEFIN devolve
+     * os erros na prática). Item sem descrição é ignorado: não há o que mostrar.
+     *
+     * @return list<array{codigo: string|null, descricao: string, complemento: string|null}>
+     */
+    private function extrairAlertas(mixed $alertas): array
+    {
+        if (!is_array($alertas)) {
+            return [];
+        }
+
+        $resultado = [];
+        foreach ($alertas as $alerta) {
+            if (!is_array($alerta)) {
+                continue;
+            }
+            $codigo = $alerta['codigo'] ?? $alerta['Codigo'] ?? null;
+            $descricao = $alerta['descricao'] ?? $alerta['Descricao'] ?? null;
+            $complemento = $alerta['complemento'] ?? $alerta['Complemento'] ?? null;
+            if (is_string($descricao) && $descricao !== '') {
+                $resultado[] = [
+                    'codigo' => is_string($codigo) && $codigo !== '' ? $codigo : null,
+                    'descricao' => $descricao,
+                    'complemento' => is_string($complemento) && $complemento !== '' ? $complemento : null,
+                ];
+            }
+        }
+
+        return $resultado;
     }
 
     /**

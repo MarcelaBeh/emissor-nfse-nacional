@@ -1040,6 +1040,61 @@ final class DpsXmlBuilderIbscbsTest extends TestCase
     }
 
     /** @param ChaveAcesso[]|null $refNFSeList */
+    private function servicoComDescontos(float $incondicionado, float $condicionado): Servico
+    {
+        return new Servico(
+            discriminacao: 'test',
+            codigoTributacao: '010101',
+            localPrestacao: new CodigoMunicipio('3550308'),
+            valorServicos: new Money(1000.00),
+            descontoIncondicionado: new Money($incondicionado),
+            descontoCondicionado: new Money($condicionado),
+            aliquotaIss: 2.0,
+            totTribTipo: 'indTotTrib',
+            indTotTrib: '0',
+            codigoNbs: '12345678',
+        );
+    }
+
+    public function test_so_desconto_incondicionado_nao_emite_vdesccond_zerado(): void
+    {
+        // Confirmado em produção restrita: vDescCond=0.00 era rejeitado pela RN E0432 (deve ser maior que zero).
+        $dps = $this->createDpsWithIbscbs(servico: $this->servicoComDescontos(100.00, 0.0));
+        $dps->gerarChaveAcesso();
+        $xml = $this->builder->build($dps);
+
+        $this->assertStringContainsString('<vDescCondIncond><vDescIncond>100.00</vDescIncond></vDescCondIncond>', $xml);
+        $this->assertStringNotContainsString('<vDescCond>', $xml);
+    }
+
+    public function test_so_desconto_condicionado_nao_emite_vdescincond_zerado(): void
+    {
+        $dps = $this->createDpsWithIbscbs(servico: $this->servicoComDescontos(0.0, 20.00));
+        $dps->gerarChaveAcesso();
+        $xml = $this->builder->build($dps);
+
+        $this->assertStringContainsString('<vDescCondIncond><vDescCond>20.00</vDescCond></vDescCondIncond>', $xml);
+        $this->assertStringNotContainsString('<vDescIncond>', $xml);
+    }
+
+    public function test_os_dois_descontos_positivos_sao_emitidos_na_ordem_do_xsd(): void
+    {
+        $dps = $this->createDpsWithIbscbs(servico: $this->servicoComDescontos(100.00, 20.00));
+        $dps->gerarChaveAcesso();
+        $xml = $this->builder->build($dps);
+
+        $this->assertStringContainsString('<vDescCondIncond><vDescIncond>100.00</vDescIncond><vDescCond>20.00</vDescCond></vDescCondIncond>', $xml);
+    }
+
+    public function test_sem_desconto_nao_emite_o_grupo(): void
+    {
+        $dps = $this->createDpsWithIbscbs(servico: $this->servicoComDescontos(0.0, 0.0));
+        $dps->gerarChaveAcesso();
+        $xml = $this->builder->build($dps);
+
+        $this->assertStringNotContainsString('vDescCondIncond', $xml);
+    }
+
     private function createIbscbs(
         ?IndicadorFinal $indFinal = null,
         ?TipoOperacao $tpOper = null,
