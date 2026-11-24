@@ -25,23 +25,11 @@ linha 2.x até lá.
 ### Adicionado
 - `vAjusteBC` (`ServicoRequest::$documentosAjusteBc`, enum `TipoAjusteBC`), operações com imóveis (`IbsCbsImovelRequest`
   reestruturado) e `IbsCbsRequest::$bensMoveis`.
-- `NfseResponse::$alertas`: avisos previstos no contrato da API da SEFIN. Antes eram descartados.
 - Código da RN oficial nas mensagens de validação.
-- Leitura do evento processado (`evento_v1.01.xsd`): `EventoResponse::$evento` e `consultarEventosProcessados()` devolvem
-  data e hora do registro, sequencial e o XML assinado do evento, como comprovante.
 
 ### Corrigido
-- `vDescCond` zerado: com só desconto incondicionado, a DPS saía com `<vDescCond>0.00</vDescCond>` e a SEFIN rejeitava (E0432).
 - `vAjusteBC`: os tipos 101, 103, 104 e 199 exigem documento fiscal, não `docOutro` (E0479), e `docFiscalOutro` só vale
   para documentos anteriores a 2026 (E0476).
-- Consulta de NFS-e: `consultarPorChave()` agora preenche `chaveAcesso` e `numero` e devolve o erro real da SEFIN (antes
-  qualquer falha virava "NFSe não encontrada"). O cancelamento não aparece na consulta da nota (`cStat` segue 100): use
-  `consultarEventosProcessados()`.
-- Substituição: a SEFIN recusa o pedido de evento `105102` enviado pelo emitente (E1861). O `EventoValidator` e o
-  `Evento` passam a recusá-lo e orientar a emitir a DPS substituta com `subst`, que faz a SEFIN registrar o evento na
-  nota original. Por isso `chSubstituta` saiu do `EventoRequest`.
-- Substituição: o `DpsValidator` aplica a RN E0042 (parte 2): o município, o tipo de inscrição e a inscrição da chave
-  substituída devem ser os do prestador da DPS.
 
 ### Removido
 - `DocDedRed`, `IbsCbsReeRepRes`, `IbsCbsDocumentoReeRepRes` e `TipoReembolsoRepasseRessarcimento`, com os DTOs de request:
@@ -49,8 +37,8 @@ linha 2.x até lá.
 - `Dps::gerarChaveAcesso()` e `getChaveAcesso()` (use `gerarIdDps()` e `getIdDps()`) e `Presentation\Factory\DpsFactory`,
   descontinuada na v2.3.2.
 - `storage/prefeituras.json` e o parâmetro `prefeitura`: toda emissão passa pela SEFIN Nacional.
-- `consultarDpsPorChave()`: nunca funcionou (a SEFIN consulta a DPS pelo Id da DPS, não pela chave da NFS-e). Use
-  `consultarChavePorDps()`.
+- `consultarDpsPorChave()` (use `consultarChavePorDps()`) e os campos `nSeqEvento`, `ambGer`, `dhProc`, `nDFSe` e
+  `chSubstituta` do `EventoRequest`, todos descontinuados na 2.4.0.
 
 ### Migração
 - Troque `documentosDeducao` e `reeRepRes` por `documentosAjusteBc`, sem mapeamento automático (exige `vTotDoc`,
@@ -62,6 +50,37 @@ linha 2.x até lá.
 - Tire `nSeqEvento`, `ambGer`, `dhProc`, `nDFSe` e `chSubstituta` do `EventoRequest`.
 - `consultarEventos()` passa a exigir tipo e sequencial, devolve a lista de itens da SEFIN e lança `ServiceException`
   em vez de `['erro' => ...]`.
+
+---
+
+## [v2.4.0] - 2026-11-24
+
+### Adicionado
+- `NfseResponse::$alertas`: avisos (`alertas[]`) previstos no contrato da API da SEFIN para a NFS-e autorizada. Antes eram
+  descartados.
+- Leitura do evento processado (`evento_v1.01.xsd`): `EventoResponse::$evento` e `consultarEventosProcessados()` devolvem
+  data e hora do registro, sequencial e o XML assinado do evento, como comprovante. A resposta do cancelamento o traz em
+  base64 simples e a consulta em base64 duplo; os dois são aceitos.
+- `consultarChavePorDps()`: descobre a chave da NFS-e pelo Id da DPS.
+
+### Corrigido
+- `vDescCond` zerado: com só desconto incondicionado, a DPS saía com `<vDescCond>0.00</vDescCond>` e a SEFIN rejeitava (E0432).
+- Consulta de NFS-e: `consultarPorChave()` agora preenche `chaveAcesso` e `numero` e devolve o erro real da SEFIN (antes
+  qualquer falha virava "NFSe não encontrada"). O cancelamento não aparece na consulta da nota (`cStat` segue 100): use
+  `consultarEventosProcessados()`.
+- Substituição: a SEFIN recusa o pedido de evento `105102` enviado pelo emitente (E1861). O `EventoValidator` passa a
+  recusá-lo e orientar a emitir a DPS substituta com `subst`, que faz a SEFIN registrar o evento na nota original.
+- Substituição: o `DpsValidator` aplica a RN E0042 (parte 2): o município, o tipo de inscrição e a inscrição da chave
+  substituída devem ser os do prestador da DPS. O dígito verificador da chave não é validado, porque o cálculo não
+  consta nos documentos oficiais; a SEFIN o confere.
+
+### Descontinuado
+Só marcados como `@deprecated`: continuam funcionando como antes.
+- `consultarDpsPorChave()`: nunca funcionou (a SEFIN consulta a DPS pelo Id da DPS, não pela chave da NFS-e). Use
+  `consultarChavePorDps()`.
+- `consultarEventos()`: a SEFIN exige tipo e sequencial (sem eles responde 405). Use `consultarEventosProcessados()`.
+- `nSeqEvento`, `ambGer`, `dhProc`, `nDFSe` e `chSubstituta` do `EventoRequest`: os quatro primeiros são do evento processado
+  (resposta) e sempre foram ignorados; o último pertence ao pedido de substituição, que a SEFIN recusa.
 
 ---
 
